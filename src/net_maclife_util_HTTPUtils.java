@@ -88,6 +88,7 @@ public class net_maclife_util_HTTPUtils
 	 * </p>
 	 * @param sRequestMethod 请求方法，{@code GET} 或 {@code POST}，当为 {@code POST} 时，本函数会自动将 URL 中 ? 前的 URL 以及 ? 后的 QueryString 截取出来（如果有的话），并用 {@code POST} 方法请求到新的 URL (截取后的 URL)。
 	 * @param sURL 网址，必须是以 http:// 开头或者以 https:// 开头的网址 (ftp:// 不行的)
+	 * @param mapRequestHeaders Map&lt;String, Object&gt; 请求头。其中 Object 可以是 String 类型 （单个值），或者 List&lt;String&gt; （多个值） 类型
 	 * @param arrayPostData POST 方法所要 POST 的数据。如果为 null，则从 sURL 中的 QueryString 中提取出来当作 PostData 处理
 	 * @param bReturnURLConnection 是否返回 URLConnection。通常，如果需要自己读取响应头（比如 Cookie）时需要用到。
 	 * @param isReturnContentOrStream 是返回 {@link String} 数据，还是 {@link InputStream}　数据。当 true　时，返回 {@link String}， false　时返回 {@link InputStream}
@@ -106,7 +107,7 @@ public class net_maclife_util_HTTPUtils
 	 * @param sTLSClientKeyStoreType TLS [客户端证书] 仓库类型，取值与 sTLSTrustStoreType 相同。
 	 * @param isTLSClientCertificate TLS [客户端证书] 仓库文件名 (不是证书自身的文件名)，此仓库中应当包含 客户端证书
 	 * @param sTLSClientCertificatePassword TLS [客户端证书] 仓库的密码。当为 null 或 "" 时，被当做 java 默认的 "changeit" 密码来用
-	 * @return
+	 * @return 取决于 bReturnURLConnection isReturnContentOrStream。要么是 URLConnection (true, *)，要么是消息体 (String 类型) (false, true)，要么是消息流 (InputStream 类型) (false, false)，
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
 	 * @throws KeyManagementException
@@ -117,6 +118,7 @@ public class net_maclife_util_HTTPUtils
 	public static Object CURL (
 			String sRequestMethod,
 			String sURL,
+			Map<String, Object> mapRequestHeaders,
 			byte[] arrayPostData,
 			boolean bReturnURLConnection,
 			boolean isReturnContentOrStream,
@@ -140,17 +142,20 @@ public class net_maclife_util_HTTPUtils
 			) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		// 将请求方法名规范化
-		if (StringUtils.equalsIgnoreCase("POST", sRequestMethod) && arrayPostData==null)
+		if (StringUtils.equalsIgnoreCase("POST", sRequestMethod))
 		{
 			sRequestMethod = "POST";
 
-			int i = sURL.indexOf('?');
-			if (i == -1)
-				throw new IllegalArgumentException ("使用 POST 方法时，即没有传递 PostData，URL 中也没有查询字符串 (Query String)");
+			if (arrayPostData == null)
+			{
+				int i = sURL.indexOf('?');
+				if (i == -1)
+					throw new IllegalArgumentException ("使用 POST 方法时，即没有传递 PostData，URL 中也没有查询字符串 (Query String)");
 
-			String sQueryString = sURL.substring (i+1);
-			sURL = sURL.substring (0, i);
-			arrayPostData = sQueryString.getBytes ();	// sQueryString.getBytes (sContentCharset);
+				String sQueryString = sURL.substring (i+1);
+				sURL = sURL.substring (0, i);
+				arrayPostData = sQueryString.getBytes ();	// sQueryString.getBytes (sContentCharset);
+			}
 		}
 		else
 			sRequestMethod = "GET";
@@ -176,6 +181,21 @@ public class net_maclife_util_HTTPUtils
 		}
 		http.setConnectTimeout ((nTimeoutSeconds_Connect <= 0 ? DEFAULT_CONNECT_TIMEOUT_SECOND : nTimeoutSeconds_Connect) * 1000);
 		http.setReadTimeout ((nTimeoutSeconds_Read <= 0 ? DEFAULT_READ_TIMEOUT_SECOND : nTimeoutSeconds_Read) * 1000);
+		if (mapRequestHeaders!=null && mapRequestHeaders.size() > 0)
+		{
+			for (String key : mapRequestHeaders.keySet ())
+			{
+				Object valueOrValues = mapRequestHeaders.get (key);
+				if (valueOrValues instanceof String)
+					http.addRequestProperty (key, (String)valueOrValues);
+				else if (valueOrValues instanceof List<?>)
+				{
+					List<String> listValues = (List<String>)valueOrValues;
+					for (String value : listValues)
+						http.addRequestProperty (key, value);
+				}
+			}
+		}
 
 		((HttpURLConnection)http).setInstanceFollowRedirects (isFollowRedirects);
 
@@ -294,7 +314,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static URLConnection CURL_Connection (String sURL) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (URLConnection)CURL (null, sURL, null, true, true, null, true, 0, 0,
+		return (URLConnection)CURL (null, sURL, null, null, true, true, null, true, 0, 0,
 				null, null, null,
 				true, true, null, null, null, null, null, null
 			);
@@ -335,7 +355,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static String CURL (String sURL, String sCharSet, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (String)CURL (null, sURL, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (String)CURL (null, sURL, null, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
 				null, null, null,
 				true, true, null, null, null, null, null, null
 			);
@@ -353,7 +373,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static String CURL_Post (String sURL, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (String)CURL ("POST", sURL, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (String)CURL ("POST", sURL, null, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				null, null, null,
 				true, true, null, null, null, null, null, null
 			);
@@ -376,7 +396,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static String CURL_ViaProxy (String sURL, String sCharSet, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (String)CURL (null, sURL, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (String)CURL (null, sURL, null, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
 				sProxyType, sProxyHost, sProxyPort,
 				true, true, null, null, null, null, null, null
 			);
@@ -394,7 +414,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static String CURL_Post_ViaProxy (String sURL, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (String)CURL ("POST", sURL, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (String)CURL ("POST", sURL, null, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				sProxyType, sProxyHost, sProxyPort,
 				true, true, null, null, null, null, null, null
 			);
@@ -416,7 +436,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static InputStream CURL_Stream (String sURL, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (InputStream)CURL (null, sURL, null, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (InputStream)CURL (null, sURL, null, null, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				null, null, null,
 				true, true, null, null, null, null, null, null
 			);
@@ -432,20 +452,24 @@ public class net_maclife_util_HTTPUtils
 	 * @param sURL 网址
 	 * @return Input Stream
 	 */
-	public static InputStream CURL_Post_Stream (String sURL, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static InputStream CURL_Post_Stream (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (InputStream)CURL ("POST", sURL, arrayPostData, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (InputStream)CURL ("POST", sURL, mapRequestHeaders, arrayPostData, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				null, null, null,
 				true, true, null, null, null, null, null, null
 			);
 	}
+	public static InputStream CURL_Post_Stream (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Post_Stream (sURL, mapRequestHeaders, arrayPostData, 0);
+	}
 	public static InputStream CURL_Post_Stream (String sURL, byte[] arrayPostData) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_Stream (sURL, arrayPostData, 0);
+		return CURL_Post_Stream (sURL, null, arrayPostData, 0);
 	}
 	public static InputStream CURL_Post_Stream (String sURL) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_Stream (sURL, null, 0);
+		return CURL_Post_Stream (sURL, null, null, 0);
 	}
 
 	/**
@@ -456,7 +480,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static InputStream CURL_Stream_ViaProxy (String sURL, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (InputStream)CURL (null, sURL, null, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (InputStream)CURL (null, sURL, null, null, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				sProxyType, sProxyHost, sProxyPort,
 				true, true, null, null, null, null, null, null
 			);
@@ -474,7 +498,7 @@ public class net_maclife_util_HTTPUtils
 	 */
 	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (InputStream)CURL ("POST", sURL, arrayPostData, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (InputStream)CURL ("POST", sURL, null, arrayPostData, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				sProxyType, sProxyHost, sProxyPort,
 				true, true, null, null, null, null, null, null
 			);
