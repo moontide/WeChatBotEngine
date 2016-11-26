@@ -336,13 +336,24 @@ public class net_maclife_util_HTTPUtils
 	 * @param sURL 网址
 	 * @return String Content
 	 */
-	public static String CURL (String sURL) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL (String sURL, Map<String, Object> mapRequestHeaders, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL (sURL, 0);
+		return (String)CURL (null, sURL, mapRequestHeaders, null, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
+				null, null, null,
+				true, true, null, null, null, null, null, null
+			);
+	}
+	public static String CURL (String sURL, Map<String, Object> mapRequestHeaders) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL (sURL, mapRequestHeaders, 0);
 	}
 	public static String CURL (String sURL, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL (sURL, null, nTimeoutSeconds);
+		return CURL (sURL, (Map<String, Object>)null, nTimeoutSeconds);
+	}
+	public static String CURL (String sURL) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL (sURL, 0);
 	}
 
 	/**
