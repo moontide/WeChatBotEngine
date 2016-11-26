@@ -54,14 +54,14 @@ public class net_maclife_wechat_http_WechatBot implements Runnable
 	static JsonFactory _JSON_FACTORY = new JsonFactory();
 
 
-	Bot bot;
+	BotEngine engine;
 	public net_maclife_wechat_http_WechatBot ()
 	{
-		bot = new Bot ();
+		engine = new BotEngine ();
 	}
-	public Bot GetBot ()
+	public BotEngine GetBotEngine ()
 	{
-		return bot;
+		return engine;
 	}
 
 	public static String GetLoginID () throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException
@@ -123,6 +123,7 @@ System.out.println (String.format ("%3d", nLoopCount) + " 循环等待二维码�
 System.out.println ("	[" + sContent + "]");
 			if (StringUtils.isEmpty (sContent))
 			{
+				nLoginResultCode = 400;
 System.out.println ("	空内容，二维码可能已经失效");
 				break;
 			}
@@ -185,6 +186,7 @@ System.out.println ("	TICKET=[" + eXML.getFirstChildElement ("pass_ticket").getV
 			mapResult.put ("PassTicket", eXML.getFirstChildElement ("pass_ticket").getValue ());
 			mapResult.put ("LoginResultCode", nLoginResultCode);
 
+			/*
 System.out.println ("登录页面设置的 Cookie:");
 			Map<String, List<String>> mapHeaders = http.getHeaderFields ();
 			for (String sHeaderName : mapHeaders.keySet ())
@@ -198,6 +200,7 @@ System.out.println ("	[" + listCookies + "]");
 					//break;
 				}
 			}
+			*/
 			return mapResult;
 
 		}
@@ -224,6 +227,13 @@ System.out.println ("	[" + listCookies + "]");
 		"}\n";
 	}
 
+	static Random random = new Random ();
+	public static String MakeDeviceID ()
+	{
+		long nRand = random.nextLong () & 0x7FFFFFFFFFFFFFFFL;
+		return "e" + String.format ("%015d", nRand).substring (0, 15);	// System.currentTimeMillis ();
+	}
+
 	public static JsonNode WebWeChatInit (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=1703974212&lang=zh_CN&pass_ticket=ZfvpI6wcO7N5PTkacmWK9zUTXpUOB3kqre%2BrkQ8IAtHDAIP2mc2psB5eDH8cwzsp
@@ -233,7 +243,7 @@ System.out.println (sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
-		String sJSONStringRequestBody = MakeFullBaseRequestJSONString (sUserID, sSessionID, sSessionKey, "e" + System.currentTimeMillis ());
+		String sJSONStringRequestBody = MakeFullBaseRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID ());
 System.out.println (sJSONStringRequestBody);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sJSONStringRequestBody.getBytes ());
 		ObjectMapper om = new ObjectMapper ();
@@ -252,12 +262,65 @@ System.out.println (sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
-		String sJSONStringRequestBody = MakeFullBaseRequestJSONString (sUserID, sSessionID, sSessionKey, "e" + System.currentTimeMillis ());
+		String sJSONStringRequestBody = MakeFullBaseRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID ());
 System.out.println (sJSONStringRequestBody);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sJSONStringRequestBody.getBytes ());
 		ObjectMapper om = new ObjectMapper ();
 		JsonNode node = om.readTree (is);
 System.out.println ("获取 WebWeChatGetContacts 的 http 响应消息体:");
+System.out.println ("	[" + node + "]");
+		//
+		return node;
+	}
+
+	public static String MakeFullGetRoomContactRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonContacts)
+	{
+		List<String> listRoomIDs = new ArrayList ();
+		JsonNode jsonMemberList = jsonContacts.get ("MemberList");
+		for (int i=0; i<jsonMemberList.size (); i++)
+		{
+			JsonNode jsonContact = jsonMemberList.get (i);
+			String sUserHashID = jsonContact.get ("UserName").asText ();
+			if (StringUtils.startsWith (sUserHashID, "@@"))
+				listRoomIDs.add (sUserHashID);
+		}
+		StringBuilder sbBody = new StringBuilder ();
+		sbBody.append ("{\n");
+		sbBody.append ("	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n");
+		sbBody.append ("	\"Count\": " + listRoomIDs.size () + ",\n");
+		sbBody.append ("	\"List\":\n");
+		sbBody.append ("	[\n");
+		for (int i=0; i<listRoomIDs.size (); i++)
+		{
+			sbBody.append ("		{\n");
+			sbBody.append ("			\"UserName\": \"" + listRoomIDs.get (i) + "\",\n");
+			sbBody.append ("			\"EncryChatRoomId\": \"\"\n");
+			sbBody.append ("		}");
+			if (i != listRoomIDs.size ()-1)
+			{
+				sbBody.append (",");
+			}
+			sbBody.append ("\n");
+		}
+		sbBody.append ("	]\n");
+		sbBody.append ("}\n");
+		return sbBody.toString ();
+	}
+
+	public static JsonNode WebWeChatGetRoomContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonContacts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
+System.out.println ("WebWeChatGetRoomContacts 的 URL:");
+System.out.println (sURL);
+
+		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
+		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
+		String sJSONStringRequestBody = MakeFullGetRoomContactRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonContacts);
+System.out.println (sJSONStringRequestBody);
+		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sJSONStringRequestBody.getBytes ());
+		ObjectMapper om = new ObjectMapper ();
+		JsonNode node = om.readTree (is);
+System.out.println ("获取 WebWeChatGetRoomContacts 的 http 响应消息体:");
 System.out.println ("	[" + node + "]");
 		//
 		return node;
@@ -277,44 +340,44 @@ System.out.println ("	[" + node + "]");
 		JsonNode jsonUser = null;
 		for (int i=0; i<jsonMemberList.size (); i++)
 		{
-			JsonNode temp = jsonMemberList.get (i);
+			JsonNode node = jsonMemberList.get (i);
 
 			if (StringUtils.isNotEmpty (sUserIDInThisSession))
 			{
-				String sTemp = temp.get ("UserName").asText ();
+				String sTemp = node.get ("UserName").asText ();
 				if (StringUtils.equalsIgnoreCase (sUserIDInThisSession, sTemp))
 				{
-					jsonUser = temp;
+					jsonUser = node;
 					break;
 				}
 			}
 
 			if (StringUtils.isNotEmpty (sAlias))
 			{
-				String sTemp = temp.get ("Alias").asText ();
+				String sTemp = node.get ("Alias").asText ();
 				if (StringUtils.equalsIgnoreCase (sAlias, sTemp))
 				{
-					jsonUser = temp;
+					jsonUser = node;
 					break;
 				}
 			}
 
 			if (StringUtils.isNotEmpty (sRemarkName))
 			{
-				String sTemp = temp.get ("RemarkName").asText ();
+				String sTemp = node.get ("RemarkName").asText ();
 				if (StringUtils.equalsIgnoreCase (sRemarkName, sTemp))
 				{
-					jsonUser = temp;
+					jsonUser = node;
 					break;
 				}
 			}
 
 			if (StringUtils.isNotEmpty (sNickName))
 			{
-				String sTemp = temp.get ("NickName").asText ();
+				String sTemp = node.get ("NickName").asText ();
 				if (StringUtils.equalsIgnoreCase (sNickName, sTemp))
 				{
-					jsonUser = temp;
+					jsonUser = node;
 					break;
 				}
 			}
@@ -334,7 +397,7 @@ System.out.println (sURL);
 		switch (nMessageType)
 		{
 		case 1:
-			sJSONStringRequestBody = MakeFullTextMessageJSONString (sUserID, sSessionID, sSessionKey, "e" + System.currentTimeMillis (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+			sJSONStringRequestBody = MakeFullTextMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
 			break;
 		default:
 			break;
@@ -378,19 +441,133 @@ System.out.println ("	[" + node + "]");
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, 1, sMessage);
 	}
 
+	public static String MakeSyncCheckKeys (JsonNode jsonSyncCheckKeys)
+	{
+		StringBuilder sbSyncCheckKeys = new StringBuilder ();
+		JsonNode listKeys = jsonSyncCheckKeys.get ("List");
+		for (int i=0; i<listKeys.size (); i++)
+		{
+			if (i != 0)
+			{
+				sbSyncCheckKeys.append ("%7C");	// %7C: |
+			}
+			JsonNode jsonKey = listKeys.get (i);
+			sbSyncCheckKeys.append (jsonKey.get ("Key").asText ());
+			sbSyncCheckKeys.append ("_");
+			sbSyncCheckKeys.append (jsonKey.get ("Val").asText ());
+		}
+		return sbSyncCheckKeys.toString ();
+	}
+	public static String MakeFullWeChatSyncJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonSyncKey)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		return
+		"{\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"SyncKey\":\n" +
+		jsonSyncKey + ",\n" +
+		"	rr: " + System.currentTimeMillis () +
+		"}\n";
+	}
+	public static JsonNode WebWeChatGetMessages (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException
+	{
+		String sSyncCheckKeys = MakeSyncCheckKeys (jsonSyncCheckKeys);
+		String sSyncCheckURL = "https://webpush.weixin.qq.com/cgi-bin/mmwebwx-bin/synccheck?r=" + System.currentTimeMillis () + "&skey=" + URLEncoder.encode (sSessionKey, "UTF-8") + "&sid=" + URLEncoder.encode (sSessionID, "UTF-8") + "&uin=" + sUserID + "&deviceid=" + MakeDeviceID () + "&synckey=" +  sSyncCheckKeys + "&_=" + System.currentTimeMillis ();
+System.out.println ("WebWeChatGetMessages 中 synccheck 的 URL:");
+System.out.println (sSyncCheckURL);
+
+		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
+		mapRequestHeaders.put ("Cookie", "wxuin=" + sUserID + "; wxsid=" + sSessionID + ";");	// 避免服务器返回 1100 1102 代码？
+		String sContent = net_maclife_util_HTTPUtils.CURL (sSyncCheckURL, mapRequestHeaders);	// window.synccheck={retcode:"0",selector:"2"}
+System.out.println ("获取 WebWeChatGetMessages 中 synccheck 的 http 响应消息体:");
+System.out.println ("	[" + sContent + "]");
+
+		String sJSCode = StringUtils.replace (sContent, "window.", "var ");
+		String sSyncCheckReturnCode = public_jse.eval (sJSCode + "; synccheck.retcode;").toString ();
+		String sSyncCheckSelector = public_jse.eval (sJSCode + "; synccheck.selector;").toString ();
+
+		JsonNode jsonResult = null;
+		if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "0"))
+		{
+			switch (sSyncCheckSelector)
+			{
+			case "2":	// 有新消息
+				String sSyncURL = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=" + URLEncoder.encode (sSessionID, "UTF-8") + "&skey" + URLEncoder.encode (sSessionKey, "UTF-8") + "&lang=zh_CN&pass_ticket=" +  sPassTicket;
+System.out.println ("WebWeChatGetMessages 中 synccheck 的 URL:");
+System.out.println (sSyncURL);
+
+				mapRequestHeaders = new HashMap<String, Object> ();
+				mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
+				String sJSONStringRequestBody = MakeFullWeChatSyncJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys);
+System.out.println (sJSONStringRequestBody);
+				InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sJSONStringRequestBody.getBytes ());
+				ObjectMapper om = new ObjectMapper ();
+				JsonNode node = om.readTree (is);
+System.out.println ("获取 WebWeChatGetMessages 中 webwxsync 的 http 响应消息体:");
+System.out.println ("	[" + node + "]");
+				jsonResult = node;
+				break;
+			case "0":	// nothing
+				break;
+			case "7":
+			default:
+				break;
+			}
+		}
+		else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1100") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1101") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))
+		{
+			throw new IllegalStateException ("微信被退出 / 被踢出了");
+		}
+		//else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))	// 当 skey=*** 不小心输错变成 skey*** 时返回了 1102 错误
+		{
+			//throw new IllegalArgumentException ("参数错误");
+		}
+		//
+		return jsonResult;
+	}
+
 	public static void Logout ()
 	{
-		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout?redirect=1&type=1&skey=@crypt_1df7c02d_9effb9a7d4292af4681c79dab30b6a57
+		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout?redirect=1&type=1&skey=@crypt_1df7c02d_9effb9a7d4292af4681c79dab30b6a57	// 加上表单数据 uin=****&sid=**** ，POST
 
 		// 被踢出后重新登录
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxnewloginpage?ticket=A-1wUN8dm6D-nIJH8m8g7yfh@qrticket_0&uuid=YZzRE6skKQ==&lang=zh_CN&scan=1479978616 对比最初的登录参数，后面是新加的： &fun=new&version=v2&lang=zh_CN
 		//    <error><ret>0</ret><message></message><skey>@crypt_1df7c02d_131d1d0335be6fd38333592c098a5b16</skey><wxsid>GrS6IjctQkOxs0PP</wxsid><wxuin>2100343515</wxuin><pass_ticket>T%2FduUWTWjODelhztGXZAO1b3u7S5Ddy8ya8fP%2BYhZlRjxR1ERMDXHKbaCs6x2mQP</pass_ticket><isgrayscale>1</isgrayscale></error>
 	}
 
-	class Bot implements Runnable
+	class BotEngine implements Runnable
 	{
+		// 几种 Bot 链处理方式
+		// 大于 0: 本 Bot 已处理，但请后面的 Bot 继续处理
+		//      0: 本 Bot 没处理，但也请后面的 Bot 继续处理
+		// 小于 0: 就此打住，后面的 Bot 别再处理了
+		public static final int BOT_CHAIN_PROCESS_MODE__PROCESSED_AND_CONTINUE = 1;
+		public static final int BOT_CHAIN_PROCESS_MODE__NOT_PROCESSED_BUT_CONTINUE = 0;
+		public static final int BOT_CHAIN_PROCESS_MODE__STOP_HERE = -1;
+
+		public static final int MSG_TYPE__TEXT = 1;
+		public static final int MSG_TYPE__IMAGE = 3;
+		public static final int MSG_TYPE__VOICE = 34;
+		public static final int MSG_TYPE__VERIFY_MSG = 37;
+		public static final int MSG_TYPE__POSSIBLE_FRIND_MSG = 40;
+		public static final int MSG_TYPE__VCARD = 42;
+		public static final int MSG_TYPE__VIDEO_CALL = 43;
+		public static final int MSG_TYPE__EMOTION = 47;
+		public static final int MSG_TYPE__GPS_POSITION = 48;
+		public static final int MSG_TYPE__URL = 49;
+		public static final int MSG_TYPE__VOIP_MSG = 50;
+		public static final int MSG_TYPE__INIT = 51;
+		public static final int MSG_TYPE__VOIP_NOTIFY = 52;
+		public static final int MSG_TYPE__VOIP_INVITE = 53;
+		public static final int MSG_TYPE__SHORT_VIDEO = 62;
+		public static final int MSG_TYPE__SYSTEM_NOTICE = 9999;
+		public static final int MSG_TYPE__SYSTEM = 10000;
+		public static final int MSG_TYPE__REVOKE = 10002;
+
+		List<Bot> listBots = new ArrayList<Bot> ();
+
 		/**
-		 * Bot 线程： 不断循环尝试登录，直到登录成功。如果登录成功后被踢下线，依旧不断循环尝试登录…… 登录成功后，不断同步消息，知道被踢下线（同上，依旧不断循环尝试登录）
+		 * Bot 引擎线程： 不断循环尝试登录，直到登录成功。如果登录成功后被踢下线，依旧不断循环尝试登录…… 登录成功后，不断同步消息，知道被踢下线（同上，依旧不断循环尝试登录）
 		 */
 		@Override
 		public void run ()
@@ -402,7 +579,7 @@ System.out.println ("	[" + node + "]");
 				Map<String, Object> mapWaitLoginResult = null;
 				Object o = null;
 			_outer_loop:
-				//do
+				do
 				{
 					// 1. 获得登录 ID
 					sLoginID = GetLoginID ();
@@ -419,7 +596,7 @@ System.out.println ("	[" + node + "]");
 							int n = (Integer) o;
 							if (n == 400)	// Bad Request / 二维码已失效
 							{
-								//continue _outer_loop;
+								continue _outer_loop;
 							}
 							else	// 大概只有 200 才能出来：当是 200 时，但访问登录页面失败时，可能会跑到此处
 							{
@@ -436,19 +613,179 @@ System.out.println ("	[" + node + "]");
 					// 4. 确认登录后，初始化 Web 微信，返回初始信息
 					JsonNode jsonInit = WebWeChatInit (sUserID, sSessionID, sSessionKey, sPassTicket);
 					String sMySelfUserHashIDInThisSession = jsonInit.get ("User").get ("UserName").asText ();
+					JsonNode jsonSyncCheckKeys = jsonInit.get ("SyncKey");
 
 					// 5. 获取联系人
-					WebWeChatGetContacts (sUserID, sSessionID, sSessionKey, sPassTicket);
+					JsonNode jsonContacts = WebWeChatGetContacts (sUserID, sSessionID, sSessionKey, sPassTicket);
+					JsonNode jsonRoomMemberContacts = WebWeChatGetRoomContacts (sUserID, sSessionID, sSessionKey, sPassTicket, jsonContacts);	// 补全各个群的联系人列表
 
-					WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMySelfUserHashIDInThisSession, sMySelfUserHashIDInThisSession, "机器人已通过 Web 微信登录，人机已合体 (=_=)");
+					WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMySelfUserHashIDInThisSession, sMySelfUserHashIDInThisSession, "机器人已通过 Web 微信登录，人机已合体 [奸笑]\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
+
+					JsonNode jsonMessage = null;
+					try
+					{
+						while (! Thread.interrupted ())
+						{
+							jsonMessage = WebWeChatGetMessages (sUserID, sSessionID, sSessionKey, sPassTicket, jsonSyncCheckKeys);
+							if (jsonMessage == null)
+							{
+								TimeUnit.SECONDS.sleep (2);
+								continue;
+							}
+
+							// 处理“接收”到的（实际是同步获取而来）消息
+							jsonSyncCheckKeys = jsonMessage.get ("SyncCheckKey");	// 新的 SyncCheckKeys
+
+							// 处理（实际上，应该交给 Bot 们处理）
+							OnMessageReceived (jsonMessage);
+						}
+					}
+					catch (IllegalStateException e)
+					{
+						continue _outer_loop;
+					}
 				}
-				//while (! Thread.interrupted ());
+				while (! Thread.interrupted ());
 			}
 			catch (Exception e)
 			{
 				e.printStackTrace ();
 			}
 System.out.println ("bot 线程退出");
+		}
+
+		void OnMessageReceived (JsonNode jsonMessage)
+		{
+			int i = 0;
+
+			JsonNode jsonAddMsgCount = jsonMessage.get ("AddMsgCount");
+			JsonNode jsonAddMsgList = jsonMessage.get ("AddMsgList");
+			for (i=0; i<jsonAddMsgCount.asInt (); i++)
+			{
+				JsonNode jsonNode = jsonAddMsgList.get (i);
+				int nMsgType = jsonNode.get ("MsgType").asInt ();
+				String sContent = jsonNode.get ("Content").asText ();
+				sContent = StringUtils.replaceEach (sContent, new String[]{"<br/>", "&lt;", "&gt;"}, new String[]{"\n", "<", ">"});
+				String sRoom = null;
+				String sFrom = jsonNode.get ("FromUserName").asText ();
+				String sTo = jsonNode.get ("ToUserName").asText ();
+				boolean isFromRoomOrChannel = StringUtils.startsWith (sFrom, "@@");	// 是否来自 聊天室/群/频道 的消息
+				if (isFromRoomOrChannel)
+				{
+					sRoom = sFrom;
+					// 找出发送人的 UserID
+					String[] arrayContents = sContent.split ("\n", 2);
+					sFrom = arrayContents[0];
+					sContent = arrayContents[1];
+				}
+				switch (nMsgType)
+				{
+				case MSG_TYPE__TEXT:
+					break;
+				case MSG_TYPE__IMAGE:
+					break;
+				case MSG_TYPE__VOICE:
+					break;
+				case MSG_TYPE__VERIFY_MSG:
+					break;
+				case MSG_TYPE__POSSIBLE_FRIND_MSG:
+					break;
+				case MSG_TYPE__VCARD:
+					break;
+				case MSG_TYPE__VIDEO_CALL:
+					break;
+				case MSG_TYPE__EMOTION:
+					break;
+				case MSG_TYPE__GPS_POSITION:
+					break;
+				case MSG_TYPE__URL:
+					break;
+				case MSG_TYPE__VOIP_MSG:
+					break;
+				case MSG_TYPE__INIT:
+					break;
+				case MSG_TYPE__VOIP_NOTIFY:
+					break;
+				case MSG_TYPE__VOIP_INVITE:
+					break;
+				case MSG_TYPE__SHORT_VIDEO:
+					break;
+				case MSG_TYPE__SYSTEM_NOTICE:
+					break;
+				case MSG_TYPE__SYSTEM:
+					break;
+				case MSG_TYPE__REVOKE:
+					break;
+				default:
+					break;
+				}
+			}
+
+			JsonNode jsonModContactCount = jsonMessage.get ("ModContactCount");
+			JsonNode jsonModContactList = jsonMessage.get ("ModContactList");
+			for (i=0; i<jsonModContactCount.asInt (); i++)
+			{
+				JsonNode jsonNode = jsonAddMsgList.get (i);
+			}
+
+			JsonNode jsonDelContactCount = jsonMessage.get ("DelContactCount");
+			JsonNode jsonDelContactList = jsonMessage.get ("DelContactList");
+			for (i=0; i<jsonDelContactCount.asInt (); i++)
+			{
+				JsonNode jsonNode = jsonAddMsgList.get (i);
+			}
+
+			JsonNode jsonModChatRoomMemerCount = jsonMessage.get ("ModChatRoomMemerCount");
+			JsonNode jsonModChatRoomMemerList = jsonMessage.get ("ModChatRoomMemerList");
+			for (i=0; i<jsonModChatRoomMemerCount.asInt (); i++)
+			{
+				JsonNode jsonNode = jsonAddMsgList.get (i);
+			}
+		}
+	}
+
+	public abstract class Bot
+	{
+		// 总入口
+		public int OnMessageReceived (JsonNode jsonMessage)
+		{
+			return BotEngine.BOT_CHAIN_PROCESS_MODE__NOT_PROCESSED_BUT_CONTINUE;
+		}
+
+		////////////////////////////////
+		// AddMsgList 节点处理
+		////////////////////////////////
+		/**
+		 *
+		 * @param sMessage
+		 */
+		public int OnTextMessageReceived (String sMessage)
+		{
+			return BotEngine.BOT_CHAIN_PROCESS_MODE__NOT_PROCESSED_BUT_CONTINUE;
+		}
+
+		////////////////////////////////
+		// ModContactList 节点处理
+		////////////////////////////////
+		public int OnContactChanged (JsonNode jsonMessage)
+		{
+			return BotEngine.BOT_CHAIN_PROCESS_MODE__NOT_PROCESSED_BUT_CONTINUE;
+		}
+
+		////////////////////////////////
+		// DelContactList 节点处理
+		////////////////////////////////
+		public int OnContactDeleted (JsonNode jsonMessage)
+		{
+			return BotEngine.BOT_CHAIN_PROCESS_MODE__NOT_PROCESSED_BUT_CONTINUE;
+		}
+
+		//
+		//
+		//
+		public int OnChatRoomMemberChanged (JsonNode jsonMessage)
+		{
+			return BotEngine.BOT_CHAIN_PROCESS_MODE__NOT_PROCESSED_BUT_CONTINUE;
 		}
 	}
 
@@ -513,6 +850,6 @@ System.out.println ("app 线程退出");
 		net_maclife_wechat_http_WechatBot app = new net_maclife_wechat_http_WechatBot ();
 
 		executor.submit (app);
-		executor.submit (app.GetBot ());
+		executor.submit (app.GetBotEngine ());
 	}
 }
