@@ -522,12 +522,4 @@ public class net_maclife_util_HTTPUtils
 	{
 		return CURL_Post_Stream_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, sProxyPort);
 	}
-
-
-	public static Map<String, Map<String, Object>> ParseCookie (String sCookies)
-	{
-		Map<String, Map<String, Object>> mapCookies = new HashMap<String, Map<String, Object>> ();
-		sCookies.split (";");
-		return null;
-	}
 }
