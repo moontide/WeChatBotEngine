@@ -312,12 +312,24 @@ public class net_maclife_util_HTTPUtils
 	 * @throws CertificateException
 	 * @throws UnrecoverableKeyException
 	 */
-	public static URLConnection CURL_Connection (String sURL) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static URLConnection CURL_Connection (String sURL, Map<String, Object> mapRequestHeaders, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (URLConnection)CURL (null, sURL, null, null, true, true, null, true, 0, 0,
+		return (URLConnection)CURL (null, sURL, mapRequestHeaders, null, true, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				null, null, null,
 				true, true, null, null, null, null, null, null
 			);
+	}
+	public static URLConnection CURL_Connection (String sURL, Map<String, Object> mapRequestHeaders) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Connection (sURL, mapRequestHeaders, 0);
+	}
+	public static URLConnection CURL_Connection (String sURL, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Connection (sURL, (Map<String, Object>)null, nTimeoutSeconds);
+	}
+	public static URLConnection CURL_Connection (String sURL) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Connection (sURL, 0);
 	}
 
 	/**
@@ -382,20 +394,28 @@ public class net_maclife_util_HTTPUtils
 	 * @param sURL 网址
 	 * @return String Content
 	 */
-	public static String CURL_Post (String sURL, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_Post (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (String)CURL ("POST", sURL, null, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (String)CURL ("POST", sURL, mapRequestHeaders, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				null, null, null,
 				true, true, null, null, null, null, null, null
 			);
 	}
+	public static String CURL_Post (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Post (sURL, mapRequestHeaders, arrayPostData, 0);
+	}
+	public static String CURL_Post (String sURL, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Post (sURL, null, arrayPostData, nTimeoutSeconds);
+	}
 	public static String CURL_Post (String sURL, byte[] arrayPostData) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post (sURL, arrayPostData, 0);
+		return CURL_Post (sURL, null, arrayPostData, 0);
 	}
 	public static String CURL_Post (String sURL) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post (sURL, null, 0);
+		return CURL_Post (sURL, null, null, 0);
 	}
 
 	/**
@@ -521,5 +541,22 @@ public class net_maclife_util_HTTPUtils
 	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return CURL_Post_Stream_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, sProxyPort);
+	}
+
+	/**
+	 * 提取 Content-Type 数值中的 MIME 小类，当成文件名扩展名。
+	 * 如："text/html; charset=utf-8;" 返回 "html"
+	 *     "image/png" 返回 "png"
+	 * @param sContentTypeValue
+	 * @return
+	 */
+	public static String ContentTypeToFileExtensionName (String sContentTypeValue)
+	{
+		if (StringUtils.isEmpty (sContentTypeValue))
+			return "";
+
+		String[] arrayContentTypeParts = sContentTypeValue.split ("[; ]+", 2);
+		String[] arrayMimeParts = arrayContentTypeParts[0].split ("/");
+		return arrayMimeParts[1];
 	}
 }
