@@ -1,3 +1,5 @@
+import java.io.*;
+
 import com.fasterxml.jackson.databind.*;
 
 /**
@@ -19,9 +21,33 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	////////////////////////////////
-	// 总入口
+	// 登录事件
 	////////////////////////////////
-	public int OnMessageReceived (JsonNode jsonMessage)
+	public int OnLoggedIn ()
+	{
+		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 登出事件
+	////////////////////////////////
+	public int OnLoggedOut ()
+	{
+		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 登出事件
+	////////////////////////////////
+	public int OnShutdown ()
+	{
+		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// “消息收到”事件总入口
+	////////////////////////////////
+	public int OnMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, JsonNode jsonMessage)
 	{
 		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -34,6 +60,22 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sMessage
 	 */
 	public int OnTextMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, String sMessage)
+	{
+		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+	public int OnImageMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	{
+		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+	public int OnVoiceMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	{
+		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+	public int OnVideoMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	{
+		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+	public int OnEmotionMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
 	{
 		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
