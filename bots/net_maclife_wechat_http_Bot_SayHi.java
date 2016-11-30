@@ -27,9 +27,12 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 		try
 		{
 			String sTemp;
-			for (int i=0; i<listTargetAliases.size (); i++)
+			List<String> list = null;
+
+			list = listTargetAliases;
+			for (int i=0; i<list.size (); i++)
 			{
-				sTemp = listTargetAliases.get (i);
+				sTemp = list.get (i);
 				if (StringUtils.isEmpty (sTemp))
 					continue;
 				jsonContact = engine.SearchForSingleContact (null, sTemp, null, null);
@@ -38,23 +41,27 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 				engine.SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
 				bProcessed = true;
 			}
-			for (int i=0; i<listTargetRemarkNames.size (); i++)
+
+			list = listTargetRemarkNames;
+			for (int i=0; i<list.size (); i++)
 			{
-				sTemp = listTargetAliases.get (i);
+				sTemp = list.get (i);
 				if (StringUtils.isEmpty (sTemp))
 					continue;
-				jsonContact = engine.SearchForSingleContact (null, null, listTargetRemarkNames.get (i), null);
+				jsonContact = engine.SearchForSingleContact (null, null, sTemp, null);
 				if (jsonContact == null)
 					continue;
 				engine.SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
 				bProcessed = true;
 			}
-			for (int i=0; i<listTargetNickNames.size (); i++)
+
+			list = listTargetNickNames;
+			for (int i=0; i<list.size (); i++)
 			{
-				sTemp = listTargetAliases.get (i);
+				sTemp = list.get (i);
 				if (StringUtils.isEmpty (sTemp))
 					continue;
-				jsonContact = engine.SearchForSingleContact (null, null, null, listTargetNickNames.get (i));
+				jsonContact = engine.SearchForSingleContact (null, null, null, sTemp);
 				if (jsonContact == null)
 					continue;
 				engine.SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
