@@ -1,4 +1,6 @@
-<div style='text-align:right;'><a href='ReadMe.Chinglish.md'>Chinglish</a> <span>中文</span></div>
+<div style='text-align:right;'><a href='ReadMe.Chinglish.md'>Chinglish</a> | <span>中文</span></div>
+
+----
 
 *由于微信官方未公开 Web 版通信协议，微信 Web 版本也有可能像 QQ Web 版那样停止运营，因此不建议将本引擎用于商业用途（前景未知）*
 
@@ -18,9 +20,19 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	<dd>重复消息发送者的消息。该机器人仅用于演示、测试用途，正式环境不建议使用。</dd>
 
 	<dt><strong>Relay</strong>: 消息中继机器人</dt>
-	<dd>从 Socket 接收消息，根据消息中指定的接收人转发到微信群/微信号中。其他程序通过这种方式来把消息转发到微信 (比如，一个长时间任务完成的消息、告警消息等等…)</dd>
+	<dd>从 Socket 接收消息，根据消息中指定的接收人转发到微信群/微信号中。其他程序通过这种方式来把消息转发到微信。
+		利用这一点，可以把强大的外部应用程序的部分功能通过消息中继机器人将功能扩展，比如
+		<br/>
+		<ul>
+			<li>Transmission 下载任务完成后，执行脚本（需在 Transmission 中配置），脚本通过消息中继发送到微信，以达到通知的目的。</li>
+			<li>利用 crontab，实现一个简单的整点报时的功能。（当然你也可以单独写一个 Bot 小程序来实现）</li>
+			<li>定时获取一个网页的信息，将内容发到微信，达到定期推送消息的目的。</li>
+			<li>你一定还有其他好的点子，可在此处补充…</li>
+			<li>…</li>
+		</ul>
+	</dd>
 
-	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人/dt>
+	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
 	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。</dd>
 </dl>
 
