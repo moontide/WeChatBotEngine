@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.concurrent.*;
 
 import com.fasterxml.jackson.databind.*;
 
@@ -11,6 +12,15 @@ public abstract class net_maclife_wechat_http_Bot
 {
 	protected net_maclife_wechat_http_BotApp.BotEngine engine;
 
+	protected Future<?> botTask = null;
+
+	String name = null;
+
+	public net_maclife_wechat_http_Bot ()
+	{
+		SetName (this.getClass ().getName ());
+	}
+
 	public void SetEngine (net_maclife_wechat_http_BotApp.BotEngine engine)
 	{
 		this.engine = engine;
@@ -20,6 +30,30 @@ public abstract class net_maclife_wechat_http_Bot
 		return engine;
 	}
 
+	protected void SetName (String sName)
+	{
+		name = sName;
+	}
+	public String GetName ()
+	{
+		return name;
+	}
+
+	/**
+	 * 启动机器人。假设机器人的实现是需要启动新线程的，则，需要用 Start 来启动该线程 (Start() 是由 Engine 来调用的)
+	 */
+	public void Start ()
+	{
+
+	}
+
+	/**
+	 * 停止机器人。假设机器人的实现是需要启动新线程的，则，需要用 Stop 来结束该线程
+	 */
+	public void Stop ()
+	{
+
+	}
 	////////////////////////////////
 	// 登录事件
 	////////////////////////////////
