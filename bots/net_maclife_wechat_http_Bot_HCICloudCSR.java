@@ -1,12 +1,10 @@
 import java.io.*;
-import java.net.*;
 import java.util.*;
 
 import org.apache.commons.lang3.*;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
 
 /**
  * 基于 http 协议的捷通华声 HCICloud CSR (灵云智能客服) 对话机器人。
@@ -34,6 +32,9 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 		try
 		{
 			JsonNode jsonCSRResponse = GetCSRReponse (sFrom_AccountHash, sMessage);
+			if (jsonCSRResponse == null)
+				return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+
 			String sResponse = ParseCSRResponse (jsonCSRResponse);
 			if (StringUtils.isNotEmpty (sResponse))
 			{
@@ -52,7 +53,7 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 
 	public String ParseCSRResponse (JsonNode jsonCSRResponse)
 	{
-System.out.println (jsonCSRResponse);
+net_maclife_wechat_http_BotApp.logger.finer ("\n" + jsonCSRResponse);
 		if (jsonCSRResponse == null || jsonCSRResponse.isNull())
 			return "";
 
@@ -152,7 +153,7 @@ System.out.println (jsonCSRResponse);
 				"	\"query\": \"" + sInput + "\",\n" +
 				"	\"__LAST__\": 0\n" +
 				"}";
-System.out.println (sRequestBody_JSONString);
+net_maclife_wechat_http_BotApp.logger.finer ("\n" + sRequestBody_JSONString);
 			// 如果不传递 RequestHeader，则返回：“访问来源变量未定义”
 			// {"aiResult":null,"answerTypeId":1,"protocolId":6,"result":0,"sendTime":null,"serviceLogId":null,"singleNode":{"answerMsg":"访问来源变量未定义","cmd":null,"isRichText":0,"list":null,"question":null,"score":0.0,"standardQuestion":"","standardQuestionId":0},"vagueNode":null}
 
