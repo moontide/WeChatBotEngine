@@ -43,7 +43,7 @@ Currently, the following interfaces/event are planned:
 - `OnLoggedIn`
 - `OnLoggedOut`
 - `OnShutdown`
-- `OnMessageReceived` Triggered when a message received. This is the entrance of all the following *`Message` eveent. If you want to analyze the message, you can do it here.
+- `OnMessageReceived` Triggered when a message received. This is the entrance of all the following *`Message` event. If you want to analyze or modify the message by yourself, you can do it here.
 - `OnTextMessageReceived` Triggered when a Text message received.
 - `OnImageMessageReceived` Triggered when an Image message received.
 - `OnVoiceMessageReceived` Triggered when a Voice message received.
