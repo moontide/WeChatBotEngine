@@ -169,15 +169,20 @@ logger.info ("根据登录ID获取二维码 GetLoginQRCodeImageFile");
 		IOUtils.copy (is, os);
 logger.info ("获取 LoginQRCode 的 http 响应消息体（保存到文件）:");
 logger.info ("	" + fOutputFile);
-		//String sQRCode = "";
-		ConvertQRCodeImage (sFileName, sFileName_PNG);
-		DisplayQRCodeInConsole (sFileName_PNG, true, false);
+
+		if (ParseBoolean(config.getString ("app.textQRCode.displayInTerminal"), true))
+		{
+			boolean bBackgroundIsDarker = ParseBoolean(config.getString ("app.textQRCode.terminal.backgroundIsDarkerThanForeground"), true);
+			boolean bUseANSIEscape = ParseBoolean(config.getString ("app.textQRCode.useANSIEscape"), true);
+			ConvertQRCodeImage (sFileName, sFileName_PNG);
+			DisplayQRCodeInConsole (sFileName_PNG, bBackgroundIsDarker, bUseANSIEscape);
+		}
 		return fOutputFile;
 	}
 
 	/**
 	 * 将获取到的二维码 (.jpg 格式) 转换为 黑白单色、尺寸缩小到 1/10 的 .png 格式。
-	 * 转换后的 .png 图片是最小的二维码图片，而且能够用来在控制台界面用文字显示二维码。
+	 * 转换后的 .png 图片是最小的二维码图片，而且能够用来在字符终端界面用文字显示二维码。
 	 * 转换工作是利用 ImageMagick 的 convert 工具来做的，所以，需要安装 ImageMagick，并在配置文件里配置其工作路径。
 	 * @param sJPGFileName
 	 * @param sPNGFileName
@@ -220,38 +225,65 @@ logger.severe ("转换失败");
 	}
 
 	/**
-	 * 在控制台用文字显示二维码。
+	 * 在字符终端用文字显示二维码。
 	 * @param sPNGFileName 必须是 2 色黑白的 PNG 图片，且，图片大小是原来微信返回的十分之一大小 （缩小后，每个像素 (pixel) 是原二维码中最小的点）
-	 * @param bConsoleBackgroundColorIsNotBlack 控制台背景色不是黑色
-	 * @param bANSIEscape 使用 ANSI 转义（需要控制台终端的支持，比如 linux 下的 bash 或 Windows 安装 Cygwin 后的 bash）
+	 * @param bTerminalBackgroundColorIsDarkerThanForgroundColor 字符终端背景色不是黑色
+	 * @param bUseANSIEscape 使用 ANSI 转义来输出颜色（保证二维码黑色是黑色，白色是白色，但需要 shell 的支持，比如 linux 下的 bash 或 Windows 安装 Cygwin 后的 bash）。
+	 * 参考： https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 	 * @throws IOException
 	 */
-	public static void DisplayQRCodeInConsole (String sPNGFileName, boolean bConsoleBackgroundColorIsNotBlack, boolean bANSIEscape) throws IOException
+	public static void DisplayQRCodeInConsole (String sPNGFileName, boolean bTerminalBackgroundColorIsDarkerThanForgroundColor, boolean bUseANSIEscape) throws IOException
 	{
+		StringBuilder sbTextQRCode = new StringBuilder ();
 		BufferedImage img = ImageIO.read (new File(sPNGFileName));
+
+		if (bTerminalBackgroundColorIsDarkerThanForgroundColor)
+		{	// 如果背景色比前景色黑，则开启颜色反转
+			sbTextQRCode.append ("\u001B[7m");
+		}
 		for (int y=0; y<img.getHeight (); y++)
 		{
 			for (int x=0; x<img.getWidth (); x++)
 			{
-				if (bConsoleBackgroundColorIsNotBlack && !bANSIEscape)
+				int nRGB = img.getRGB (x, y) & 0xFFFFFF;
+
+				if (nRGB == 0)	// 黑色
 				{
-					int nRGB = img.getRGB (x, y) & 0xFFFFFF;
-					if (nRGB == 0)	// 黑色
-					{
-						System.out.print ("█");
+					if (!bTerminalBackgroundColorIsDarkerThanForgroundColor && bUseANSIEscape)
+					{	// 当前字符转义开始
+						sbTextQRCode.append ("\u001B[30m");
 					}
-					else if (nRGB == 0xFFFFFF)	// 白色
-					{
-						System.out.print ("　");
-					}
-					else
-					{
-						System.err.print ("未知的 RGB 颜色: " + nRGB);
+					sbTextQRCode.append ("█");
+					if (!bTerminalBackgroundColorIsDarkerThanForgroundColor && bUseANSIEscape)
+					{	// 当前字符转义结束
+						sbTextQRCode.append ("\u001B[m");
 					}
 				}
+				else if (nRGB == 0xFFFFFF)	// 白色
+				{
+					if (!bTerminalBackgroundColorIsDarkerThanForgroundColor && bUseANSIEscape)
+					{	// 当前字符转义开始
+						sbTextQRCode.append ("\u001B[47;1m");
+					}
+					sbTextQRCode.append ("　");
+					if (!bTerminalBackgroundColorIsDarkerThanForgroundColor && bUseANSIEscape)
+					{	// 当前字符转义结束
+						sbTextQRCode.append ("\u001B[m");
+					}
+				}
+				else
+				{
+					//System.err.print ("未知的 RGB 颜色: " + nRGB);
+				}
 			}
-			System.out.println ();
+			sbTextQRCode.append ("\n");
 		}
+		if (bTerminalBackgroundColorIsDarkerThanForgroundColor)
+		{	// 如果背景色比前景色黑，则结束颜色反转
+			sbTextQRCode.append ("\u001B[27m");
+		}
+
+		System.out.println (sbTextQRCode);
 	}
 
 	public static Object 等待二维码被扫描以便登录 (String sLoginID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, ValidityException, ParsingException, URISyntaxException
