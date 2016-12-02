@@ -1143,7 +1143,7 @@ logger.fine ("	" + sURL);
 		String sCookieValue = "";
 		sCookieValue = MakeCookieValue (listCookies);
 		mapRequestHeaders.put ("Cookie", sCookieValue);
-		//mapRequestHeaders.put ("Range", "bytes=0-");
+		mapRequestHeaders.put ("Range", "bytes=0-");	// 该请求头是必需的，否则下载视频文件时会返回 0 字节的数据
 		//mapRequestHeaders.put ("Accept", "*/*");
 		//mapRequestHeaders.put ("User-Agent", "bot");
 logger.fine ("发送 WebWeChatGetMedia 的 http 请求消息头 (Cookie、Range):");
@@ -1159,12 +1159,16 @@ logger.fine ("	" + mapRequestHeaders);
 				sMediaFileName = sMediaFileName + "." + sExtensionName;
 
 			fMediaFile = new File (sMediaFileName);
-			InputStream is = http.getInputStream ();
-			OutputStream os = new FileOutputStream (fMediaFile);
-			IOUtils.copy (is, os);
-		}
 logger.fine ("获取 WebWeChatGetMedia 的 http 响应消息体 (保存到文件)");
 logger.fine ("	" + fMediaFile);
+
+			InputStream is = http.getInputStream ();
+			OutputStream os = new FileOutputStream (fMediaFile);
+			int nBytes = IOUtils.copy (is, os);
+logger.info ("获取了 " + nBytes + " 字节的数据");
+			is.close ();
+			os.close ();
+		}
 		return fMediaFile;
 	}
 	public static File WebWeChatGetImage (String sSessionKey, String sMsgID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
@@ -1265,14 +1269,22 @@ logger.fine ("	" + fMediaFile);
 		try
 		{
 			BufferedReader reader = new BufferedReader (new InputStreamReader (System.in));
-			while ( (sTerminalInput=reader.readLine ()) != null)
+			while (true)
 			{
+//System.err.println ("等待控制台命令输入…");
+				sTerminalInput = reader.readLine ();
+//System.err.println ("收到控制台输入: [" + sTerminalInput + "]");
 				if (StringUtils.isEmpty (sTerminalInput))
 					continue;
 
+//System.err.println ("分割……");
 				String[] arrayParams = sTerminalInput.split (" +", 2);
+//System.err.println (arrayParams.length + " 个数组元素");
 				String sCommand = arrayParams[0];
-				String sParam = arrayParams[1];
+				String sParam = null;
+				if (arrayParams.length >=2)
+					sParam = arrayParams[1];
+//System.err.println ("Command=[" + sCommand + "], Param=[" + sParam + "]");
 				//try
 				//{
 					if (StringUtils.equalsIgnoreCase (sCommand, "notifyAll"))
@@ -1317,6 +1329,10 @@ System.err.println ("收到退出命令");
 						TimeUnit.MILLISECONDS.sleep (100);
 						break;
 						//System.exit (0);
+					}
+					else
+					{
+System.err.println ("未知控制台命令: " + sCommand);
 					}
 				//}
 				//catch (Exception e)
