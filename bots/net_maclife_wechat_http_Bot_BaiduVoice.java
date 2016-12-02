@@ -7,6 +7,7 @@ import java.util.*;
 import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
 /**
@@ -92,10 +93,6 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-
-		String sAccessToken = GetBaiduAccessToken ();
-		if (StringUtils.isEmpty (sAccessToken))
-			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 /*
 -------------------------------------------------------------------------------
  语音识别参数
@@ -141,8 +138,54 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 */
 		try
 		{
-			// 显式发送
+			fMedia = ConvertAudioToAMRFormat (fMedia);
+			if (fMedia == null)
 			{
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+			}
+			ProcessSpeechRecognition (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	@Override
+	public int OnVideoMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	{
+		if (! fMedia.exists ())
+			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+
+		try
+		{
+			fMedia = StripAudioFromVideo (fMedia);
+			if (fMedia == null)
+			{
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+			}
+			ProcessSpeechRecognition (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+
+		// 从视频中提取出语音，然后再语音识别
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	int ProcessSpeechRecognition (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		String sAccessToken = GetBaiduAccessToken ();
+		if (StringUtils.isEmpty (sAccessToken))
+			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+
+		//try
+		{	// 显式发送
 			String sURL = BAIDU_ASR_API_URL + "?cuid=" + sMACAddress + "&token=" + sAccessToken + "&lan=zh";
 //logger.fine ("WebWeChatGetContacts 的 URL:");
 //logger.fine ("	" + sURL);
@@ -155,12 +198,6 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 //String sRequestBody_JSONString = MakeFullBaseRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID ());
 //logger.finer  ("发送 WebWeChatGetContacts 的 http 请求消息体:");
 //logger.finer  ("	" + sRequestBody_JSONString);
-
-			fMedia = ConvertAudioToAMRFormat (fMedia);
-			if (fMedia == null)
-			{
-				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-			}
 			InputStream is = new FileInputStream (fMedia);
 			byte[] arrayPostData = IOUtils.toByteArray (is, fMedia.length ());
 			is.close ();
@@ -179,7 +216,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 					JsonNode jsonResults = jsonNode.get ("result");
 					if (jsonResults.size () == 1)
 					{
-						SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "我听到 " + sFrom_NickName + " 说:\n" + jsonResults.get (0).asText ());
+						SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sFrom_NickName + " 说道:\n" + jsonResults.get (0).asText ());
 						return
 							net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 							| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -193,7 +230,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 						sb.append (jsonResults.get (i).asText ());
 						sb.append ("\n");
 					}
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "我听到 " + sFrom_NickName + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
+					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sFrom_NickName + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
 					return
 						net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 						| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -220,23 +257,15 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "听不清 " + sFrom_NickName + " 说了些啥: " + err_msg);
 					break;
 			}
-			}
 		}
-		catch (Exception e)
-		{
-			e.printStackTrace ();
-		}
+		//catch (Exception e)
+		//{
+		//	e.printStackTrace ();
+		//}
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
-	@Override
-	public int OnVideoMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
-	{
-		// 从视频中提取出语音，然后再语音识别
-		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-	}
-
-	String GetBaiduAccessToken ()
+	public static String GetBaiduAccessToken ()
 	{
 		File f = new File (sBaiduOAuthAccessTokenFileInJSONFormat);
 		if (f.exists ())
@@ -261,7 +290,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 		return GetNewBaiduAccessToken ();
 	}
 
-	String GetNewBaiduAccessToken ()
+	public static String GetNewBaiduAccessToken ()
 	{
 		// 使用 Client Credentials 方式获得百度访问令牌
 		// 参见: http://developer.baidu.com/wiki/index.php?title=docs/oauth/client
@@ -288,15 +317,15 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 	{
 net_maclife_wechat_http_BotApp.logger.info ("ConvertAudioToAMRFormat 将 " + sSourceAudio + " 【转换】为 amr 格式");
 		String sAMRFileName = sSourceAudio + ".amr";
-		List<String> listImageMagickConvertArgs = new ArrayList<String> ();
+		List<String> listCommandArgs = new ArrayList<String> ();
 		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
-		listImageMagickConvertArgs.add ("ffmpeg");
-		listImageMagickConvertArgs.add ("-i");
-		listImageMagickConvertArgs.add (sSourceAudio.toString ());
-		listImageMagickConvertArgs.add ("-ar");
-		listImageMagickConvertArgs.add ("8000");
-		listImageMagickConvertArgs.add (sAMRFileName);
-		ProcessBuilder pb = new ProcessBuilder (listImageMagickConvertArgs);
+		listCommandArgs.add ("ffmpeg");
+		listCommandArgs.add ("-i");
+		listCommandArgs.add (sSourceAudio.toString ());
+		listCommandArgs.add ("-ar");
+		listCommandArgs.add ("8000");
+		listCommandArgs.add (sAMRFileName);
+		ProcessBuilder pb = new ProcessBuilder (listCommandArgs);
 		Process p = pb.start ();
 		InputStream in = p.getInputStream ();
 		InputStream err = p.getErrorStream ();
@@ -306,7 +335,36 @@ net_maclife_wechat_http_BotApp.logger.info ("ConvertAudioToAMRFormat 将 " + sSo
 		assert (rc == 0);
 		if (rc != 0)
 		{
-net_maclife_wechat_http_BotApp.logger.severe ("转换失败");
+net_maclife_wechat_http_BotApp.logger.severe ("语音格式转换失败");
+			return null;
+		}
+		return new File (sAMRFileName);
+	}
+
+	public static File StripAudioFromVideo (File sSourceVideo) throws IOException, InterruptedException
+	{
+net_maclife_wechat_http_BotApp.logger.info ("StripAudioFromVideo 将视频 " + sSourceVideo + " 中的音频提取出来 (amr 格式)");
+		String sAMRFileName = sSourceVideo + ".amr";
+		List<String> listCommandArgs = new ArrayList<String> ();
+		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
+		listCommandArgs.add ("ffmpeg");
+		listCommandArgs.add ("-i");
+		listCommandArgs.add (sSourceVideo.toString ());
+		listCommandArgs.add ("-vn");
+		listCommandArgs.add ("-ar");
+		listCommandArgs.add ("8000");
+		listCommandArgs.add (sAMRFileName);
+		ProcessBuilder pb = new ProcessBuilder (listCommandArgs);
+		Process p = pb.start ();
+		InputStream in = p.getInputStream ();
+		InputStream err = p.getErrorStream ();
+		while (-1 != in.read ());
+		while (-1 != err.read ());
+		int rc = p.waitFor ();
+		assert (rc == 0);
+		if (rc != 0)
+		{
+net_maclife_wechat_http_BotApp.logger.severe ("视频提取音频失败");
 			return null;
 		}
 		return new File (sAMRFileName);
