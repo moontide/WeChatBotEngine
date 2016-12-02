@@ -164,7 +164,7 @@ net_maclife_wechat_http_BotApp.logger.severe ("bot 启动失败: " + e);
 				{
 					case "":
 					case "text":
-						engine.BotSendTextMessage (this, sTo, sMessage);
+						SendTextMessage (sTo, sMessage);
 						break;
 					case "voice":
 						out.println ("暂时不处理音频消息");
