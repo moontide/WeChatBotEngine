@@ -427,6 +427,8 @@ net_maclife_wechat_http_BotApp.logger.info (sBotClassName + " 类机器人已实
 				catch (Exception e)
 				{
 					e.printStackTrace ();
+					// 因为在循环内，出现异常，先暂停一会，免得不断重复
+					TimeUnit.SECONDS.sleep (2);
 				}
 			}
 		}

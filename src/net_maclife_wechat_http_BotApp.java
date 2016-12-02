@@ -377,10 +377,10 @@ logger.finer ("	" + listCookies);
 logger.fine ("登录页面响应的消息体:");
 //System.out.println ("	[" + sContent + "]");
 logger.fine ("	[" + eXML.toXML() + "]");
-logger.info ("	UIN=[" + eXML.getFirstChildElement ("wxuin").getValue () + "]");
-logger.info ("	SID=[" + eXML.getFirstChildElement ("wxsid").getValue () + "]");
-logger.info ("	SKEY=[" + eXML.getFirstChildElement ("skey").getValue () + "]");
-logger.info ("	TICKET=[" + eXML.getFirstChildElement ("pass_ticket").getValue () + "]");
+logger.info ("\n	UIN=" + eXML.getFirstChildElement ("wxuin").getValue () + "\n" +
+			"	SID=[" + eXML.getFirstChildElement ("wxsid").getValue () + "\n" +
+			"	SKEY=[" + eXML.getFirstChildElement ("skey").getValue () + "\n" +
+			"	TICKET=[" + eXML.getFirstChildElement ("pass_ticket").getValue () + "\n");
 			Map<String, Object> mapResult = new HashMap <String, Object> ();
 			mapResult.put ("UserID", eXML.getFirstChildElement ("wxuin").getValue ());
 			mapResult.put ("SessionID", eXML.getFirstChildElement ("wxsid").getValue ());
@@ -880,7 +880,7 @@ logger.finer ("	" + mapRequestHeaders);
 				sContent = net_maclife_util_HTTPUtils.CURL (sSyncCheckURL, mapRequestHeaders);	// window.synccheck={retcode:"0",selector:"2"}
 				break;
 			}
-			catch (UnknownHostException e)
+			catch (UnknownHostException | SocketTimeoutException e)
 			{
 				continue _适应临时网络错误_TolerateTemporarilyNetworkIssue;
 			}
@@ -1270,36 +1270,47 @@ logger.fine ("	" + fMediaFile);
 				if (StringUtils.isEmpty (sTerminalInput))
 					continue;
 
+				String[] arrayParams = sTerminalInput.split (" +", 2);
+				String sCommand = arrayParams[0];
+				String sParam = arrayParams[1];
 				//try
 				//{
-					if (StringUtils.equalsIgnoreCase (sTerminalInput, "notifyAll"))
+					if (StringUtils.equalsIgnoreCase (sCommand, "notifyAll"))
 					{
 						// 本微信号现在人机已合一，具体命令请用 @xxx help 获得帮助
 					}
-					else if (StringUtils.startsWithIgnoreCase (sTerminalInput, "enableFromUser "))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "enableFromUser"))
 					{
 						//
 					}
-					else if (StringUtils.startsWithIgnoreCase (sTerminalInput, "disableFromUser "))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "disableFromUser"))
 					{
 						//
 					}
-					else if (StringUtils.equalsIgnoreCase (sTerminalInput, "/login"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/LoadBot"))
+					{
+						engine.LoadBot (sParam);
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/UnLoadBot"))
+					{
+						engine.UnloadBot (sParam);
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/login"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
 					{
 					}
-					else if (StringUtils.equalsIgnoreCase (sTerminalInput, "/logout"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/logout"))
 					{
 						engine.Logout ();
 					}
-					else if (StringUtils.equalsIgnoreCase (sTerminalInput, "/start"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/start"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
 					{
 						engine.Start ();
 					}
-					else if (StringUtils.startsWithIgnoreCase (sTerminalInput, "/stop"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/stop"))
 					{
 						engine.Stop ();
 					}
-					else if (StringUtils.startsWithIgnoreCase (sTerminalInput, "/quit"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/quit"))
 					{
 System.err.println ("收到退出命令");
 						engine.Stop ();
