@@ -1,6 +1,11 @@
 import java.io.*;
+import java.security.*;
+import java.security.cert.*;
 import java.util.concurrent.*;
 
+import org.apache.commons.lang3.*;
+
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
 /**
@@ -18,7 +23,8 @@ public abstract class net_maclife_wechat_http_Bot
 
 	public net_maclife_wechat_http_Bot ()
 	{
-		SetName (this.getClass ().getName ());
+		String sBotName = net_maclife_wechat_http_BotApp.config.getString ("bot." + this.getClass ().getName () + ".name");
+		SetName (StringUtils.isEmpty (sBotName) ? this.getClass ().getName () : sBotName);
 	}
 
 	public void SetEngine (net_maclife_wechat_http_BotEngine engine)
@@ -37,6 +43,22 @@ public abstract class net_maclife_wechat_http_Bot
 	public String GetName ()
 	{
 		return name;
+	}
+
+	//
+	// 对 engine.BotSendTextMessage 的封装，免得每次都传递 Bot 参数
+	//
+	public void SendTextMessage (String sTo_RoomAccountHash, String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		engine.BotSendTextMessage (this, sTo_RoomAccountHash, sTo_AccountHash, sTo_NickName, sMessage);
+	}
+	public void SendTextMessage (String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		engine.BotSendTextMessage (this, sTo_AccountHash, sTo_NickName, sMessage);
+	}
+	public void SendTextMessage (String sTo_AccountHash, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		engine.BotSendTextMessage (this, sTo_AccountHash, sMessage);
 	}
 
 	/**
