@@ -33,7 +33,7 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 		{
 			JsonNode jsonCSRResponse = GetCSRReponse (sFrom_AccountHash, sMessage);
 			if (jsonCSRResponse == null)
-				return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 			String sResponse = ParseCSRResponse (jsonCSRResponse);
 			if (StringUtils.isNotEmpty (sResponse))
@@ -47,8 +47,8 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 		}
 
 		return
-			  net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
-			| net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+			  net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
+			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	public String ParseCSRResponse (JsonNode jsonCSRResponse)

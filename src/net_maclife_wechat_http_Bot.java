@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.*;
  */
 public abstract class net_maclife_wechat_http_Bot
 {
-	protected net_maclife_wechat_http_BotApp.BotEngine engine;
+	protected net_maclife_wechat_http_BotEngine engine;
 
 	protected Future<?> botTask = null;
 
@@ -21,11 +21,11 @@ public abstract class net_maclife_wechat_http_Bot
 		SetName (this.getClass ().getName ());
 	}
 
-	public void SetEngine (net_maclife_wechat_http_BotApp.BotEngine engine)
+	public void SetEngine (net_maclife_wechat_http_BotEngine engine)
 	{
 		this.engine = engine;
 	}
-	public net_maclife_wechat_http_BotApp.BotEngine GetEngine ()
+	public net_maclife_wechat_http_BotEngine GetEngine ()
 	{
 		return engine;
 	}
@@ -59,7 +59,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	public int OnLoggedIn ()
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
@@ -67,7 +67,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	public int OnLoggedOut ()
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
@@ -75,7 +75,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	public int OnShutdown ()
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
@@ -83,7 +83,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	public int OnMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, JsonNode jsonMessage)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
@@ -95,23 +95,23 @@ public abstract class net_maclife_wechat_http_Bot
 	 */
 	public int OnTextMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, String sMessage)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 	public int OnImageMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 	public int OnVoiceMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 	public int OnVideoMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 	public int OnEmotionMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
@@ -119,7 +119,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	public int OnContactChanged (JsonNode jsonMessage)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
@@ -127,7 +127,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	public int OnContactDeleted (JsonNode jsonMessage)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
@@ -136,7 +136,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	public int OnChatRoomMemberChanged (JsonNode jsonMessage)
 	{
-		return net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 }

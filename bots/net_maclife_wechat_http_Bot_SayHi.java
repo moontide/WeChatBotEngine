@@ -72,8 +72,8 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 		{
 			e.printStackTrace();
 		}
-		return (bProcessed ? net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED : 0)
-				| net_maclife_wechat_http_BotApp.BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		return (bProcessed ? net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED : 0)
+				| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	@Override
