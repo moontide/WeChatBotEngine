@@ -105,7 +105,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 						if (botClass.isInstance (bot))
 						{
 							bAlreadyLoaded = true;
-net_maclife_wechat_http_BotApp.logger.warning ("已经加载过了 " + sBotClassName + " 类的机器人");
+net_maclife_wechat_http_BotApp.logger.warning ("已经加载过 " + bot.GetName() + " 机器人，不重复加载");
 							break;
 						}
 					}
@@ -115,7 +115,7 @@ net_maclife_wechat_http_BotApp.logger.warning ("已经加载过了 " + sBotClass
 						newBot.SetEngine (this);
 						newBot.Start ();
 						listBots.add (newBot);
-net_maclife_wechat_http_BotApp.logger.info (sBotClassName + " 类机器人已实例化并加载");
+net_maclife_wechat_http_BotApp.logger.info (newBot.GetName () + " 机器人已创建并加载");
 				}
 			}
 			//
@@ -143,8 +143,9 @@ net_maclife_wechat_http_BotApp.logger.info (sBotClassName + " 类机器人已实
 	{
 		try
 		{
-			//listBots.remove (bot);
+			listBots.remove (bot);
 			bot.Stop ();
+net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被卸载");
 		}
 		catch (Exception e)
 		{
@@ -158,7 +159,7 @@ net_maclife_wechat_http_BotApp.logger.info (sBotClassName + " 类机器人已实
 		{
 			for (int i=0; i<listBots.size (); i++)
 			{
-				net_maclife_wechat_http_Bot bot = listBots.remove (i);
+				net_maclife_wechat_http_Bot bot = listBots.get (i);
 				if (StringUtils.equalsIgnoreCase (bot.getClass ().getCanonicalName (), sBotClassName))
 				{
 					UnloadBot (bot);
