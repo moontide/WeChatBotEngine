@@ -48,7 +48,7 @@ net_maclife_wechat_http_BotApp.logger.info ("\n" + sJSONString);
 			{
 				JsonNode jsonData = jsonUploadImageResult.get ("data");
 				sURL = net_maclife_wechat_http_BotApp.GetJSONText (jsonData, "pageUrl");
-				doc = org.jsoup.Jsoup.connect (sURL).get ();
+				doc = org.jsoup.Jsoup.connect (sURL).timeout (net_maclife_util_HTTPUtils.DEFAULT_READ_TIMEOUT_SECOND * 1000).get ();
 				String sImageInfo = doc.select ("#guessInfo").text ();
 				SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "图片信息:\n" + sImageInfo);
 			}
