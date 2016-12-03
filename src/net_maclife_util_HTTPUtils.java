@@ -98,7 +98,7 @@ public class net_maclife_util_HTTPUtils
 	 * @param nTimeoutSeconds_Read 读取操作的超时时长，单位：秒。 如果小于等于 0，则改用默认值 DEFAULT_READ_TIMEOUT_SECOND
 	 * @param sProxyType 代理服务器类型(不区分大小写)。 "http" - HTTP 代理， "socks" - SOCKS 代理， 其他值 - 不使用代理
 	 * @param sProxyHost 代理服务器主机地址
-	 * @param sProxyPort 代理服务器端口
+	 * @param nProxyPort 代理服务器端口
 	 * @param isIgnoreTLSCertificateValidation 是否忽略 TLS 服务器证书验证
 	 * @param isIgnoreTLSHostnameValidation 是否忽略 TLS 主机名验证
 	 * @param sTLSTrustStoreType (以下所有带 TLS 名称的参数都仅仅用于访问 https:// 的设置)。 TLS [信任证书/服务器证书]仓库类型。 "jks" 或 "pkcs12"，null 或 "" 被当做 "jks"
@@ -129,7 +129,7 @@ public class net_maclife_util_HTTPUtils
 
 			String sProxyType,
 			String sProxyHost,
-			String sProxyPort,
+			int nProxyPort,
 
 			boolean isIgnoreTLSCertificateValidation,
 			boolean isIgnoreTLSHostnameValidation,
@@ -175,8 +175,8 @@ public class net_maclife_util_HTTPUtils
 			http = url.openConnection ();
 		else
 		{
-			Proxy proxy = new Proxy (proxyType, new InetSocketAddress(sProxyHost, Integer.parseInt (sProxyPort)));
-			System.out.println (proxy);
+			Proxy proxy = new Proxy (proxyType, new InetSocketAddress(sProxyHost, nProxyPort));
+System.out.println (proxy);
 			http = url.openConnection (proxy);
 		}
 		http.setConnectTimeout ((nTimeoutSeconds_Connect <= 0 ? DEFAULT_CONNECT_TIMEOUT_SECOND : nTimeoutSeconds_Connect) * 1000);
@@ -315,7 +315,7 @@ public class net_maclife_util_HTTPUtils
 	public static URLConnection CURL_Connection (String sURL, Map<String, Object> mapRequestHeaders, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (URLConnection)CURL (null, sURL, mapRequestHeaders, null, true, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				null, null, null,
+				null, null, 0,
 				true, true, null, null, null, null, null, null
 			);
 	}
@@ -351,7 +351,7 @@ public class net_maclife_util_HTTPUtils
 	public static String CURL (String sURL, Map<String, Object> mapRequestHeaders, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (String)CURL (null, sURL, mapRequestHeaders, null, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				null, null, null,
+				null, null, 0,
 				true, true, null, null, null, null, null, null
 			);
 	}
@@ -379,7 +379,7 @@ public class net_maclife_util_HTTPUtils
 	public static String CURL (String sURL, String sCharSet, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (String)CURL (null, sURL, null, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
-				null, null, null,
+				null, null, 0,
 				true, true, null, null, null, null, null, null
 			);
 	}
@@ -397,7 +397,7 @@ public class net_maclife_util_HTTPUtils
 	public static String CURL_Post (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (String)CURL ("POST", sURL, mapRequestHeaders, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				null, null, null,
+				null, null, 0,
 				true, true, null, null, null, null, null, null
 			);
 	}
@@ -425,16 +425,16 @@ public class net_maclife_util_HTTPUtils
 	 * @param sCharSet 返回的字符串内容的字符集编码
 	 * @return String Content
 	 */
-	public static String CURL_ViaProxy (String sURL, String sCharSet, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_ViaProxy (String sURL, String sCharSet, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (String)CURL (null, sURL, null, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
-				sProxyType, sProxyHost, sProxyPort,
+				sProxyType, sProxyHost, nProxyPort,
 				true, true, null, null, null, null, null, null
 			);
 	}
-	public static String CURL_ViaProxy (String sURL, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_ViaProxy (String sURL, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, sProxyPort);
+		return CURL_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, nProxyPort);
 	}
 
 	/**
@@ -443,20 +443,20 @@ public class net_maclife_util_HTTPUtils
 	 * @param sURL 网址
 	 * @return String Content
 	 */
-	public static String CURL_Post_ViaProxy (String sURL, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_Post_ViaProxy (String sURL, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (String)CURL ("POST", sURL, null, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				sProxyType, sProxyHost, sProxyPort,
+				sProxyType, sProxyHost, nProxyPort,
 				true, true, null, null, null, null, null, null
 			);
 	}
-	public static String CURL_Post_ViaProxy (String sURL,  byte[] arrayPostData, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_Post_ViaProxy (String sURL,  byte[] arrayPostData, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_ViaProxy (sURL, arrayPostData, 0, sProxyType, sProxyHost, sProxyPort);
+		return CURL_Post_ViaProxy (sURL, arrayPostData, 0, sProxyType, sProxyHost, nProxyPort);
 	}
-	public static String CURL_Post_ViaProxy (String sURL, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_Post_ViaProxy (String sURL, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, sProxyPort);
+		return CURL_Post_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, nProxyPort);
 	}
 
 	/**
@@ -468,7 +468,7 @@ public class net_maclife_util_HTTPUtils
 	public static InputStream CURL_Stream (String sURL, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (InputStream)CURL (null, sURL, null, null, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				null, null, null,
+				null, null, 0,
 				true, true, null, null, null, null, null, null
 			);
 	}
@@ -486,7 +486,7 @@ public class net_maclife_util_HTTPUtils
 	public static InputStream CURL_Post_Stream (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (InputStream)CURL ("POST", sURL, mapRequestHeaders, arrayPostData, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				null, null, null,
+				null, null, 0,
 				true, true, null, null, null, null, null, null
 			);
 	}
@@ -509,16 +509,16 @@ public class net_maclife_util_HTTPUtils
 	 * @param sURL 网址
 	 * @return Input Stream
 	 */
-	public static InputStream CURL_Stream_ViaProxy (String sURL, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static InputStream CURL_Stream_ViaProxy (String sURL, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (InputStream)CURL (null, sURL, null, null, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				sProxyType, sProxyHost, sProxyPort,
+				sProxyType, sProxyHost, nProxyPort,
 				true, true, null, null, null, null, null, null
 			);
 	}
-	public static InputStream CURL_Stream_ViaProxy (String sURL, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static InputStream CURL_Stream_ViaProxy (String sURL, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Stream_ViaProxy (sURL, 0, sProxyType, sProxyHost, sProxyPort);
+		return CURL_Stream_ViaProxy (sURL, 0, sProxyType, sProxyHost, nProxyPort);
 	}
 
 	/**
@@ -527,20 +527,20 @@ public class net_maclife_util_HTTPUtils
 	 * @param sURL 网址
 	 * @return Input Stream
 	 */
-	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
 		return (InputStream)CURL ("POST", sURL, null, arrayPostData, false, false, null, true, nTimeoutSeconds, nTimeoutSeconds,
-				sProxyType, sProxyHost, sProxyPort,
+				sProxyType, sProxyHost, nProxyPort,
 				true, true, null, null, null, null, null, null
 			);
 	}
-	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, byte[] arrayPostData, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, byte[] arrayPostData, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_Stream_ViaProxy (sURL, arrayPostData, 0, sProxyType, sProxyHost, sProxyPort);
+		return CURL_Post_Stream_ViaProxy (sURL, arrayPostData, 0, sProxyType, sProxyHost, nProxyPort);
 	}
-	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, String sProxyType, String sProxyHost, String sProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static InputStream CURL_Post_Stream_ViaProxy (String sURL, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_Stream_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, sProxyPort);
+		return CURL_Post_Stream_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, nProxyPort);
 	}
 
 	/**
