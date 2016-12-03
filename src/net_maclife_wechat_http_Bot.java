@@ -15,16 +15,20 @@ import com.fasterxml.jackson.databind.*;
  */
 public abstract class net_maclife_wechat_http_Bot
 {
+	public static final String OFFICIAL_BOT_CLASSNAME_PREFIX = "net_maclife_wechat_http_Bot_";
 	protected net_maclife_wechat_http_BotEngine engine;
 
 	protected Future<?> botTask = null;
 
-	String name = null;
+	private String name = null;
 
 	public net_maclife_wechat_http_Bot ()
 	{
 		String sBotName = net_maclife_wechat_http_BotApp.config.getString ("bot." + this.getClass ().getName () + ".name");
-		SetName (StringUtils.isEmpty (sBotName) ? this.getClass ().getName () : sBotName);
+		String sClassName = this.getClass ().getName ();
+		if (StringUtils.startsWithIgnoreCase (sClassName, OFFICIAL_BOT_CLASSNAME_PREFIX))
+			sClassName = StringUtils.substring (sClassName, OFFICIAL_BOT_CLASSNAME_PREFIX.length ());
+		SetName (StringUtils.isEmpty (sBotName) ? sClassName : sBotName);
 	}
 
 	public void SetEngine (net_maclife_wechat_http_BotEngine engine)
