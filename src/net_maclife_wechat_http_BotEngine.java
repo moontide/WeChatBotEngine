@@ -187,6 +187,16 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被�
 		}
 	}
 
+	public void ListBots ()
+	{
+		for (int i=listBots.size ()-1; i>=0; i--)
+		{
+			net_maclife_wechat_http_Bot bot = listBots.get (i);
+			//UnloadBot (bot);
+			net_maclife_wechat_http_BotApp.logger.info (bot.GetName ());
+		}
+	}
+
 	public boolean IsMe (String  sAccountHash)
 	{
 		return StringUtils.equalsIgnoreCase (sMyAccountHashInThisSession, sAccountHash);

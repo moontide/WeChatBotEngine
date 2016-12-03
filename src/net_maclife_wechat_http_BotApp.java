@@ -1307,6 +1307,10 @@ logger.fine ("	" + fMediaFile);
 					{
 						engine.UnloadBot (sParam);
 					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "/ListBots"))
+					{
+						engine.ListBots ();
+					}
 					else if (StringUtils.equalsIgnoreCase (sCommand, "/login"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
 					{
 					}
