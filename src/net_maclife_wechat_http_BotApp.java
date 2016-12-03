@@ -377,10 +377,10 @@ logger.finer ("	" + listCookies);
 logger.fine ("登录页面响应的消息体:");
 //System.out.println ("	[" + sContent + "]");
 logger.fine ("	[" + eXML.toXML() + "]");
-logger.info ("\n	UIN=" + eXML.getFirstChildElement ("wxuin").getValue () + "\n" +
-			"	SID=[" + eXML.getFirstChildElement ("wxsid").getValue () + "\n" +
-			"	SKEY=[" + eXML.getFirstChildElement ("skey").getValue () + "\n" +
-			"	TICKET=[" + eXML.getFirstChildElement ("pass_ticket").getValue () + "\n");
+logger.info ("\n	UIN: " + eXML.getFirstChildElement ("wxuin").getValue () + "\n" +
+			"	SID = " + eXML.getFirstChildElement ("wxsid").getValue () + "\n" +
+			"	SKEY = " + eXML.getFirstChildElement ("skey").getValue () + "\n" +
+			"	TICKET = " + eXML.getFirstChildElement ("pass_ticket").getValue () + "\n");
 			Map<String, Object> mapResult = new HashMap <String, Object> ();
 			mapResult.put ("UserID", eXML.getFirstChildElement ("wxuin").getValue ());
 			mapResult.put ("SessionID", eXML.getFirstChildElement ("wxsid").getValue ());
