@@ -92,9 +92,7 @@ net_maclife_wechat_http_BotApp.logger.severe ("bot 启动失败: " + e);
 				InputStream is = s.getInputStream ();
 				PrintWriter out = new PrintWriter (s.getOutputStream (), true);
 				//IOUtils.toString (is, net_maclife_wechat_http_BotApp.utf8);
-				ObjectMapper om = new ObjectMapper ();
-				om.configure (JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-				JsonNode jsonNode = om.readTree (is);
+				JsonNode jsonNode = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (is);
 				ProcessMessage (jsonNode, out);
 				s.close ();
 			}

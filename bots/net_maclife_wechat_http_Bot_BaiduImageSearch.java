@@ -1,7 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.security.*;
-import java.security.cert.*;
 
 import org.apache.commons.io.*;
 import org.jsoup.nodes.*;
@@ -41,8 +39,7 @@ public class net_maclife_wechat_http_Bot_BaiduImageSearch extends net_maclife_we
     ]
 } */
 net_maclife_wechat_http_BotApp.logger.info ("\n" + sJSONString);
-			ObjectMapper om = new ObjectMapper ();
-			JsonNode jsonUploadImageResult = om.readTree (sJSONString);
+			JsonNode jsonUploadImageResult = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (sJSONString);
 			int errno = net_maclife_wechat_http_BotApp.GetJSONInt (jsonUploadImageResult, "errno");
 			if (errno == 0)
 			{
@@ -53,10 +50,16 @@ net_maclife_wechat_http_BotApp.logger.info ("\n" + sJSONString);
 				SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "图片信息:\n" + sImageInfo);
 			}
 		}
-		catch (IOException | KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	@Override
+	public int OnEmotionMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	{
+		return OnImageMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
 	}
 }

@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 
 import javax.script.*;
 
+import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
 
 import com.fasterxml.jackson.core.*;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.databind.node.*;
 
 class net_maclife_wechat_http_BotEngine implements Runnable
 {
+	public static String sSessionCacheFileName = net_maclife_wechat_http_BotApp.cacheDirectory + File.separator + "wechat-session-cache.json";
 	// 几种 Bot 链处理方式标志（Bot 链处理方式仅仅在 ${engine.message.dispatch.ThreadMode} 配置为【单线程/共享线程】时才有用）。组合值列表：
 	// 0: 本 Bot 没处理，后面的 Bot 也别处理了
 	// 1: 本 Bot 已处理，后面的 Bot 别处理了
@@ -71,15 +73,15 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 
 	public void Start ()
 	{
+		bStopFlag = false;
 		LoadBots ();
 		engineTask = net_maclife_wechat_http_BotApp.executor.submit (this);
-		bStopFlag = false;
 	}
 
 	public void Stop ()
 	{
-		UnloadAllBots ();
 		bStopFlag = true;
+		UnloadAllBots ();
 
 		if (engineTask!=null && !engineTask.isCancelled ())
 		{
@@ -130,12 +132,12 @@ net_maclife_wechat_http_BotApp.logger.info (newBot.GetName () + " 机器人已�
 	{
 		List<String> listBotClassNames = net_maclife_wechat_http_BotApp.config.getList (String.class, "engine.bots.load.classNames");
 		if (listBotClassNames != null)
-			for (String sBotClassName : listBotClassNames)
+			for (String sBotFullClassName : listBotClassNames)
 			{
-				if (StringUtils.isEmpty (sBotClassName))
+				if (StringUtils.isEmpty (sBotFullClassName))
 					continue;
 
-				LoadBot (sBotClassName);
+				LoadBot (sBotFullClassName);
 			}
 	}
 
@@ -153,17 +155,24 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被�
 		}
 	}
 
-	public void UnloadBot (String sBotClassName)
+	public void UnloadBot (String sBotFullClassName)
 	{
 		try
 		{
+			boolean bFound = false;
 			for (int i=0; i<listBots.size (); i++)
 			{
 				net_maclife_wechat_http_Bot bot = listBots.get (i);
-				if (StringUtils.equalsIgnoreCase (bot.getClass ().getCanonicalName (), sBotClassName))
+				if (StringUtils.equalsIgnoreCase (bot.getClass ().getCanonicalName (), sBotFullClassName))
 				{
+					bFound = true;
 					UnloadBot (bot);
+					break;
 				}
+			}
+			if (! bFound)
+			{
+net_maclife_wechat_http_BotApp.logger.warning ("在已加载的机器人列表中找不到 " + sBotFullClassName + " 机器人");
 			}
 		}
 		catch (Exception e)
@@ -193,7 +202,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被�
 		{
 			net_maclife_wechat_http_Bot bot = listBots.get (i);
 			//UnloadBot (bot);
-			net_maclife_wechat_http_BotApp.logger.info (bot.GetName ());
+net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass ().getCanonicalName () + ")");
 		}
 	}
 
@@ -333,6 +342,12 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被�
 		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonRoom.get ("MemberList"), sAccountHashInThisSession, sAliasAccount, sRemarkName, sNickName);
 	}
 
+	private JsonNode GetSessionCache () throws JsonProcessingException, IOException
+	{
+		File fSessionCache = new File (sSessionCacheFileName);
+		return net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (fSessionCache);
+	}
+
 	/**
 	 * Bot 引擎线程： 不断循环尝试登录，直到登录成功。如果登录成功后被踢下线，依旧不断循环尝试登录…… 登录成功后，不断同步消息，直到被踢下线（同上，依旧不断循环尝试登录）
 	 */
@@ -344,39 +359,60 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被�
 			String sLoginID = null;
 			Map<String, Object> mapWaitLoginResult = null;
 			Object o = null;
+			boolean bSessionExpired = false;
 		_outer_loop:
 			while (! Thread.interrupted () && !bStopFlag)
 			{
 				try
 				{
-					// 1. 获得登录 ID
-					sLoginID = net_maclife_wechat_http_BotApp.GetNewLoginID ();
-
-					// 2. 根据登录 ID，获得登录地址的二维码图片 （暂时只能扫描图片，不能根据登录地址自动登录 -- 暂时无法截获手机微信 扫描二维码以及确认登录时 时带的参数，所以无法模拟自动登录）
-					net_maclife_wechat_http_BotApp.GetLoginQRCodeImageFile (sLoginID);
-
-					// 3. 等待二维码扫描（）、以及确认登录
-					do
+					File fSessionCache = new File (sSessionCacheFileName);
+					if (!bSessionExpired && fSessionCache.exists () && ((fSessionCache.lastModified () + 12 * 3600 * 1000) > System.currentTimeMillis ()))	// 目前的微信 Session 只有 12 小时的生命
 					{
-						o = net_maclife_wechat_http_BotApp.等待二维码被扫描以便登录 (sLoginID);
-						if (o instanceof Integer)
+						JsonNode jsonSessionCache = GetSessionCache ();
+						sUserID     = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "UserID");
+						sSessionID  = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "SessionID");
+						sSessionKey = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "SessionKey");
+						sPassTicket = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "PassTicket");
+net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " + sUserID + "\n	SID = " + sSessionID + "\n	SKEY = " + sSessionKey + "\n	TICKET = " + sPassTicket + "\n");
+					}
+					else
+					{
+						// 1. 获得登录 ID
+						sLoginID = net_maclife_wechat_http_BotApp.GetNewLoginID ();
+
+						// 2. 根据登录 ID，获得登录地址的二维码图片 （暂时只能扫描图片，不能根据登录地址自动登录 -- 暂时无法截获手机微信 扫描二维码以及确认登录时 时带的参数，所以无法模拟自动登录）
+						net_maclife_wechat_http_BotApp.GetLoginQRCodeImageFile (sLoginID);
+
+						// 3. 等待二维码扫描（）、以及确认登录
+						do
 						{
-							int n = (Integer) o;
-							if (n == 400)	// Bad Request / 二维码已失效
+							o = net_maclife_wechat_http_BotApp.等待二维码被扫描以便登录 (sLoginID);
+							if (o instanceof Integer)
 							{
-								continue _outer_loop;
+								int n = (Integer) o;
+								if (n == 400)	// Bad Request / 二维码已失效
+								{
+									continue _outer_loop;
+								}
+								else	// 大概只有 200 才能出来：当是 200 时，但访问登录页面失败时，可能会跑到此处
+								{
+									//
+								}
 							}
-							else	// 大概只有 200 才能出来：当是 200 时，但访问登录页面失败时，可能会跑到此处
-							{
-								//
-							}
-						}
-					} while (! (o instanceof Map<?, ?>) && !bStopFlag);
-					mapWaitLoginResult = (Map<String, Object>) o;
-					sUserID     = (String) mapWaitLoginResult.get ("UserID");
-					sSessionID  = (String) mapWaitLoginResult.get ("SessionID");
-					sSessionKey = (String) mapWaitLoginResult.get ("SessionKey");
-					sPassTicket = (String) mapWaitLoginResult.get ("PassTicket");
+						} while (! (o instanceof Map<?, ?>) && !bStopFlag);
+						mapWaitLoginResult = (Map<String, Object>) o;
+						sUserID     = (String) mapWaitLoginResult.get ("UserID");
+						sSessionID  = (String) mapWaitLoginResult.get ("SessionID");
+						sSessionKey = (String) mapWaitLoginResult.get ("SessionKey");
+						sPassTicket = (String) mapWaitLoginResult.get ("PassTicket");
+						bSessionExpired = false;
+net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UIN: " + sUserID + "\n	SID = " + sSessionID + "\n	SKEY = " + sSessionKey + "\n	TICKET = " + sPassTicket + "\n");
+
+						String sSessionCache_JSONString = "{\n\tUserID: \"" + sUserID + "\",\n\tSessionID: \"" + sSessionID + "\",\n\tSessionKey: \"" + sSessionKey + "\",\n\tPassTicket: \"" + sPassTicket + "\"\n}";
+						OutputStream os = new FileOutputStream (fSessionCache);
+						IOUtils.write (sSessionCache_JSONString, os);
+						os.close ();
+					}
 
 					// 4. 确认登录后，初始化 Web 微信，返回初始信息
 					JsonNode jsonInit = Init ();
@@ -432,6 +468,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被�
 					}
 					catch (IllegalStateException e)
 					{
+						bSessionExpired = true;
 						continue _outer_loop;
 					}
 				}
@@ -473,6 +510,10 @@ net_maclife_wechat_http_BotApp.logger.warning ("bot 线程退出");
 		int i = 0;
 
 		int nAddMsgCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "AddMsgCount", 0);
+		if (nAddMsgCount != 0)
+		{
+net_maclife_wechat_http_BotApp.logger.info ("收到 " + nAddMsgCount + " 个新增的消息");
+		}
 		JsonNode jsonAddMsgList = jsonMessage.get ("AddMsgList");
 		for (i=0; i<nAddMsgCount; i++)
 		{
@@ -550,64 +591,66 @@ net_maclife_wechat_http_BotApp.logger.warning ("bot 线程退出");
 					continue;
 			}
 
-net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 发给 " + sToNickName + " 的消息 (聊天室: " + sRoomNickName + ")：" + sContent);
+net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 发给 " + sToNickName + " 的消息 (类型=" + nMsgType + (StringUtils.isEmpty (sFromNickName) || StringUtils.equalsIgnoreCase (sFromNickName, "null") ? "" : ", 聊天室: " + sRoomNickName) + ")：" + sContent);
 
 			File fMedia = null;
 			switch (nMsgType)
 			{
-			case WECHAT_MSG_TYPE__TEXT:
-				OnTextMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent);
-				break;
-			case WECHAT_MSG_TYPE__IMAGE:
-				fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-				OnImageMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
-				break;
-			case WECHAT_MSG_TYPE__APP:
-				break;
-			case WECHAT_MSG_TYPE__VOICE:
-				fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVoice (sSessionKey, sMsgID);
-				OnVoiceMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
-				break;
-			case WECHAT_MSG_TYPE__VERIFY_MSG:
-				break;
-			case WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG:
-				break;
-			case WECHAT_MSG_TYPE__VCARD:
-				break;
-			case WECHAT_MSG_TYPE__VIDEO_CALL:
-				break;
-			case WECHAT_MSG_TYPE__EMOTION:
-				fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-				OnEmotionMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
-				break;
-			case WECHAT_MSG_TYPE__GPS_POSITION:
-				break;
-			case WECHAT_MSG_TYPE__URL:
-				break;
-			case WECHAT_MSG_TYPE__VOIP_MSG:
-				break;
-			case WECHAT_MSG_TYPE__INIT:
-				break;
-			case WECHAT_MSG_TYPE__VOIP_NOTIFY:
-				break;
-			case WECHAT_MSG_TYPE__VOIP_INVITE:
-				break;
-			case WECHAT_MSG_TYPE__SHORT_VIDEO:
-				fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVideo (sSessionKey, sMsgID);
-				OnVideoMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
-				break;
-			case WECHAT_MSG_TYPE__SYSTEM_NOTICE:
-				break;
-			case WECHAT_MSG_TYPE__SYSTEM:
-				break;
-			case WECHAT_MSG_TYPE__MSG_REVOKED:
-				break;
-			default:
-				break;
+				case WECHAT_MSG_TYPE__TEXT:
+					OnTextMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent);
+					break;
+				case WECHAT_MSG_TYPE__IMAGE:
+					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
+					OnImageMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					break;
+				case WECHAT_MSG_TYPE__APP:
+					break;
+				case WECHAT_MSG_TYPE__VOICE:
+					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVoice (sSessionKey, sMsgID);
+					OnVoiceMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					break;
+				case WECHAT_MSG_TYPE__VERIFY_MSG:
+					break;
+				case WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG:
+					break;
+				case WECHAT_MSG_TYPE__VCARD:
+					break;
+				case WECHAT_MSG_TYPE__VIDEO_CALL:
+					break;
+				case WECHAT_MSG_TYPE__EMOTION:
+					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
+					OnEmotionMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					break;
+				case WECHAT_MSG_TYPE__GPS_POSITION:
+					break;
+				case WECHAT_MSG_TYPE__URL:
+					break;
+				case WECHAT_MSG_TYPE__VOIP_MSG:
+					break;
+				case WECHAT_MSG_TYPE__INIT:
+					break;
+				case WECHAT_MSG_TYPE__VOIP_NOTIFY:
+					break;
+				case WECHAT_MSG_TYPE__VOIP_INVITE:
+					break;
+				case WECHAT_MSG_TYPE__SHORT_VIDEO:
+					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVideo (sSessionKey, sMsgID);
+					OnVideoMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					break;
+				case WECHAT_MSG_TYPE__SYSTEM_NOTICE:
+					break;
+				case WECHAT_MSG_TYPE__SYSTEM:
+					break;
+				case WECHAT_MSG_TYPE__MSG_REVOKED:
+					break;
+				default:
+					break;
 			}
 		}
 
 		int nModContactCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "ModContactCount", 0);
+		if (nModContactCount != 0)
+			net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModContactCount + " 个【修改了联系人】信息");
 		JsonNode jsonModContactList = jsonMessage.get ("ModContactList");
 		for (i=0; i<nModContactCount; i++)
 		{
@@ -615,6 +658,8 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 		}
 
 		int nDelContactCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "DelContactCount", 0);
+		if (nModContactCount != 0)
+			net_maclife_wechat_http_BotApp.logger.info ("收到 " + nDelContactCount + " 个【删除了联系人】信息");
 		JsonNode jsonDelContactList = jsonMessage.get ("DelContactList");
 		for (i=0; i<nDelContactCount; i++)
 		{
@@ -622,6 +667,8 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 		}
 
 		int nModChatRoomMemerCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "ModChatRoomMemberCount", 0);
+		if (nModChatRoomMemerCount != 0)
+			net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModChatRoomMemerCount + " 个【聊天室成员列表变更】信息");
 		JsonNode jsonModChatRoomMemerList = jsonMessage.get ("ModChatRoomMemberList");
 		for (i=0; i<nModChatRoomMemerCount; i++)
 		{
@@ -684,37 +731,44 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 
 	int DoDispatch (final net_maclife_wechat_http_Bot bot, final String sType, final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final Object data)
 	{
-		switch (StringUtils.lowerCase (sType))
+		try
 		{
-		case "onloggedin":
-			return bot.OnLoggedIn ();
-			//break;
-		case "onloggedout":
-			return bot.OnLoggedOut ();
-			//break;
-		case "onshutdown":
-			return bot.OnShutdown ();
-			//break;
-		case "onmessage":
-			return bot.OnMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (JsonNode)data);
-			//break;
-		case "ontextmessage":
-			return bot.OnTextMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (String)data);
-			//break;
-		case "onimagemessage":
-			return bot.OnImageMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
-			//break;
-		case "onvoicemessage":
-			return bot.OnVoiceMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
-			//break;
-		case "onvideomessage":
-			return bot.OnVideoMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
-			//break;
-		case "onemotionmessage":
-			return bot.OnEmotionMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
-			//break;
-		default:
-			break;
+			switch (StringUtils.lowerCase (sType))
+			{
+				case "onloggedin":
+					return bot.OnLoggedIn ();
+					//break;
+				case "onloggedout":
+					return bot.OnLoggedOut ();
+					//break;
+				case "onshutdown":
+					return bot.OnShutdown ();
+					//break;
+				case "onmessage":
+					return bot.OnMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (JsonNode)data);
+					//break;
+				case "ontextmessage":
+					return bot.OnTextMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (String)data);
+					//break;
+				case "onimagemessage":
+					return bot.OnImageMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					//break;
+				case "onvoicemessage":
+					return bot.OnVoiceMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					//break;
+				case "onvideomessage":
+					return bot.OnVideoMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					//break;
+				case "onemotionmessage":
+					return bot.OnEmotionMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					//break;
+				default:
+					break;
+			}
+		}
+		catch (Throwable e)
+		{
+			e.printStackTrace ();
 		}
 		return BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}

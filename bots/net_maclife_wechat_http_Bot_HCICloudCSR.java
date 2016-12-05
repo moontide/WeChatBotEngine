@@ -38,7 +38,7 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 			String sResponse = ParseCSRResponse (jsonCSRResponse);
 			if (StringUtils.isNotEmpty (sResponse))
 			{
-				engine.SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sResponse);
+				SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sResponse);
 			}
 		}
 		catch (Exception e)
@@ -162,9 +162,7 @@ net_maclife_wechat_http_BotApp.logger.finer ("\n" + sRequestBody_JSONString);
 
 			InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (HCICLOUD_CSR_URL__Query, mapRequestHeaders, sRequestBody_JSONString.getBytes (HCICLOUD_CHARSET_ENCODING));
 
-			ObjectMapper omFromHcicloud = new ObjectMapper();
-			omFromHcicloud.configure (JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-			JsonNode jsonCSRResponse = omFromHcicloud.readTree (is);
+			JsonNode jsonCSRResponse = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (is);
 			return jsonCSRResponse;
 		}
 		catch (Exception e)

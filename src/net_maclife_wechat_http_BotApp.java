@@ -32,8 +32,8 @@ import nu.xom.*;
  */
 public class net_maclife_wechat_http_BotApp implements Runnable
 {
-	static final Logger logger = Logger.getLogger (net_maclife_wechat_http_BotApp.class.getName ());
-	public static ExecutorService executor = Executors.newCachedThreadPool ();	// .newFixedThreadPool (5);
+	public static final Logger logger = Logger.getLogger (net_maclife_wechat_http_BotApp.class.getName ());
+	public static final ExecutorService executor = Executors.newCachedThreadPool ();	// .newFixedThreadPool (5);
 
 	public static final String utf8 = "UTF-8";
 
@@ -41,18 +41,18 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Subscriber = 0x10;	// 订阅号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Tencent = 0x20;	// 腾讯自己的公众号
 
-	static final String configFileName = "src" + File.separator + "config.properties";
-	static Parameters configParameters = null;
+	private static final String configFileName = "src" + File.separator + "config.properties";
+	private static Parameters configParameters = null;
 	//static Configurations configs = new Configurations();
-	static Configuration config = null;
+	public static Configuration config = null;
 
 	static
 	{
 		try
 		{
 			configParameters = new Parameters ();
-			FileBasedConfigurationBuilder<PropertiesConfiguration> configBuilder =
-				new FileBasedConfigurationBuilder<PropertiesConfiguration> (PropertiesConfiguration.class)
+			ConfigurationBuilder<PropertiesConfiguration> configBuilder =
+				new ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> (PropertiesConfiguration.class)
 					.configure
 					(
 						configParameters.fileBased ()
@@ -69,12 +69,17 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 		}
 	}
 
-
-	static CookieManager cookieManager = new CookieManager ();
+	public static String cacheDirectory = config.getString ("app.running.CacheDirectory", "run");
+	public static String qrcodeFilesDirectory = cacheDirectory + "/qrcodes";
+	public static String mediaFilesDirectory = cacheDirectory + "/medias";
 	static
 	{
-		cookieManager.setCookiePolicy (CookiePolicy.ACCEPT_ALL);
+		File fQrcodeFilesDirectory = new File (qrcodeFilesDirectory);
+		File fMediaFilesDirectory = new File (mediaFilesDirectory);
+		fQrcodeFilesDirectory.mkdirs ();
+		fMediaFilesDirectory.mkdirs ();
 	}
+
 
 	static ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	static ScriptEngine public_jse = scriptEngineManager.getEngineByName("JavaScript");
@@ -97,19 +102,24 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 		}
 	}
 	*/
-	static nu.xom.Builder xomBuilder = new nu.xom.Builder();
 
-	//static JsonFactory _JSON_FACTORY = new JsonFactory();
-
-	public static String workingDirectory = config.getString ("app.working.directory", "run");
-	public static String qrcodeFilesDirectory = workingDirectory + "/qrcodes";
-	public static String mediaFilesDirectory = workingDirectory + "/medias";
+	public static final ObjectMapper jacksonObjectMapper_Strict = new ObjectMapper ();
+	public static final ObjectMapper jacksonObjectMapper_Loose = new ObjectMapper ();	// 不那么严格的选项，但解析时也支持严格选项
 	static
 	{
-		File fQrcodeFilesDirectory = new File (qrcodeFilesDirectory);
-		File fMediaFilesDirectory = new File (mediaFilesDirectory);
-		fQrcodeFilesDirectory.mkdirs ();
-		fMediaFilesDirectory.mkdirs ();
+		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);	// 允许不对字段名加引号
+		jacksonObjectMapper_Loose.configure (MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);	// 字段名不区分大小写
+
+		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);	// 允许用单引号把数值引起来
+		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);	// 数值前面补 0
+	}
+
+	static nu.xom.Builder xomBuilder = new nu.xom.Builder();
+
+	static CookieManager cookieManager = new CookieManager ();
+	static
+	{
+		cookieManager.setCookiePolicy (CookiePolicy.ACCEPT_ALL);
 	}
 
 	Future<?> appTask = null;
@@ -143,7 +153,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 
 	public static String GetNewLoginID () throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException
 	{
-logger.info ("获取新的登录ID GetNewLoginID");
+logger.info ("获取新的登录 ID");
 		String sURL = "https://login.weixin.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=en_US&_=" + System.currentTimeMillis ();
 
 		String sContent = net_maclife_util_HTTPUtils.CURL (sURL);	// window.QRLogin.code = 200; window.QRLogin.uuid = "QegF7Tukgw==";
@@ -151,14 +161,14 @@ logger.fine ("获取 LoginID 的 http 响应消息体:");
 logger.fine ("	" + sContent);
 
 		String sLoginID = public_jse.eval (StringUtils.replace (sContent, "window.QRLogin.", "var ") + " uuid;").toString ();
-logger.info ("获取到的 LoginID:	" + sLoginID);
+logger.info ("获取到的登录 ID:	" + sLoginID);
 
 		return sLoginID;
 	}
 
 	public static File GetLoginQRCodeImageFile (String sLoginID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-logger.info ("根据登录ID获取二维码 GetLoginQRCodeImageFile");
+logger.info ("根据登录 ID 获取二维码图片");
 		String sURL = "https://login.weixin.qq.com/qrcode/" + sLoginID;
 		//String sScanLoginURL = "https://login.weixin.qq.com/l/" + sLoginID;	// 二维码图片解码后的 URL
 		String sFileName = qrcodeFilesDirectory + "/wechat-login-qrcode-image-" + sLoginID + ".jpg";
@@ -167,7 +177,7 @@ logger.info ("根据登录ID获取二维码 GetLoginQRCodeImageFile");
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Stream (sURL);
 		OutputStream os = new FileOutputStream (fOutputFile);
 		IOUtils.copy (is, os);
-logger.info ("获取 LoginQRCode 的 http 响应消息体（保存到文件）:");
+logger.info ("获取二维码图片的 http 响应消息体（保存到文件）:");
 logger.info ("	" + fOutputFile);
 
 		if (ParseBoolean(config.getString ("app.textQRCode.displayInTerminal"), true))
@@ -190,10 +200,10 @@ logger.info ("	" + fOutputFile);
 	 */
 	public static void ConvertQRCodeImage (String sJPGFileName, String sPNGFileName) throws IOException
 	{
-logger.info ("ConvertQRCodeImage 将二维码 jpg 文件 " + sJPGFileName + " 【转换并缩小】到适合文字输出大小的 png 文件: " + sPNGFileName);
+logger.info ("将二维码 jpg 文件【转换并缩小】适合文字输出大小的 png 文件: " + sPNGFileName);
 		List<String> listImageMagickConvertArgs = new ArrayList<String> ();
 		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
-		listImageMagickConvertArgs.add ("convert");
+		listImageMagickConvertArgs.add (net_maclife_wechat_http_BotApp.config.getString ("app.imagemagick.path") + File.separator + "convert");
 		listImageMagickConvertArgs.add (sJPGFileName);
 		listImageMagickConvertArgs.add ("-resize");
 		listImageMagickConvertArgs.add ("10%");
@@ -326,28 +336,28 @@ logger.fine ("	获取到的 LoginResultCode:	" + nLoginResultCode);
 
 			switch (nLoginResultCode)
 			{
-			case 408:	// 假设等同于 http 响应码 408: Request Time-out
+				case 408:	// 假设等同于 http 响应码 408: Request Time-out
 logger.info ("	" + nLoginResultCode + " 请求超时");
-				break;
-			case 201:	// 假设等同于 http 响应码 201: Created
+					break;
+				case 201:	// 假设等同于 http 响应码 201: Created
 logger.info ("	" + nLoginResultCode + " 已扫描");
-				break;
-			case 200:	// 假设等同于 http 响应码 200: OK
-				sLoginURL = public_jse.eval (sJSCode + " redirect_uri;").toString ();
+					break;
+				case 200:	// 假设等同于 http 响应码 200: OK
+					sLoginURL = public_jse.eval (sJSCode + " redirect_uri;").toString ();
 logger.info ("	" + nLoginResultCode + " 已确认登录，浏览器需要重定向到的登录页面网址为:");
 logger.fine ("	" + sLoginURL);
-				sLoginURL = sLoginURL + "&fun=new&version=v2";
+					sLoginURL = sLoginURL + "&fun=new&version=v2";
 logger.fine ("网址加上 &fun=new&version=v2:");
 logger.info ("	" + sLoginURL);
-				break;
-			case 400:	// 假设等同于 http 响应码 400: Bad Request
+					break;
+				case 400:	// 假设等同于 http 响应码 400: Bad Request
 logger.warning ("	" + nLoginResultCode + " 二维码已过期");
-				//throw new RuntimeException ("二维码已过期");
-				//break while_loop;
-				return nLoginResultCode;
-			default:
+					//throw new RuntimeException ("二维码已过期");
+					//break while_loop;
+					return nLoginResultCode;
+				default:
 logger.warning ("	" + nLoginResultCode + " 未知的响应代码: " + nLoginResultCode);
-				break while_loop;
+					break while_loop;
 			}
 		} while (nLoginResultCode != 200);
 
@@ -377,10 +387,6 @@ logger.finer ("	" + listCookies);
 logger.fine ("登录页面响应的消息体:");
 //System.out.println ("	[" + sContent + "]");
 logger.fine ("	[" + eXML.toXML() + "]");
-logger.info ("\n	UIN: " + eXML.getFirstChildElement ("wxuin").getValue () + "\n" +
-			"	SID = " + eXML.getFirstChildElement ("wxsid").getValue () + "\n" +
-			"	SKEY = " + eXML.getFirstChildElement ("skey").getValue () + "\n" +
-			"	TICKET = " + eXML.getFirstChildElement ("pass_ticket").getValue () + "\n");
 			Map<String, Object> mapResult = new HashMap <String, Object> ();
 			mapResult.put ("UserID", eXML.getFirstChildElement ("wxuin").getValue ());
 			mapResult.put ("SessionID", eXML.getFirstChildElement ("wxsid").getValue ());
@@ -422,7 +428,7 @@ logger.info ("\n	UIN: " + eXML.getFirstChildElement ("wxuin").getValue () + "\n"
 
 	public static JsonNode WebWeChatInit (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("初始化 WebWeChatInit …");
+logger.info ("初始化 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=1703974212&lang=zh_CN&pass_ticket=ZfvpI6wcO7N5PTkacmWK9zUTXpUOB3kqre%2BrkQ8IAtHDAIP2mc2psB5eDH8cwzsp
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
 logger.fine ("WebWeChatInit 的 URL:");
@@ -438,8 +444,7 @@ logger.finer ("发送 WebWeChatInit 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		ObjectMapper om = new ObjectMapper ();
-		JsonNode node = om.readTree (is);
+		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
 logger.fine ("获取 WebWeChatInit 的 http 响应消息体:");
 logger.fine ("	" + node);
 
@@ -513,7 +518,7 @@ logger.info (sb.toString ());
 	}
 	public static JsonNode WebWeChatStatusNotify (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccountHashInThisSession) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("开启状态通知 WebWeChatStatusNotify …");
+logger.info ("开启状态通知 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify?lang=zh_CN&pass_ticket=" + sPassTicket;
 logger.fine ("WebWeChatStatusNotify 的 URL:");
 logger.fine ("	" + sURL);
@@ -527,8 +532,7 @@ logger.finer ("	" + mapRequestHeaders);
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		ObjectMapper om = new ObjectMapper ();
-		JsonNode node = om.readTree (is);
+		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
 logger.fine ("获取 WebWeChatStatusNotify 的 http 响应消息体:");
 logger.fine ("	" + node);
 		//
@@ -537,7 +541,7 @@ logger.fine ("	" + node);
 
 	public static JsonNode WebWeChatGetContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("获取联系人 WebWeChatGetContacts …");
+logger.info ("获取联系人 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
 logger.fine ("WebWeChatGetContacts 的 URL:");
 logger.fine ("	" + sURL);
@@ -552,8 +556,7 @@ logger.finer  ("发送 WebWeChatGetContacts 的 http 请求消息体:");
 logger.finer  ("	" + sRequestBody_JSONString);
 
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		ObjectMapper om = new ObjectMapper ();
-		JsonNode node = om.readTree (is);
+		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
 logger.fine  ("获取 WebWeChatGetContacts 的 http 响应消息体:");
 logger.fine  ("	" + node);
 
@@ -631,7 +634,7 @@ logger.info (sb.toString ());
 
 	public static JsonNode WebWeChatGetRoomContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomIDs) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("获取 " + listRoomIDs.size () + " 个聊天室的联系人 WebWeChatGetRoomContacts …");
+logger.info ("获取 " + listRoomIDs.size () + " 个聊天室的联系人 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
 logger.fine ("WebWeChatGetRoomContacts 的 URL:");
 logger.fine ("	" + sURL);
@@ -642,8 +645,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatGetRoomContacts 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		ObjectMapper om = new ObjectMapper ();
-		JsonNode node = om.readTree (is);
+		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
 logger.fine ("获取 WebWeChatGetRoomContacts 的 http 响应消息体:");
 logger.fine ("	" + node);
 
@@ -897,34 +899,33 @@ logger.fine ("	" + sContent);
 		{
 			switch (sSyncCheckSelector)
 			{
-			case "2":	// 有新消息
-				String sSyncURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=" + URLEncoder.encode (sSessionID, utf8) + "&skey" + URLEncoder.encode (sSessionKey, utf8) + "&lang=zh_CN&pass_ticket=" +  sPassTicket;
-logger.fine ("WebWeChatGetMessages 中 webwxsync 的 URL:");
+				case "2":	// 有新消息
+					String sSyncURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=" + URLEncoder.encode (sSessionID, utf8) + "&skey" + URLEncoder.encode (sSessionKey, utf8) + "&lang=zh_CN&pass_ticket=" +  sPassTicket;
+	logger.fine ("WebWeChatGetMessages 中 webwxsync 的 URL:");
 logger.fine ("	" + sSyncURL);
 
-				//mapRequestHeaders = new HashMap<String, Object> ();
-				mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
-				//mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 "Ret": 1 代码
-				String sRequestBody_JSONString = MakeFullWeChatSyncJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys);
+					//mapRequestHeaders = new HashMap<String, Object> ();
+					mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
+					//mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 "Ret": 1 代码
+					String sRequestBody_JSONString = MakeFullWeChatSyncJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys);
 logger.finer ("发送 WebWeChatGetMessages 中 webwxsync 的 http 请求消息头 (Cookie & Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
 logger.finer ("发送 WebWeChatGetMessages 中 webwxsync 的 http 请求消息体:");
 logger.finer ("	\n" + sRequestBody_JSONString);
-				InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-				ObjectMapper om = new ObjectMapper ();
-				JsonNode node = om.readTree (is);
+					InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+					JsonNode node = jacksonObjectMapper_Loose.readTree (is);
 logger.fine ("获取 WebWeChatGetMessages 中 webwxsync 的 http 响应消息体:");
 logger.fine ("\n" + node);
-				jsonResult = node;
-				break;
-			case "0":	// nothing
+					jsonResult = node;
+					break;
+				case "0":	// nothing
 logger.fine ("WebWeChatGetMessages 中 synccheck 返回 0 -- 无消息");
-				break;
-			case "7":	// 进入离开聊天页面
+					break;
+				case "7":	// 进入离开聊天页面
 logger.fine ("WebWeChatGetMessages 中 synccheck 返回 7 -- 进入/离开聊天页面");
-				break;
-			default:
-				break;
+					break;
+				default:
+					break;
 			}
 		}
 		else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1100") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1101") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))
@@ -942,7 +943,7 @@ logger.warning ("WebWeChatGetMessages 中 synccheck 返回 " + sSyncCheckReturnC
 
 	public static void WebWeChatLogout (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-logger.info ("退出微信 WebWeChatLogout …");
+logger.info ("退出微信 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout?redirect=1&type=1&skey=@crypt_1df7c02d_9effb9a7d4292af4681c79dab30b6a57	// 加上表单数据 uin=****&sid=**** ，POST
 
 		// 被踢出后重新登录
@@ -982,24 +983,24 @@ logger.fine ("发消息 WebWeChatSendMessage …");
 		String sRequestBody_JSONString = "";
 		switch (nMessageType)
 		{
-		case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT:
-			sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
-			sRequestBody_JSONString = MakeFullTextMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
-			break;
-		case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE:
-			sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-			sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
-			break;
-		case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP:
-			sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-			sRequestBody_JSONString = MakeFullApplicationMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
-			break;
-		case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION:
-			sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-			sRequestBody_JSONString = MakeFullEmotionMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
-			break;
-		default:
-			break;
+			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT:
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sRequestBody_JSONString = MakeFullTextMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				break;
+			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE:
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				break;
+			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP:
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sRequestBody_JSONString = MakeFullApplicationMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				break;
+			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION:
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sRequestBody_JSONString = MakeFullEmotionMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				break;
+			default:
+				break;
 		}
 logger.fine ("WebWeChatSendMessage 的 URL:");
 logger.fine ("	" + sURL);
@@ -1008,8 +1009,7 @@ logger.finer ("	" + mapRequestHeaders);
 logger.finer ("发送 WebWeChatSendMessage 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		ObjectMapper om = new ObjectMapper ();
-		JsonNode node = om.readTree (is);
+		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
 logger.fine ("获取 WebWeChatSendMessage 的 http 响应消息体:");
 logger.fine ("\n" + node);
 		//
@@ -1035,7 +1035,7 @@ logger.fine ("\n" + node);
 	}
 	public static JsonNode WebWeChatSendTextMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("发文本消息 WebWeChatSendTextMessage: " + sMessage);
+logger.info ("发文本消息: " + sMessage);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
 	}
 
@@ -1059,7 +1059,7 @@ logger.info ("发文本消息 WebWeChatSendTextMessage: " + sMessage);
 	}
 	public static JsonNode WebWeChatSendImageMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("发图片消息 WebWeChatSendImageMessage: " + sMediaID);
+logger.info ("发图片消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID);
 	}
 
@@ -1084,7 +1084,7 @@ logger.info ("发图片消息 WebWeChatSendImageMessage: " + sMediaID);
 	}
 	public static JsonNode WebWeChatSendEmotionMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("发表情图消息 WebWeChatSendEmotionMessage: " + sMediaID);
+logger.info ("发表情图消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
 	}
 
@@ -1107,13 +1107,13 @@ logger.info ("发表情图消息 WebWeChatSendEmotionMessage: " + sMediaID);
 	}
 	public static JsonNode WebWeChatSendApplicationMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("发应用程序 (如：上传文件) 消息 WebWeChatSendApplicationMessage: " + sMediaID);
+logger.info ("发应用程序 (如：上传文件) 消息，媒体 ID: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, sMediaID);
 	}
 
 	public static JsonNode WebWeChatUploadMedia (File f)
 	{
-logger.info ("上传媒体/上传文件 WebWeChatUploadMedia: " + f);
+logger.info ("上传媒体/上传文件: " + f);
 		String sURL = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
 
 		// OPTIONS sURL :
@@ -1129,12 +1129,12 @@ logger.info ("上传媒体/上传文件 WebWeChatUploadMedia: " + f);
 
 	public static File WebWeChatGetMedia (String sSessionKey, String sAPI, String sMsgID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-logger.fine ("获取媒体/获取文件 WebWeChatGetMedia …");
+logger.fine ("获取媒体/获取文件 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/" + sAPI + "?" + (StringUtils.equalsIgnoreCase (sAPI, "webwxgetmsgimg") ? "MsgId" : "msgid") + "=" + sMsgID + "&skey=" + URLEncoder.encode (sSessionKey, utf8);
 		String sMediaFileName = mediaFilesDirectory + "/" + sMsgID;
 		File fMediaFile = null;
 
-logger.fine ("获取 WebWeChatGetMedia 的 URL (api = " + sAPI + ")");
+logger.fine ("WebWeChatGetMedia 的 URL (api = " + sAPI + ")");
 logger.fine ("	" + sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
@@ -1173,29 +1173,29 @@ logger.info ("获取了 " + nBytes + " 字节的数据");
 	}
 	public static File WebWeChatGetImage (String sSessionKey, String sMsgID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-logger.info ("获取图片 WebWeChatGetImage：" + sMsgID);
+logger.info ("获取图片，MsgID: " + sMsgID);
 		return WebWeChatGetMedia (sSessionKey, "webwxgetmsgimg", sMsgID);
 	}
 	public static File WebWeChatGetVoice (String sSessionKey, String sMsgID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-logger.info ("获取音频 WebWeChatGetVoice：" + sMsgID);
+logger.info ("获取音频，msgid: " + sMsgID);
 		return WebWeChatGetMedia (sSessionKey, "webwxgetvoice", sMsgID);
 	}
 	public static File WebWeChatGetVideo (String sSessionKey, String sMsgID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-logger.info ("获取视频 WebWeChatGetVideo：" + sMsgID);
+logger.info ("获取视频, msgid: " + sMsgID);
 		return WebWeChatGetMedia (sSessionKey, "webwxgetvideo", sMsgID);
 	}
 
 	public static File WebWeChatGetMedia2 (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sAccountHash, String sAPI, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-logger.info ("获取媒体/获取文件 WebWeChatGetMedia2：" + sMediaID);
+logger.info ("获取媒体/获取文件，媒体 ID: " + sMediaID);
 		//             https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=********************&mediaid=*********&filename=*******&fromuser=2100343515&pass_ticket=********&webwx_data_ticket=*****
 		String sURL = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=" + sAccountHash + "&mediaid=" + sMediaID + "&skey=" + URLEncoder.encode (sSessionKey, utf8);
 		String sMediaFileName = mediaFilesDirectory + "/" + sMediaID;
 		File fMediaFile = null;
 
-logger.fine ("获取 WebWeChatGetMedia2 的 URL");
+logger.fine ("WebWeChatGetMedia2 的 URL");
 logger.fine ("	" + sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
@@ -1327,7 +1327,7 @@ logger.fine ("	" + fMediaFile);
 						engine.Stop ();
 					}
 					else if (StringUtils.equalsIgnoreCase (sCommand, "/quit"))
-					{
+					{	// 单纯退出程序，不注销登录（需要让 session 的缓存保持有效）
 System.err.println ("收到退出命令");
 						engine.Stop ();
 						TimeUnit.MILLISECONDS.sleep (100);
