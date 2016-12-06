@@ -11,14 +11,14 @@ public class net_maclife_wechat_http_Bot_Repeater extends net_maclife_wechat_htt
 	boolean bRepeatMyOwnMessage = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("bot.repeater.repeatMyOwnMessage", "no"), false);
 
 	@Override
-	public int OnTextMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, String sMessage)
+	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, String sMessage)
 	{
-		if (!bRepeatMyOwnMessage && engine.IsMe (sFrom_AccountHash))
+		if (!bRepeatMyOwnMessage && engine.IsMe (sFrom_EncryptedAccount))
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 		try
 		{
-			engine.SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sMessage);
+			engine.SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, sMessage);
 		}
 		catch (Exception e)
 		{

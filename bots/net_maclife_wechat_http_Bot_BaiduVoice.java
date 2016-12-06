@@ -89,7 +89,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 	}
 
 	@Override
-	public int OnVoiceMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	public int OnVoiceMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -143,7 +143,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 			{
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 			}
-			ProcessSpeechRecognition (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+			ProcessSpeechRecognition (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
 
 		}
 		catch (Exception e)
@@ -154,7 +154,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 	}
 
 	@Override
-	public int OnVideoMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	public int OnVideoMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -166,7 +166,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 			{
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 			}
-			ProcessSpeechRecognition (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+			ProcessSpeechRecognition (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
 
 		}
 		catch (Exception e)
@@ -178,7 +178,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
-	int ProcessSpeechRecognition (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	int ProcessSpeechRecognition (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		String sAccessToken = GetBaiduAccessToken ();
 		if (StringUtils.isEmpty (sAccessToken))
@@ -215,7 +215,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 					JsonNode jsonResults = jsonNode.get ("result");
 					if (jsonResults.size () == 1)
 					{
-						SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sFrom_NickName + " 说道:\n" + jsonResults.get (0).asText ());
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, sFrom_NickName + " 说道:\n" + jsonResults.get (0).asText ());
 						return
 							net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 							| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -229,31 +229,31 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 						sb.append (jsonResults.get (i).asText ());
 						sb.append ("\n");
 					}
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sFrom_NickName + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, sFrom_NickName + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
 					return
 						net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 						| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					//break;
 				case 3300:
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "输入参数不正确");
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "输入参数不正确");
 					break;
 				case 3301:
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "识别错误");
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "识别错误");
 					break;
 				case 3302:
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "验证失败");
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "验证失败");
 					break;
 				case 3303:
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "语音服务器后端问题");
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "语音服务器后端问题");
 					break;
 				case 3304:
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "请求 GPS 过大，超过限额");
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "请求 GPS 过大，超过限额");
 					break;
 				case 3305:
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "产品线当前日请求数超过限额");
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "产品线当前日请求数超过限额");
 					break;
 				default:
-					SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, "听不清 " + sFrom_NickName + " 说了些啥: " + err_msg);
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "听不清 " + sFrom_NickName + " 说了些啥: " + err_msg);
 					break;
 			}
 		}

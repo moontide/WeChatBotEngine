@@ -454,7 +454,7 @@ logger.fine ("	" + node);
 		sb.append ("昵称: ");
 		sb.append (GetJSONText (jsonUser, "NickName"));
 		sb.append ("\n");
-		sb.append ("本次会话帐号的 Hash: ");
+		sb.append ("本次会话的加密帐号: ");
 		sb.append (GetJSONText (jsonUser, "UserName"));
 		sb.append ("\n");
 		sb.append ("最近联系人数量: ");
@@ -505,18 +505,18 @@ logger.info (sb.toString ());
 		return System.currentTimeMillis () * 10000 + (nRecycledMessageID ++);
 	}
 
-	public static String MakeFullStatusNotifyRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccountHashInThisSession)
+	public static String MakeFullStatusNotifyRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyEncryptedAccountInThisSession)
 	{
 		return
 		"{\n" +
 		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Code\": 3,\n" +
-		"	\"FromUserName\": \"" + sMyAccountHashInThisSession + "\",\n" +
-		"	\"ToUserName\": \"" + sMyAccountHashInThisSession + "\",\n" +
+		"	\"FromUserName\": \"" + sMyEncryptedAccountInThisSession + "\",\n" +
+		"	\"ToUserName\": \"" + sMyEncryptedAccountInThisSession + "\",\n" +
 		"	\"ClientMsgId\": " + GenerateLocalMessageID () + "\n" +
 		"}\n";
 	}
-	public static JsonNode WebWeChatStatusNotify (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccountHashInThisSession) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatStatusNotify (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyEncryptedAccountInThisSession) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("开启状态通知 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify?lang=zh_CN&pass_ticket=" + sPassTicket;
@@ -528,7 +528,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息头 (Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
 
-		String sRequestBody_JSONString = MakeFullStatusNotifyRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccountHashInThisSession);
+		String sRequestBody_JSONString = MakeFullStatusNotifyRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyEncryptedAccountInThisSession);
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
@@ -601,9 +601,9 @@ logger.info (sb.toString ());
 		for (int i=0; i<jsonMemberList.size (); i++)
 		{
 			JsonNode jsonContact = jsonMemberList.get (i);
-			String sUserHashID = GetJSONText (jsonContact, "UserName");
-			if (IsRoomAccount (sUserHashID))
-				listRoomIDs.add (sUserHashID);
+			String sUserEncryptedAccount = GetJSONText (jsonContact, "UserName");
+			if (IsRoomAccount (sUserEncryptedAccount))
+				listRoomIDs.add (sUserEncryptedAccount);
 		}
 		return listRoomIDs;
 	}
@@ -694,16 +694,16 @@ logger.info (sb.toString ());
 
 	/**
 	 * 从 WebWeChatGetContacts 返回的 JsonNode 中的 MemberList 中找出符合条件的联系人。
-	 * 只要指定了 sAccountHashInASession，就会搜到唯一一个联系人（除非给出的 ID 不正确），
-	 * 如果没指定 sAccountHashInASession (null 或空字符串)，则尽可能全部指定 sAlias、sRemarkName、sNickName，以便更精确的匹配联系人。
+	 * 只要指定了 sEncryptedAccountInASession，就会搜到唯一一个联系人（除非给出的 ID 不正确），
+	 * 如果没指定 sEncryptedAccountInASession (null 或空字符串)，则尽可能全部指定 sAlias、sRemarkName、sNickName，以便更精确的匹配联系人。
 	 * @param jsonMemberList
-	 * @param sAccountHashInASession 类似  @********** filehelper weixin 等 ID，可以唯一对应一个联系人。最高优先级。
+	 * @param sEncryptedAccountInASession 类似  @********** filehelper weixin 等 ID，可以唯一对应一个联系人。最高优先级。
 	 * @param sAliasAccount 自定义帐号。如果 UserIDInThisSession 为空，则尝试根据 sAlias 获取。次优先级。
 	 * @param sRemarkName 备注名。如果 Alias 也为空，则根据备注名称获取。再次优先级。
 	 * @param sNickName 昵称。如果 Alias 也为空，则根据昵称获取。这个优先级在最后，因为，用户自己更改昵称的情况应该比前面的更常见，导致不确定性更容易出现。
 	 * @return 搜索到的联系人的 JsonNode 列表。正常情况下应该为 1 个，但也可能为空，也可能为多个。
 	 */
-	public static List<JsonNode> SearchForContacts (JsonNode jsonMemberList, String sAccountHashInASession, String sAliasAccount, String sRemarkName, String sNickName)
+	public static List<JsonNode> SearchForContacts (JsonNode jsonMemberList, String sEncryptedAccountInASession, String sAliasAccount, String sRemarkName, String sNickName)
 	{
 		List<JsonNode> listUsersMatched = new ArrayList <JsonNode> ();
 		JsonNode jsonUser = null;
@@ -711,10 +711,10 @@ logger.info (sb.toString ());
 		{
 			JsonNode node = jsonMemberList.get (i);
 
-			if (StringUtils.isNotEmpty (sAccountHashInASession))
+			if (StringUtils.isNotEmpty (sEncryptedAccountInASession))
 			{
 				String sTemp = GetJSONText (node, "UserName");
-				if (StringUtils.equalsIgnoreCase (sAccountHashInASession, sTemp))
+				if (StringUtils.equalsIgnoreCase (sEncryptedAccountInASession, sTemp))
 				{
 					//jsonUser = node;
 					listUsersMatched.add (node);
@@ -770,15 +770,15 @@ logger.info (sb.toString ());
 	/**
 	 * 查找
 	 * @param jsonMemberList
-	 * @param sAccountHashInThisSession
+	 * @param sEncryptedAccountInThisSession
 	 * @param sAlias
 	 * @param sRemarkName
 	 * @param sNickName
 	 * @return
 	 */
-	public static JsonNode SearchForSingleContact (JsonNode jsonMemberList, String sAccountHashInThisSession, String sAlias, String sRemarkName, String sNickName)
+	public static JsonNode SearchForSingleContact (JsonNode jsonMemberList, String sEncryptedAccountInThisSession, String sAlias, String sRemarkName, String sNickName)
 	{
-		List<JsonNode> listUsers = SearchForContacts (jsonMemberList, sAccountHashInThisSession, sAlias, sRemarkName, sNickName);
+		List<JsonNode> listUsers = SearchForContacts (jsonMemberList, sEncryptedAccountInThisSession, sAlias, sRemarkName, sNickName);
 		return listUsers.size ()==0 ? null : listUsers.get (0);
 	}
 
@@ -973,7 +973,7 @@ logger.fine ("\n" + sContent);
 		//
 	}
 
-	public static JsonNode WebWeChatSendMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, int nMessageType, Object oMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_EncryptedAccount, String sTo_EncryptedAccount, int nMessageType, Object oMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.fine ("发消息 WebWeChatSendMessage …");
 		String sURL = null;
@@ -985,19 +985,19 @@ logger.fine ("发消息 WebWeChatSendMessage …");
 		{
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullTextMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				sRequestBody_JSONString = MakeFullTextMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_EncryptedAccount, sTo_EncryptedAccount, (String)oMessage);
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_EncryptedAccount, sTo_EncryptedAccount, (String)oMessage);
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullApplicationMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				sRequestBody_JSONString = MakeFullApplicationMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_EncryptedAccount, sTo_EncryptedAccount, (String)oMessage);
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullEmotionMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_AccountHash, sTo_AccountHash, (String)oMessage);
+				sRequestBody_JSONString = MakeFullEmotionMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_EncryptedAccount, sTo_EncryptedAccount, (String)oMessage);
 				break;
 			default:
 				break;
@@ -1033,10 +1033,10 @@ logger.fine ("\n" + node);
 		"	}\n" +
 		"}\n";
 	}
-	public static JsonNode WebWeChatSendTextMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendTextMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_EncryptedAccount, String sTo_EncryptedAccount, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发文本消息: " + sMessage);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
+		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_EncryptedAccount, sTo_EncryptedAccount, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
 	}
 
 	public static String MakeFullImageMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
@@ -1057,10 +1057,10 @@ logger.info ("发文本消息: " + sMessage);
 		"	\"Scene\": 0\n" +
 		"}\n";
 	}
-	public static JsonNode WebWeChatSendImageMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendImageMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_EncryptedAccount, String sTo_EncryptedAccount, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发图片消息: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID);
+		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_EncryptedAccount, sTo_EncryptedAccount, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID);
 	}
 
 	public static String MakeFullEmotionMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
@@ -1082,10 +1082,10 @@ logger.info ("发图片消息: " + sMediaID);
 		"	\"Scene\": 0\n" +
 		"}\n";
 	}
-	public static JsonNode WebWeChatSendEmotionMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendEmotionMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_EncryptedAccount, String sTo_EncryptedAccount, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发表情图消息: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
+		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_EncryptedAccount, sTo_EncryptedAccount, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
 	}
 
 	public static String MakeFullApplicationMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMessage)
@@ -1105,10 +1105,10 @@ logger.info ("发表情图消息: " + sMediaID);
 		"	}\n" +
 		"}\n";
 	}
-	public static JsonNode WebWeChatSendApplicationMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_AccountHash, String sTo_AccountHash, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendApplicationMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_EncryptedAccount, String sTo_EncryptedAccount, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发应用程序 (如：上传文件) 消息，媒体 ID: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_AccountHash, sTo_AccountHash, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, sMediaID);
+		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_EncryptedAccount, sTo_EncryptedAccount, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, sMediaID);
 	}
 
 	public static JsonNode WebWeChatUploadMedia (File f)
@@ -1187,11 +1187,11 @@ logger.info ("获取视频, msgid: " + sMsgID);
 		return WebWeChatGetMedia (sSessionKey, "webwxgetvideo", sMsgID);
 	}
 
-	public static File WebWeChatGetMedia2 (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sAccountHash, String sAPI, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static File WebWeChatGetMedia2 (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sEncryptedAccount, String sAPI, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("获取媒体/获取文件，媒体 ID: " + sMediaID);
 		//             https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=********************&mediaid=*********&filename=*******&fromuser=2100343515&pass_ticket=********&webwx_data_ticket=*****
-		String sURL = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=" + sAccountHash + "&mediaid=" + sMediaID + "&skey=" + URLEncoder.encode (sSessionKey, utf8);
+		String sURL = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=" + sEncryptedAccount + "&mediaid=" + sMediaID + "&skey=" + URLEncoder.encode (sSessionKey, utf8);
 		String sMediaFileName = mediaFilesDirectory + "/" + sMediaID;
 		File fMediaFile = null;
 
@@ -1230,13 +1230,13 @@ logger.fine ("	" + fMediaFile);
 	}
 
 	/**
-	 * 根据帐号 Hash 来判断是否是聊天室帐号
-	 * @param sAccountHash 帐号 Hash
+	 * 根据加密的帐号来判断是否是聊天室帐号
+	 * @param sEncryptedAccount 加密的帐号
 	 * @return 如果帐号以 <code>@@</code> 开头，则返回 <code>true</code>，否则返回 <code>false</code>
 	 */
-	public static boolean IsRoomAccount (String sAccountHash)
+	public static boolean IsRoomAccount (String sEncryptedAccount)
 	{
-		return StringUtils.startsWith (sAccountHash, "@@");
+		return StringUtils.startsWith (sEncryptedAccount, "@@");
 	}
 
 	/**

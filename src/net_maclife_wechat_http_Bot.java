@@ -52,17 +52,17 @@ public abstract class net_maclife_wechat_http_Bot
 	//
 	// 对 engine.BotSendTextMessage 的封装，免得每次都传递 Bot 参数
 	//
-	public void SendTextMessage (String sTo_RoomAccountHash, String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		engine.BotSendTextMessage (this, sTo_RoomAccountHash, sTo_AccountHash, sTo_NickName, sMessage);
+		engine.BotSendTextMessage (this, sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage);
 	}
-	public void SendTextMessage (String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		engine.BotSendTextMessage (this, sTo_AccountHash, sTo_NickName, sMessage);
+		engine.BotSendTextMessage (this, sTo_EncryptedAccount, sTo_NickName, sMessage);
 	}
-	public void SendTextMessage (String sTo_AccountHash, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		engine.BotSendTextMessage (this, sTo_AccountHash, sMessage);
+		engine.BotSendTextMessage (this, sTo_EncryptedAccount, sMessage);
 	}
 
 	/**
@@ -107,7 +107,7 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	// “消息收到”事件总入口
 	////////////////////////////////
-	public int OnMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, JsonNode jsonMessage)
+	public int OnMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -119,23 +119,23 @@ public abstract class net_maclife_wechat_http_Bot
 	 *
 	 * @param sMessage
 	 */
-	public int OnTextMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, String sMessage)
+	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, String sMessage)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
-	public int OnImageMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	public int OnImageMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
-	public int OnVoiceMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	public int OnVoiceMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
-	public int OnVideoMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	public int OnVideoMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
-	public int OnEmotionMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, File fMedia)
+	public int OnEmotionMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}

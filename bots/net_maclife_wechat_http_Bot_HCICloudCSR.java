@@ -27,18 +27,18 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 	String HCICLOUD_CHARSET_ENCODING = net_maclife_wechat_http_BotApp.utf8;
 
 	@Override
-	public int OnTextMessageReceived (String sFrom_RoomAccountHash, String sFrom_RoomNickName, String sFrom_AccountHash, String sFrom_NickName, String sTo_AccountHash, String sTo_NickName, String sMessage)
+	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, String sMessage)
 	{
 		try
 		{
-			JsonNode jsonCSRResponse = GetCSRReponse (sFrom_AccountHash, sMessage);
+			JsonNode jsonCSRResponse = GetCSRReponse (sFrom_EncryptedAccount, sMessage);
 			if (jsonCSRResponse == null)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 			String sResponse = ParseCSRResponse (jsonCSRResponse);
 			if (StringUtils.isNotEmpty (sResponse))
 			{
-				SendTextMessage (sFrom_RoomAccountHash, sFrom_AccountHash, sFrom_NickName, sResponse);
+				SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, sResponse);
 			}
 		}
 		catch (Exception e)
@@ -127,22 +127,22 @@ net_maclife_wechat_http_BotApp.logger.finer ("\n" + jsonCSRResponse);
 		return sResult;
 	}
 
-	public JsonNode GetCSRReponse (String sFrom_AccountHash, String sInput)
+	public JsonNode GetCSRReponse (String sFrom_EncryptedAccount, String sInput)
 	{
 		try
 		{
 			Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 			mapRequestHeaders.put ("Content-Type", "application/json");
 
-			if (sFrom_AccountHash.length () > 40)
-				sFrom_AccountHash = StringUtils.left (sFrom_AccountHash, 40);
+			if (sFrom_EncryptedAccount.length () > 40)
+				sFrom_EncryptedAccount = StringUtils.left (sFrom_EncryptedAccount, 40);
 
 			String sRequestBody_JSONString =
 				"{\n" +
 				"	\"protocolId\": 5,\n" +
 				"	\"robotHashCode\": \"" + HCICLOUD_CSR_ROBOT_ID + "\",\n" +
 				"	\"platformConnType\": \"" + HCICLOUD_CSR_ROBOT_CHANNEL_NUMBER + "\",\n" +
-				"	\"userId\": \"" + sFrom_AccountHash + "\",\n" +
+				"	\"userId\": \"" + sFrom_EncryptedAccount + "\",\n" +
 				"	\"talkerId\": \"" + HCICLOUD_CSR_TALKER_ID + "\",\n" +
 				"	\"receiverId\": \"" + HCICLOUD_CSR_RECEIVER_ID + "\",\n" +
 				"	\"appKey\": \"" + HCICLOUD_APP_KEY + "\",\n" +
@@ -157,7 +157,7 @@ net_maclife_wechat_http_BotApp.logger.finer ("\n" + sRequestBody_JSONString);
 			// 如果不传递 RequestHeader，则返回：“访问来源变量未定义”
 			// {"aiResult":null,"answerTypeId":1,"protocolId":6,"result":0,"sendTime":null,"serviceLogId":null,"singleNode":{"answerMsg":"访问来源变量未定义","cmd":null,"isRichText":0,"list":null,"question":null,"score":0.0,"standardQuestion":"","standardQuestionId":0},"vagueNode":null}
 
-			// 如果用微信的帐号 Hash 当 userId 传递，则返回：“访问来源名过长”
+			// 如果用微信的加密帐号当 userId 传递，则返回：“访问来源名过长”
 			// {"aiResult":null,"answerTypeId":1,"protocolId":6,"result":0,"sendTime":null,"serviceLogId":null,"singleNode":{"answerMsg":"访问来源名过长","cmd":null,"isRichText":0,"list":null,"question":null,"score":0.0,"standardQuestion":"","standardQuestionId":0},"vagueNode":null}
 
 			InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (HCICLOUD_CSR_URL__Query, mapRequestHeaders, sRequestBody_JSONString.getBytes (HCICLOUD_CHARSET_ENCODING));

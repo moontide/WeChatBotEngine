@@ -56,7 +56,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	String sPassTicket = null;
 
 	JsonNode jsonMe       = null;
-	String sMyAccountHashInThisSession = null;
+	String sMyEncryptedAccountInThisSession = null;
 	String sMyAliasName   = null;
 	String sMyNickName    = null;
 	String sMyRemarkName  = null;
@@ -206,9 +206,9 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 		}
 	}
 
-	public boolean IsMe (String  sAccountHash)
+	public boolean IsMe (String  sEncryptedAccount)
 	{
-		return StringUtils.equalsIgnoreCase (sMyAccountHashInThisSession, sAccountHash);
+		return StringUtils.equalsIgnoreCase (sMyEncryptedAccountInThisSession, sEncryptedAccount);
 	}
 
 	JsonNode Init () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
@@ -218,7 +218,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 
 	JsonNode StatusNotify () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatStatusNotify (sUserID, sSessionID, sSessionKey, sPassTicket, sMyAccountHashInThisSession);
+		return net_maclife_wechat_http_BotApp.WebWeChatStatusNotify (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession);
 	}
 
 	JsonNode GetContacts () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
@@ -250,70 +250,70 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 		}
 	}
 
-	public void SendTextMessage (String sTo_RoomAccountHash, String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.text.appendTimestamp", "yes")))
 		{
 			sMessage = sMessage + "\n" + new java.sql.Timestamp (System.currentTimeMillis ());
 		}
-		if (StringUtils.isEmpty (sTo_RoomAccountHash))
+		if (StringUtils.isEmpty (sTo_EncryptedRoomAccount))
 		{	// 私信，直接发送
-			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyAccountHashInThisSession, sTo_AccountHash, sMessage);
+			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sTo_EncryptedAccount, sMessage);
 		}
 		else
 		{	// 聊天室，需要做一下处理： @一下发送人，然后是消息
-			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyAccountHashInThisSession, sTo_RoomAccountHash, (StringUtils.isNotEmpty (sTo_NickName) ? "@" + sTo_NickName + "\n" : "") + sMessage);
+			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sTo_EncryptedRoomAccount, (StringUtils.isNotEmpty (sTo_NickName) ? "@" + sTo_NickName + "\n" : "") + sMessage);
 		}
 	}
-	public void SendTextMessage (String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		SendTextMessage (null, sTo_AccountHash, sTo_NickName, sMessage);
+		SendTextMessage (null, sTo_EncryptedAccount, sTo_NickName, sMessage);
 	}
-	public void SendTextMessage (String sTo_AccountHash, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		SendTextMessage (null, sTo_AccountHash, null, sMessage);
+		SendTextMessage (null, sTo_EncryptedAccount, null, sMessage);
 	}
 
-	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_RoomAccountHash, String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.text.appendBotName", "yes")))
 		{
 			sMessage = sMessage + "\n-- " + bot.GetName ();
 		}
-		SendTextMessage (sTo_RoomAccountHash, sTo_AccountHash, sTo_NickName, sMessage);
+		SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage);
 	}
-	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_AccountHash, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		BotSendTextMessage (bot, null, sTo_AccountHash, sTo_NickName, sMessage);
+		BotSendTextMessage (bot, null, sTo_EncryptedAccount, sTo_NickName, sMessage);
 	}
-	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_AccountHash, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		BotSendTextMessage (bot, null, sTo_AccountHash, null, sMessage);
+		BotSendTextMessage (bot, null, sTo_EncryptedAccount, null, sMessage);
 	}
 
-	public List<JsonNode> SearchForContacts (String sAccountHashInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
+	public List<JsonNode> SearchForContacts (String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
 	{
-		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonContacts.get ("MemberList"), sAccountHashInThisSession, sAliasAccount, sRemarkName, sNickName);
+		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonContacts.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
 	}
-	public JsonNode SearchForSingleContact (String sAccountHashInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
+	public JsonNode SearchForSingleContact (String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
 	{
-		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonContacts.get ("MemberList"), sAccountHashInThisSession, sAliasAccount, sRemarkName, sNickName);
+		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonContacts.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
 	}
 
-	public JsonNode GetRoomByRoomAccountHash (String sRoomAccountHashInThisSession)
+	public JsonNode GetRoomByRoomEncryptedAccount (String sRoomEncryptedAccountInThisSession)
 	{
 		JsonNode jsonRooms = jsonRoomContacts.get ("ContactList");
 		JsonNode jsonRoom = null;
 		for (int i=0; i<jsonRooms.size (); i++)
 		{
 			jsonRoom = jsonRooms.get (i);
-			if (StringUtils.equalsIgnoreCase (sRoomAccountHashInThisSession, net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "UserName")))
+			if (StringUtils.equalsIgnoreCase (sRoomEncryptedAccountInThisSession, net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "UserName")))
 				return jsonRoom;
 		}
 
 		// 如果找不到聊天室，则尝试重新获取一次
 		List<String> listRoomIDs = new ArrayList<String> ();
-		listRoomIDs.add (sRoomAccountHashInThisSession);
+		listRoomIDs.add (sRoomEncryptedAccountInThisSession);
 		try
 		{
 			JsonNode jsonThisRoomContact = net_maclife_wechat_http_BotApp.WebWeChatGetRoomContacts (sUserID, sSessionID, sSessionKey, sPassTicket, listRoomIDs);
@@ -331,15 +331,15 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 		}
 		return null;
 	}
-	public List<JsonNode> SearchForContactsInRoom (String sRoomAccountHashInThisSession, String sAccountHashInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
+	public List<JsonNode> SearchForContactsInRoom (String sRoomEncryptedAccountInThisSession, String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
 	{
-		JsonNode jsonRoom = GetRoomByRoomAccountHash (sRoomAccountHashInThisSession);
-		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonRoom.get ("MemberList"), sAccountHashInThisSession, sAliasAccount, sRemarkName, sNickName);
+		JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sRoomEncryptedAccountInThisSession);
+		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonRoom.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
 	}
-	public JsonNode SearchForSingleContactInRoom (String sRoomAccountHashInThisSession, String sAccountHashInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
+	public JsonNode SearchForSingleContactInRoom (String sRoomEncryptedAccountInThisSession, String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
 	{
-		JsonNode jsonRoom = GetRoomByRoomAccountHash (sRoomAccountHashInThisSession);
-		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonRoom.get ("MemberList"), sAccountHashInThisSession, sAliasAccount, sRemarkName, sNickName);
+		JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sRoomEncryptedAccountInThisSession);
+		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonRoom.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
 	}
 
 	private JsonNode GetSessionCache () throws JsonProcessingException, IOException
@@ -417,7 +417,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 					// 4. 确认登录后，初始化 Web 微信，返回初始信息
 					JsonNode jsonInit = Init ();
 					jsonMe = jsonInit.get ("User");
-					sMyAccountHashInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "UserName");
+					sMyEncryptedAccountInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "UserName");
 					sMyAliasName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "Alias");
 					sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "NickName");
 					JsonNode jsonSyncCheckKeys = jsonInit.get ("SyncKey");
@@ -535,7 +535,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到 " + nAddMsgCount + " 个新�
 			if (isFromRoomOrChannel)
 			{	// 如果是发自聊天室，则从聊天室的成员列表中获取真正的发送人（可能不在自己的联系人内，只能从聊天室成员列表中获取）
 				sRoom = sFrom;
-				JsonNode jsonRoom = GetRoomByRoomAccountHash (sRoom);
+				JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sRoom);
 				sRoomNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "NickName");
 
 				// 找出发送人的 UserID
@@ -571,7 +571,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到 " + nAddMsgCount + " 个新�
 				else
 					sFromNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonFrom, "NickName");
 
-				JsonNode jsonRoom = GetRoomByRoomAccountHash (sTo);
+				JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sTo);
 				sToNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "NickName");
 				if (IsMe (sFrom))
 				{	// 能够收到自己的帐号从其他设备发的消息：发件人是自己、收件人人是聊天室
@@ -601,13 +601,13 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 					break;
 				case WECHAT_MSG_TYPE__IMAGE:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-					OnImageMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					OnImageMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__APP:
 					break;
 				case WECHAT_MSG_TYPE__VOICE:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVoice (sSessionKey, sMsgID);
-					OnVoiceMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					OnVoiceMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__VERIFY_MSG:
 					break;
@@ -619,7 +619,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 					break;
 				case WECHAT_MSG_TYPE__EMOTION:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-					OnEmotionMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					OnEmotionMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__GPS_POSITION:
 					break;
@@ -635,7 +635,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 					break;
 				case WECHAT_MSG_TYPE__SHORT_VIDEO:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVideo (sSessionKey, sMsgID);
-					OnVideoMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, fMedia);
+					OnVideoMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__SYSTEM_NOTICE:
 					break;
@@ -676,39 +676,39 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 		}
 	}
 
-	void OnTextMessageReceived (final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	void OnTextMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sMessage)
 	{
-		DispatchEvent ("OnTextMessage", sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, sMessage);
+		DispatchEvent ("OnTextMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, sMessage);
 	}
 
-	void OnEmotionMessageReceived (final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	void OnEmotionMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
 	{
-		DispatchEvent ("OnEmotionMessage", sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+		DispatchEvent ("OnEmotionMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
 	}
 
-	void OnImageMessageReceived (final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	void OnImageMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
 	{
-		DispatchEvent ("OnImageMessage", sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+		DispatchEvent ("OnImageMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
 	}
 
-	void OnVoiceMessageReceived (final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	void OnVoiceMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
 	{
-		DispatchEvent ("OnVoiceMessage", sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+		DispatchEvent ("OnVoiceMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
 	}
 
-	void OnVideoMessageReceived (final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	void OnVideoMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
 	{
-		DispatchEvent ("OnVideoMessage", sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, fMedia);
+		DispatchEvent ("OnVideoMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
 	}
 
-	void DispatchEvent (final String sType, final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final Object data)
+	void DispatchEvent (final String sType, final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final Object data)
 	{
 		int rc = 0;
 		for (final net_maclife_wechat_http_Bot bot : listBots)
 		{
 			if (! bMultithread)
 			{	// 单线程或共享 Engine 线程时，才会有 Bot 链的处理机制。
-				rc = DoDispatch (bot, sType, sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, data);
+				rc = DoDispatch (bot, sType, sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, data);
 				if ((rc & BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE) != BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE)
 					break;
 			}
@@ -721,7 +721,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 						@Override
 						public void run ()
 						{
-							DoDispatch (bot, sType, sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, data);
+							DoDispatch (bot, sType, sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, data);
 						}
 					}
 				);
@@ -729,7 +729,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 		}
 	}
 
-	int DoDispatch (final net_maclife_wechat_http_Bot bot, final String sType, final String sFrom_RoomAccountHash, final String sFrom_RoomNickName, final String sFrom_AccountHash, final String sFrom_NickName, final String sTo_AccountHash, final String sTo_NickName, final Object data)
+	int DoDispatch (final net_maclife_wechat_http_Bot bot, final String sType, final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final Object data)
 	{
 		try
 		{
@@ -745,22 +745,22 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 					return bot.OnShutdown ();
 					//break;
 				case "onmessage":
-					return bot.OnMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (JsonNode)data);
+					return bot.OnMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (JsonNode)data);
 					//break;
 				case "ontextmessage":
-					return bot.OnTextMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (String)data);
+					return bot.OnTextMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (String)data);
 					//break;
 				case "onimagemessage":
-					return bot.OnImageMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					return bot.OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
 					//break;
 				case "onvoicemessage":
-					return bot.OnVoiceMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					return bot.OnVoiceMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
 					//break;
 				case "onvideomessage":
-					return bot.OnVideoMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					return bot.OnVideoMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
 					//break;
 				case "onemotionmessage":
-					return bot.OnEmotionMessageReceived (sFrom_RoomAccountHash, sFrom_RoomNickName, sFrom_AccountHash, sFrom_NickName, sTo_AccountHash, sTo_NickName, (File)data);
+					return bot.OnEmotionMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
 					//break;
 				default:
 					break;
