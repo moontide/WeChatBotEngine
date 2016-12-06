@@ -80,6 +80,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 					sb.append (String.format ("%02X", arrayMAC[i]));
 				}
 				sMACAddress = sb.toString ();
+net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 			}
 		}
 		catch (Exception e)
@@ -89,7 +90,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 	}
 
 	@Override
-	public int OnVoiceMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
+	public int OnVoiceMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sContent, File fMedia)
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -154,7 +155,7 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 	}
 
 	@Override
-	public int OnVideoMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, File fMedia)
+	public int OnVideoMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sContent, File fMedia)
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;

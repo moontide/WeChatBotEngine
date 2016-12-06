@@ -14,6 +14,8 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
+import nu.xom.*;
+
 class net_maclife_wechat_http_BotEngine implements Runnable
 {
 	public static String sSessionCacheFileName = net_maclife_wechat_http_BotApp.cacheDirectory + File.separator + "wechat-session-cache.json";
@@ -25,19 +27,22 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	public static final int BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED = 1;	// 标志位： 消息是否已经处理过。如果此位为 0，则表示未处理过。
 	public static final int BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE  = 2;	// 标志位： 消息是否让后面的 Bot 继续处理。如果此位为 0，则表示不让后面的 Bot 继续处理。
 
+	// 消息类型列表
+	// 参考自: https://github.com/Urinx/WeixinBot/blob/master/README.md ，但做了一些改动
+	//
 	public static final int WECHAT_MSG_TYPE__TEXT                  = 1;
 	public static final int WECHAT_MSG_TYPE__IMAGE                 = 3;
-	public static final int WECHAT_MSG_TYPE__APP                   = 6;
+	public static final int WECHAT_MSG_TYPE__APP                   = 6;	// 上面的参考中没有的
 	public static final int WECHAT_MSG_TYPE__VOICE                 = 34;
 	public static final int WECHAT_MSG_TYPE__VERIFY_MSG            = 37;
 	public static final int WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG   = 40;
-	public static final int WECHAT_MSG_TYPE__VCARD                 = 42;
+	public static final int WECHAT_MSG_TYPE__WECHAT_VCARD          = 42;
 	public static final int WECHAT_MSG_TYPE__VIDEO_CALL            = 43;
 	public static final int WECHAT_MSG_TYPE__EMOTION               = 47;
 	public static final int WECHAT_MSG_TYPE__GPS_POSITION          = 48;
 	public static final int WECHAT_MSG_TYPE__URL                   = 49;
 	public static final int WECHAT_MSG_TYPE__VOIP_MSG              = 50;
-	public static final int WECHAT_MSG_TYPE__INIT                  = 51;
+	public static final int WECHAT_MSG_TYPE__OPERATION             = 51;	// 上面的参考文档认为是初始化消息，我这里看起来更像是一个“操作”消息
 	public static final int WECHAT_MSG_TYPE__VOIP_NOTIFY           = 52;
 	public static final int WECHAT_MSG_TYPE__VOIP_INVITE           = 53;
 	public static final int WECHAT_MSG_TYPE__SHORT_VIDEO           = 62;
@@ -57,9 +62,9 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 
 	JsonNode jsonMe       = null;
 	String sMyEncryptedAccountInThisSession = null;
-	String sMyAliasName   = null;
-	String sMyNickName    = null;
-	String sMyRemarkName  = null;
+	String sMyCustomAccount   = null;	// 微信号
+	String sMyNickName    = null;	// 昵称
+	//String sMyRemarkName  = null;
 	JsonNode jsonContacts = null;
 	JsonNode jsonRoomContacts = null;
 
@@ -348,6 +353,30 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 		return net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (fSessionCache);
 	}
 
+	private void SaveSessionCache (File fSessionCache, JsonNode jsonSyncCheckKey)
+	{
+		try
+		{
+			String sSessionCache_JSONString =
+				"{\n\tUserID: \"" + sUserID + "\"" +
+				",\n	SessionID: \"" + sSessionID + "\"" +
+				",\n	SessionKey: \"" + sSessionKey + "\"" +
+				",\n	PassTicket: \"" + sPassTicket + "\"" +
+				",\n	SyncCheckKeys: " + jsonSyncCheckKey +
+				",\n	EncryptedAccountInThisSession: \"" + sMyEncryptedAccountInThisSession + "\"" +
+				",\n	CustomAccount: \"" + sMyCustomAccount + "\"" +
+				",\n	NickName: \"" + sMyNickName + "\"" +
+				"\n}";
+			OutputStream os = new FileOutputStream (fSessionCache);
+			IOUtils.write (sSessionCache_JSONString, os, net_maclife_wechat_http_BotApp.utf8);
+			os.close ();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+	}
+
 	/**
 	 * Bot 引擎线程： 不断循环尝试登录，直到登录成功。如果登录成功后被踢下线，依旧不断循环尝试登录…… 登录成功后，不断同步消息，直到被踢下线（同上，依旧不断循环尝试登录）
 	 */
@@ -363,6 +392,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 		_outer_loop:
 			while (! Thread.interrupted () && !bStopFlag)
 			{
+				JsonNode jsonSyncCheckKeys = null;
 				try
 				{
 					File fSessionCache = new File (sSessionCacheFileName);
@@ -373,7 +403,11 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 						sSessionID  = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "SessionID");
 						sSessionKey = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "SessionKey");
 						sPassTicket = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "PassTicket");
-net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " + sUserID + "\n	SID = " + sSessionID + "\n	SKEY = " + sSessionKey + "\n	TICKET = " + sPassTicket + "\n");
+						jsonSyncCheckKeys = jsonSessionCache.get ("SyncCheckKeys");
+						sMyEncryptedAccountInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "EncryptedAccountInThisSession");
+						sMyCustomAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "CustomAccount");
+						sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "NickName");
+net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " + sUserID + "\n	SID: " + sSessionID + "\n	SKEY: " + sSessionKey + "\n	TICKET: " + sPassTicket + "\n	EncryptedAccountInThisSession: " + sMyEncryptedAccountInThisSession + "\n	CustomAccount/Alias: " + sMyCustomAccount + "\n	NickName: " + sMyNickName + "\n	SyncCheckKeys: " + jsonSyncCheckKeys + "\n");
 					}
 					else
 					{
@@ -406,21 +440,17 @@ net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " +
 						sSessionKey = (String) mapWaitLoginResult.get ("SessionKey");
 						sPassTicket = (String) mapWaitLoginResult.get ("PassTicket");
 						bSessionExpired = false;
-net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UIN: " + sUserID + "\n	SID = " + sSessionID + "\n	SKEY = " + sSessionKey + "\n	TICKET = " + sPassTicket + "\n");
+net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UIN: " + sUserID + "\n	SID: " + sSessionID + "\n	SKEY: " + sSessionKey + "\n	TICKET: " + sPassTicket + "\n");
 
-						String sSessionCache_JSONString = "{\n\tUserID: \"" + sUserID + "\",\n\tSessionID: \"" + sSessionID + "\",\n\tSessionKey: \"" + sSessionKey + "\",\n\tPassTicket: \"" + sPassTicket + "\"\n}";
-						OutputStream os = new FileOutputStream (fSessionCache);
-						IOUtils.write (sSessionCache_JSONString, os);
-						os.close ();
+						// 4. 确认登录后，初始化 Web 微信，返回初始信息
+						JsonNode jsonInit = Init ();
+						jsonMe = jsonInit.get ("User");
+						sMyEncryptedAccountInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "UserName");
+						sMyCustomAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "Alias");
+						sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "NickName");
+						jsonSyncCheckKeys = jsonInit.get ("SyncKey");
+						SaveSessionCache (fSessionCache, jsonSyncCheckKeys);
 					}
-
-					// 4. 确认登录后，初始化 Web 微信，返回初始信息
-					JsonNode jsonInit = Init ();
-					jsonMe = jsonInit.get ("User");
-					sMyEncryptedAccountInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "UserName");
-					sMyAliasName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "Alias");
-					sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "NickName");
-					JsonNode jsonSyncCheckKeys = jsonInit.get ("SyncKey");
 
 					JsonNode jsonStatusNotify = StatusNotify ();
 
@@ -461,6 +491,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 
 							// 处理“接收”到的（实际是同步获取而来）消息
 							jsonSyncCheckKeys = jsonMessage.get ("SyncCheckKey");	// 新的 SyncCheckKeys
+							SaveSessionCache (fSessionCache, jsonSyncCheckKeys);
 
 							// 处理（实际上，应该交给 Bot 们处理）
 							OnMessageReceived (jsonMessage);
@@ -492,17 +523,17 @@ net_maclife_wechat_http_BotApp.logger.warning ("bot 线程退出");
 	void OnLoggedIn ()
 	{
 		loggedIn = true;
-		DispatchEvent ("OnLoggedIn", null, null, null, null, null, null, null);
+		DispatchEvent ("OnLoggedIn", null, null, null, null, null, null, null, null, null, null);
 	}
 
 	void OnLoggedOut ()
 	{
-		DispatchEvent ("OnLoggedOut", null, null, null, null, null, null, null);
+		DispatchEvent ("OnLoggedOut", null, null, null, null, null, null, null, null, null, null);
 	}
 
 	void OnShutdown ()
 	{
-		DispatchEvent ("OnShutdown", null, null, null, null, null, null, null);
+		DispatchEvent ("OnShutdown", null, null, null, null, null, null, null, null, null, null);
 	}
 
 	void OnMessageReceived (JsonNode jsonMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
@@ -597,29 +628,29 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 			switch (nMsgType)
 			{
 				case WECHAT_MSG_TYPE__TEXT:
-					OnTextMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent);
+					OnTextMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, jsonNode, sContent);
 					break;
 				case WECHAT_MSG_TYPE__IMAGE:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-					OnImageMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
+					OnImageMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, jsonNode, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__APP:
 					break;
 				case WECHAT_MSG_TYPE__VOICE:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVoice (sSessionKey, sMsgID);
-					OnVoiceMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
+					OnVoiceMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, jsonNode, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__VERIFY_MSG:
 					break;
 				case WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG:
 					break;
-				case WECHAT_MSG_TYPE__VCARD:
+				case WECHAT_MSG_TYPE__WECHAT_VCARD:
 					break;
 				case WECHAT_MSG_TYPE__VIDEO_CALL:
 					break;
 				case WECHAT_MSG_TYPE__EMOTION:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-					OnEmotionMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
+					OnEmotionMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, jsonNode, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__GPS_POSITION:
 					break;
@@ -627,7 +658,8 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 					break;
 				case WECHAT_MSG_TYPE__VOIP_MSG:
 					break;
-				case WECHAT_MSG_TYPE__INIT:
+				case WECHAT_MSG_TYPE__OPERATION:
+					OnOperationMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, jsonNode, sContent);
 					break;
 				case WECHAT_MSG_TYPE__VOIP_NOTIFY:
 					break;
@@ -635,7 +667,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 					break;
 				case WECHAT_MSG_TYPE__SHORT_VIDEO:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVideo (sSessionKey, sMsgID);
-					OnVideoMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, sContent, fMedia);
+					OnVideoMessageReceived (sRoom, sRoomNickName, sFrom, sFromNickName, sTo, sToNickName, jsonNode, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__SYSTEM_NOTICE:
 					break;
@@ -650,7 +682,9 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 
 		int nModContactCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "ModContactCount", 0);
 		if (nModContactCount != 0)
-			net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModContactCount + " 个【修改了联系人】信息");
+		{
+net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModContactCount + " 个【修改了联系人】信息");
+		}
 		JsonNode jsonModContactList = jsonMessage.get ("ModContactList");
 		for (i=0; i<nModContactCount; i++)
 		{
@@ -659,7 +693,9 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 
 		int nDelContactCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "DelContactCount", 0);
 		if (nModContactCount != 0)
-			net_maclife_wechat_http_BotApp.logger.info ("收到 " + nDelContactCount + " 个【删除了联系人】信息");
+		{
+net_maclife_wechat_http_BotApp.logger.info ("收到 " + nDelContactCount + " 个【删除了联系人】信息");
+		}
 		JsonNode jsonDelContactList = jsonMessage.get ("DelContactList");
 		for (i=0; i<nDelContactCount; i++)
 		{
@@ -668,7 +704,9 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 
 		int nModChatRoomMemerCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "ModChatRoomMemberCount", 0);
 		if (nModChatRoomMemerCount != 0)
-			net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModChatRoomMemerCount + " 个【聊天室成员列表变更】信息");
+		{
+net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModChatRoomMemerCount + " 个【聊天室成员列表变更】信息");
+		}
 		JsonNode jsonModChatRoomMemerList = jsonMessage.get ("ModChatRoomMemberList");
 		for (i=0; i<nModChatRoomMemerCount; i++)
 		{
@@ -676,39 +714,164 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 		}
 	}
 
-	void OnTextMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sMessage)
+	void OnTextMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonMessage, final String sMessage)
 	{
-		DispatchEvent ("OnTextMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, sMessage);
+		String sURL = net_maclife_wechat_http_BotApp.GetJSONText (jsonMessage, "Url");	// http://apis.map.qq.com/uri/v1/geocoder?coord=纬度,经度
+		if (StringUtils.isNotEmpty (sURL))
+		{
+			//URL url = null;
+			//try
+			//{
+			//	url = new URL (sURL);
+			//	if (StringUtils.equalsIgnoreCase (url.getHost (), "apis.map.qq.com"))
+			//	{	// 地理位置
+			//		// <地理位置名称>: /cgi-bin/mmwebwx-bin/webwxgetpubliclinkimg?url=xxx&msgid=*******&pictype=location
+			//	}
+			//}
+			//catch (MalformedURLException e)
+			//{
+			//	e.printStackTrace();
+			//}
+			final String QQMAP_URL_PREFIX = "http://apis.map.qq.com/uri/v1/geocoder?coord=";
+			if (StringUtils.startsWith (sURL, QQMAP_URL_PREFIX))
+			{
+				String sCoords = StringUtils.substring (sURL, QQMAP_URL_PREFIX.length ());
+				String[] arrayCoords = sCoords.split (",");
+				String sLongitude = arrayCoords [1];
+				String sLatitude = arrayCoords [0];
+
+				String[] arrayContent = sMessage.split (":\\n", 2);
+				String sLocation = arrayContent[0];
+				// arrayContent[1];	// 该信息忽略吧，暂时无用
+				DispatchEvent ("OnGeoLocationMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sLocation, sLongitude, sLatitude);
+				return;
+			}
+		}
+		DispatchEvent ("OnTextMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sMessage, null, null);
 	}
 
-	void OnEmotionMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
+	void OnEmotionMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonMessage, final String sContent, final File fMedia)
 	{
-		DispatchEvent ("OnEmotionMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
+/*
+<msg>
+	<emoji
+		fromusername = "wxid_**************"
+		tousername = "wxid_**************"
+		type="2"
+		idbuffer="media:0_0"
+		md5="85c2e3b767def7d4abc9b709166c6c05"
+		len = "753878"
+		productid=""
+		androidmd5="85c2e3b767def7d4abc9b709166c6c05"
+		androidlen="753878"
+		s60v3md5 = "85c2e3b767def7d4abc9b709166c6c05"
+		s60v3len="753878"
+		s60v5md5 = "85c2e3b767def7d4abc9b709166c6c05"
+		s60v5len="753878"
+		cdnurl = "http://emoji.qpic.cn/wx_emoji/icHGuicAUhag5okZibJNykSkKPyUfiaVkDpt5UTre6qp8eiaWqlYwczIPqA/"	// 这个 url 可以显示图片
+		designerid = ""
+		thumburl = ""
+		encrypturl = "http://emoji.qpic.cn/wx_emoji/J06sWZL5wGv73PIHM84QRZlZtoFPzHVDz5wSH28JnuGKxfMibdHibKdg/"
+		aeskey= "43cc024c68be865cefe166114dd4702d"
+		width= "192"
+		height= "139" >
+	</emoji>
+</msg>
+*/
+		String sImageURL = null;
+		try
+		{
+			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+			Element msg = doc.getRootElement ();
+			sImageURL = msg.getFirstChildElement ("emoji").getAttributeValue ("cdnurl");
+		}
+		catch (ParsingException | IOException e)
+		{
+			e.printStackTrace();
+		}
+		DispatchEvent ("OnEmotionMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, fMedia, sImageURL);
 	}
 
-	void OnImageMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
+	void OnImageMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonMessage, final String sContent, final File fMedia)
 	{
-		DispatchEvent ("OnImageMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
+		DispatchEvent ("OnImageMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, fMedia, null);
 	}
 
-	void OnVoiceMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
+	void OnOperationMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonMessage, final String sContent)
 	{
-		DispatchEvent ("OnVoiceMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
+		String sOperationType = null;
+		String sTargetAccount = null;
+		try
+		{
+			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+			Element msg = doc.getRootElement ();
+			Element op = msg.getFirstChildElement ("op");
+			sOperationType = op.getAttributeValue ("id");
+			switch (sOperationType)
+			{
+				case "2":	// 微信手机端打开一个聊天窗口时收到该类型的消息
+//<msg>
+//	<op id='2'>
+//		<username>未加密的帐号（打开的联系人的帐号）</username>
+//	</op>
+//</msg>
+					sTargetAccount = op.getFirstChildElement ("username").getValue ();
+net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗口，联系人/聊天室的未加密的帐号：" + sTargetAccount);
+					DispatchEvent ("OnChatWindowOpenedMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, sTargetAccount, null);
+					break;
+				case "4":
+//<msg>
+//	<op id='4'>
+//		<username>
+//			// 最近联系的联系人
+//			filehelper,xxx@chatroom,wxid_xxx,xxx,...
+//		</username>
+//		<unreadchatlist>
+//			<chat>
+//				<username>
+//					// 朋友圈
+//					MomentsUnreadMsgStatus
+//				</username>
+//				<lastreadtime>
+//					1454502365
+//				</lastreadtime>
+//			</chat>
+//		</unreadchatlist>
+//		<unreadfunctionlist>
+//			// 未读的功能账号消息，群发助手，漂流瓶等
+//		</unreadfunctionlist>
+//	</op>
+//</msg>
+					sTargetAccount = op.getFirstChildElement ("username").getValue ();
+					break;
+			}
+		}
+		catch (ParsingException | IOException e)
+		{
+			e.printStackTrace();
+		}
+
+		//DispatchEvent ("OnOperationMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, sContent, null, null);
 	}
 
-	void OnVideoMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final File fMedia)
+	void OnVoiceMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonMessage, final String sContent, final File fMedia)
 	{
-		DispatchEvent ("OnVideoMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, fMedia);
+		DispatchEvent ("OnVoiceMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, fMedia, null);
 	}
 
-	void DispatchEvent (final String sType, final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final String sContent, final Object data)
+	void OnVideoMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonMessage, final String sContent, final File fMedia)
+	{
+		DispatchEvent ("OnVideoMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, fMedia, null);
+	}
+
+	void DispatchEvent (final String sType, final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonNode, final String sContent, final Object data, final Object data2)
 	{
 		int rc = 0;
 		for (final net_maclife_wechat_http_Bot bot : listBots)
 		{
 			if (! bMultithread)
 			{	// 单线程或共享 Engine 线程时，才会有 Bot 链的处理机制。
-				rc = DoDispatch (bot, sType, sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, data);
+				rc = DoDispatch (bot, sType, sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, data, data2);
 				if ((rc & BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE) != BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE)
 					break;
 			}
@@ -721,7 +884,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 						@Override
 						public void run ()
 						{
-							DoDispatch (bot, sType, sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, data);
+							DoDispatch (bot, sType, sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, data, data2);
 						}
 					}
 				);
@@ -729,7 +892,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 		}
 	}
 
-	int DoDispatch (final net_maclife_wechat_http_Bot bot, final String sType, final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final Object data)
+	int DoDispatch (final net_maclife_wechat_http_Bot bot, final String sType, final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_NickName, final String sTo_EncryptedAccount, final String sTo_NickName, final JsonNode jsonNode, final String sContent, final Object data, final Object data2)
 	{
 		try
 		{
@@ -748,19 +911,24 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 
 					return bot.OnMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (JsonNode)data);
 					//break;
 				case "ontextmessage":
-					return bot.OnTextMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (String)data);
+					return bot.OnTextMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, null);
 					//break;
+				case "ongeolocationmessage":
+					return bot.OnGeoLocationMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (String)data, (String)data2);
 				case "onimagemessage":
-					return bot.OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
+					return bot.OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
 					//break;
 				case "onvoicemessage":
-					return bot.OnVoiceMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
+					return bot.OnVoiceMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
 					//break;
 				case "onvideomessage":
-					return bot.OnVideoMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
+					return bot.OnVideoMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
 					//break;
 				case "onemotionmessage":
-					return bot.OnEmotionMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, (File)data);
+					return bot.OnEmotionMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
+					//break;
+				case "onchatwindowopenedmessage":
+					return bot.OnChatWindowOpenedMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (String)data);
 					//break;
 				default:
 					break;
