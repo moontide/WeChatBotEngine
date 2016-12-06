@@ -37,6 +37,8 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 
 	public static final String utf8 = "UTF-8";
 
+	public static final Random random = new SecureRandom ();
+
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Public = 0x08;	// 公众号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Subscriber = 0x10;	// 订阅号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Tencent = 0x20;	// 腾讯自己的公众号
@@ -247,6 +249,7 @@ logger.severe ("转换失败");
 		StringBuilder sbTextQRCode = new StringBuilder ();
 		BufferedImage img = ImageIO.read (new File(sPNGFileName));
 
+		sbTextQRCode.append ("\n");	// 不跟 logger 在一行，新起一行
 		if (bTerminalBackgroundColorIsDarkerThanForgroundColor)
 		{	// 如果背景色比前景色黑，则开启颜色反转
 			sbTextQRCode.append ("\u001B[7m");
@@ -293,7 +296,7 @@ logger.severe ("转换失败");
 			sbTextQRCode.append ("\u001B[27m");
 		}
 
-		System.out.println (sbTextQRCode);
+logger.info (sbTextQRCode.toString ());
 	}
 
 	public static Object 等待二维码被扫描以便登录 (String sLoginID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, ValidityException, ParsingException, URISyntaxException
@@ -419,7 +422,6 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		"}\n";
 	}
 
-	static Random random = new Random ();
 	public static String MakeDeviceID ()
 	{
 		long nRand = random.nextLong () & 0x7FFFFFFFFFFFFFFFL;
@@ -930,7 +932,7 @@ logger.fine ("WebWeChatGetMessages 中 synccheck 返回 7 -- 进入/离开聊天
 		}
 		else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1100") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1101") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))
 		{
-logger.warning ("WebWeChatGetMessages 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能微信网页版（含 Windows 版）在其他地方登录了");
+logger.warning ("WebWeChatGetMessages 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能微信网页版（含 Windows 版）在其他地方登录了、或者 SyncCheckKey 参数不正确");
 			throw new IllegalStateException ("微信被退出 / 被踢出了");
 		}
 		//else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))	// 当 skey=*** 不小心输错变成 skey*** 时返回了 1102 错误
@@ -1298,6 +1300,26 @@ logger.fine ("	" + fMediaFile);
 					else if (StringUtils.equalsIgnoreCase (sCommand, "disableFromUser"))
 					{
 						//
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "LogLevel"))
+					{
+						if (StringUtils.isEmpty (sParam))
+						{
+System.out.println ("当前日志级别: " + logger.getLevel ());
+							continue;
+						}
+
+						try
+						{
+							String sNewLogLevel = StringUtils.upperCase (sParam);
+							logger.setLevel (Level.parse (sNewLogLevel));
+System.out.println ("日志级别已改为: " + logger.getLevel ());
+						}
+						catch (IllegalArgumentException e)
+						{
+System.out.println ("非法日志级别: " + sParam + ", 请换有效的日志级别名称，比如 all finest finer fine info warning severe 1000 0 1 ...");
+							e.printStackTrace ();
+						}
 					}
 					else if (StringUtils.equalsIgnoreCase (sCommand, "/LoadBot"))
 					{
