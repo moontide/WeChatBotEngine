@@ -248,7 +248,7 @@ System.out.println (proxy);
 			((HttpURLConnection)http).setRequestMethod (sRequestMethod);
 			http.setDoOutput (true);
 			//http.setRequestProperty ("Content-Type", "application/x-www-form-urlencoded");
-			http.setRequestProperty ("Content-Length", String.valueOf (arrayPostData.length));
+			//http.setRequestProperty ("Content-Length", String.valueOf (arrayPostData.length));
 
 			DataOutputStream dos = new DataOutputStream (http.getOutputStream());
 			dos.write (arrayPostData, 0, arrayPostData.length);
@@ -425,16 +425,28 @@ System.out.println (proxy);
 	 * @param sCharSet 返回的字符串内容的字符集编码
 	 * @return String Content
 	 */
-	public static String CURL_ViaProxy (String sURL, String sCharSet, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_ViaProxy (String sURL, Map<String, Object> mapRequestHeaders, String sCharSet, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (String)CURL (null, sURL, null, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (String)CURL (null, sURL, mapRequestHeaders, null, false, true, sCharSet, true, nTimeoutSeconds, nTimeoutSeconds,
 				sProxyType, sProxyHost, nProxyPort,
 				true, true, null, null, null, null, null, null
 			);
 	}
+	public static String CURL_ViaProxy (String sURL, Map<String, Object> mapRequestHeaders, String sCharSet, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_ViaProxy (sURL, mapRequestHeaders, sCharSet, 0, sProxyType, sProxyHost, nProxyPort);
+	}
+	public static String CURL_ViaProxy (String sURL, Map<String, Object> mapRequestHeaders, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_ViaProxy (sURL, mapRequestHeaders, null, 0, sProxyType, sProxyHost, nProxyPort);
+	}
+	public static String CURL_ViaProxy (String sURL, String sCharSet, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_ViaProxy (sURL, null, sCharSet, 0, sProxyType, sProxyHost, nProxyPort);
+	}
 	public static String CURL_ViaProxy (String sURL, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, nProxyPort);
+		return CURL_ViaProxy (sURL, null, null, 0, sProxyType, sProxyHost, nProxyPort);
 	}
 
 	/**
@@ -443,20 +455,24 @@ System.out.println (proxy);
 	 * @param sURL 网址
 	 * @return String Content
 	 */
-	public static String CURL_Post_ViaProxy (String sURL, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_Post_ViaProxy (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData, int nTimeoutSeconds, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return (String)CURL ("POST", sURL, null, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
+		return (String)CURL ("POST", sURL, mapRequestHeaders, arrayPostData, false, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
 				sProxyType, sProxyHost, nProxyPort,
 				true, true, null, null, null, null, null, null
 			);
 	}
-	public static String CURL_Post_ViaProxy (String sURL,  byte[] arrayPostData, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	public static String CURL_Post_ViaProxy (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_ViaProxy (sURL, arrayPostData, 0, sProxyType, sProxyHost, nProxyPort);
+		return CURL_Post_ViaProxy (sURL, mapRequestHeaders, arrayPostData, 0, sProxyType, sProxyHost, nProxyPort);
+	}
+	public static String CURL_Post_ViaProxy (String sURL, byte[] arrayPostData, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Post_ViaProxy (sURL, null, arrayPostData, 0, sProxyType, sProxyHost, nProxyPort);
 	}
 	public static String CURL_Post_ViaProxy (String sURL, String sProxyType, String sProxyHost, int nProxyPort) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
 	{
-		return CURL_Post_ViaProxy (sURL, null, 0, sProxyType, sProxyHost, nProxyPort);
+		return CURL_Post_ViaProxy (sURL, null, null, 0, sProxyType, sProxyHost, nProxyPort);
 	}
 
 	/**
