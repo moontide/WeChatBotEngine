@@ -923,8 +923,8 @@ logger.fine ("\n" + node);
 				case "0":	// nothing
 logger.fine ("WebWeChatGetMessages 中 synccheck 返回 0 -- 无消息");
 					break;
-				case "7":	// 进入离开聊天页面
-logger.fine ("WebWeChatGetMessages 中 synccheck 返回 7 -- 进入/离开聊天页面");
+				case "7":	// 进入离开聊天页面？
+logger.fine ("WebWeChatGetMessages 中 synccheck 返回 7 -- 进入/离开聊天页面？");
 					break;
 				default:
 					break;

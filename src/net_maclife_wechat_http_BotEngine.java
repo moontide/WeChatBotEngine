@@ -50,6 +50,43 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	public static final int WECHAT_MSG_TYPE__SYSTEM                = 10000;
 	public static final int WECHAT_MSG_TYPE__MSG_REVOKED           = 10002;
 
+	/*
+	public enum WeChatMsgType
+	{
+		文本 (WECHAT_MSG_TYPE__TEXT),
+		文本消息中的位置信息 (WECHAT_MSG_TYPE__TEXT),
+		图片 (WECHAT_MSG_TYPE__IMAGE),
+		应用 (WECHAT_MSG_TYPE__APP),
+		语音 (WECHAT_MSG_TYPE__VOICE),
+		VerifyMsg (WECHAT_MSG_TYPE__VERIFY_MSG),
+		PossibleFriendMessage (WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG),
+		名片WeChatVCard (WECHAT_MSG_TYPE__WECHAT_VCARD),
+		视频通话 (WECHAT_MSG_TYPE__VIDEO_CALL),
+		表情图 (WECHAT_MSG_TYPE__EMOTION),
+		位置 (WECHAT_MSG_TYPE__GPS_POSITION),
+		链接 (WECHAT_MSG_TYPE__URL),
+		VOIP (WECHAT_MSG_TYPE__VOIP_MSG),
+		初始化或操作 (WECHAT_MSG_TYPE__OPERATION),
+		VOIP通话通知 (WECHAT_MSG_TYPE__VOIP_NOTIFY),
+		VOIP通话发起 (WECHAT_MSG_TYPE__VOIP_INVITE),
+		小视频 (WECHAT_MSG_TYPE__SHORT_VIDEO),
+		系统通知 (WECHAT_MSG_TYPE__SYSTEM_NOTICE),
+		系统 (WECHAT_MSG_TYPE__SYSTEM),
+		消息撤回 (WECHAT_MSG_TYPE__MSG_REVOKED),
+		;
+
+		int value = 0;
+		WeChatMsgType (int nType)
+		{
+			value = nType;
+		}
+		public int GetValue ()
+		{
+			return value;
+		}
+	}
+	*/
+
 	Future<?> engineTask = null;
 	List<net_maclife_wechat_http_Bot> listBots = new ArrayList<net_maclife_wechat_http_Bot> ();
 
@@ -622,7 +659,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到 " + nAddMsgCount + " 个新�
 					continue;
 			}
 
-net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 发给 " + sToNickName + " 的消息 (类型=" + nMsgType + (StringUtils.isEmpty (sFromNickName) || StringUtils.equalsIgnoreCase (sFromNickName, "null") ? "" : ", 聊天室: " + sRoomNickName) + ")：" + sContent);
+net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromNickName + " 发给 " + sToNickName + " 的消息 (类型=" + nMsgType + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : ", 聊天室: " + sRoomNickName) + ")：" + sContent);
 
 			File fMedia = null;
 			switch (nMsgType)
@@ -916,7 +953,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗�
 				case "ongeolocationmessage":
 					return bot.OnGeoLocationMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (String)data, (String)data2);
 				case "onimagemessage":
-					return bot.OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
+					return bot.OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data, (String)data2);
 					//break;
 				case "onvoicemessage":
 					return bot.OnVoiceMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
@@ -925,7 +962,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗�
 					return bot.OnVideoMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
 					//break;
 				case "onemotionmessage":
-					return bot.OnEmotionMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data);
+					return bot.OnEmotionMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (File)data, (String)data2);
 					//break;
 				case "onchatwindowopenedmessage":
 					return bot.OnChatWindowOpenedMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonNode, sContent, (String)data);
