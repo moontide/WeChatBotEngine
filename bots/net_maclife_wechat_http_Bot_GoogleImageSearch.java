@@ -16,12 +16,14 @@ import org.apache.http.impl.client.*;
 import org.apache.http.util.*;
 import org.jsoup.*;
 import org.jsoup.nodes.*;
+import org.jsoup.select.*;
 
 import com.fasterxml.jackson.databind.*;
 
 public class net_maclife_wechat_http_Bot_GoogleImageSearch extends net_maclife_wechat_http_Bot
 {
-	public static String GOOGLE_IMAGE_SEARCH_URL = "https://www.google.com.hk/searchbyimage";
+	public static String GOOGLE_BASE_URL = "https://www.google.com.hk";
+	public static String GOOGLE_IMAGE_SEARCH_URL = GOOGLE_BASE_URL + "/searchbyimage";
 	public static boolean USE_GFW_PROXY = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("google.useGFWProxy"), true);
 	public static String GFW_PROXY_TYPE = StringUtils.upperCase (net_maclife_wechat_http_BotApp.config.getString ("gfw.proxy.type"));
 	public static String GFW_PROXY_HOST = net_maclife_wechat_http_BotApp.config.getString ("gfw.proxy.host");
@@ -71,7 +73,7 @@ public class net_maclife_wechat_http_Bot_GoogleImageSearch extends net_maclife_w
 			jsoup_conn
 				.followRedirects (false)
 				//.referrer ("https://www.google.com.hk/")
-				.userAgent ("Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0")
+				.userAgent ("Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/1234 Firefox is versioning emperor #2, Chrome is versioning emperor #1!!!")
 				.header ("Accept-Language", "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3")
 				//.header ("Accept-Encoding", "gzip, deflate, br")
 				//.header ("Cookie", "NID=91=eLR2Xt0oeN-XCDP3lQkbfBLqFU0fTxLq5ocj7lYBbkKKQBqnmvTJy-y9v3Y73nPQc_PIx59ir3T7hqmyPFAH02xSg6cCp9wqTiSTVGb0HuHqWd8U75jxpKeF47FK8DKl59mUX0WsfGjDzFvzsllfF6_HfPcBW54OATKvBBgseC-yBbJPE30YmK_z3KTWFiRRdWzWYAMTgeXERmDXBqFFpHZQLNebcQHkCTLLuBuAe5MsC2PIJs1TV8iYda_kbGFVvvvboNJTBw0eKwK9sPPt5NODU5s; SID=EwM1NpOSROI0ddQDNSMzCdQV7PF1NsutdbHv1QnVNhf2qSP3LtF-dkfUuJuBCZU5bXaMmQ.; HSID=AHHYjmOQYposTbxEx; APISID=S_Ga4t7dY6Xj_2IY/ATJD3hDdWt0OYN88-; SSID=AhuyWEzQ4qpQEbiW1; SAPISID=c91O3a08aWSgUrKP/AVd_0zQa4fzUH9adu; DV=grlNNAF72VBKxtBGytCv9RBrGlCGsQpb23j9sCB7RwAAAGqv7e54uemJFAAAAJa5wcBxIXwPCQAAAA")
@@ -142,7 +144,7 @@ System.out.println (doc);
 			Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 			mapRequestHeaders.put ("Content-Type", "");	// Java HttpURLConnection 你妈的能不能彻底删除 Content-Type 消息头啊
 			mapRequestHeaders.put ("Content-Length", "");	// Java HttpURLConnection 你妈的能不能彻底删除 Content-Length 消息头啊
-			mapRequestHeaders.put ("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/1234");	// 经过多次测试，User-Agent 和/或 Accept-Language 头是必须要的，否则返回不了正确响应
+			mapRequestHeaders.put ("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/1234 Firefox is versioning emperor #2, Chrome is versioning emperor #1!!!");	// 经过多次测试，User-Agent 和/或 Accept-Language 头是必须要的，否则返回不了正确响应
 			mapRequestHeaders.put ("Accept-Language", "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3");
 			if (StringUtils.isNotEmpty (sImageURL))
 			{	// GET 方法访问
@@ -179,9 +181,9 @@ System.out.println (doc);
 				baos_multipart = baos;
 
 				arrayPostData = baos_multipart.toByteArray ();
-				os = new FileOutputStream ("google-image-search-post.data");
-				IOUtils.write (arrayPostData, os);
-				os.close ();
+//os = new FileOutputStream ("google-image-search-post.data");
+//IOUtils.write (arrayPostData, os);
+//os.close ();
 
 				URLConnection http = null;
 
@@ -241,15 +243,50 @@ net_maclife_wechat_http_BotApp.logger.severe ("http 响应代码是 " + iRespons
 				}
 			}
 
-			os = new FileOutputStream("google.html");
-			IOUtils.write (sResponseBody, new FileOutputStream("google.html"), net_maclife_wechat_http_BotApp.utf8);
-			os.close ();
+//os = new FileOutputStream("google-image-search-result.html");
+//IOUtils.write (sResponseBody, os, net_maclife_wechat_http_BotApp.utf8);
+//os.close ();
 
-			doc = Jsoup.parse (sResponseBody);
+			doc = Jsoup.parse (sResponseBody, GOOGLE_BASE_URL);
 			//*/
 
-			String sImageInfo = doc.select ("#topstuff").text ();
-			SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, "图片信息:\n" + sImageInfo);
+			Elements eTopStuff = doc.select ("#topstuff");
+			if (eTopStuff.isEmpty ())
+			{
+net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 #topstuff，也许，搜索出错了？  " + eTopStuff.text ());
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+			}
+			Element e图片猜测词语链接 = eTopStuff.select ("a._gUb").first ();
+			if (e图片猜测词语链接 == null)
+			{
+net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 ._gUb，也许，没有结果？  " + eTopStuff.text ());
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+			}
+
+			StringBuilder sbInfo = new StringBuilder ();
+			sbInfo.append (e图片猜测词语链接.text ());
+			sbInfo.append ("\n");
+			sbInfo.append (e图片猜测词语链接.absUrl ("href"));
+			Elements e图片来源 = doc.select ("div.normal-header");
+			if (! e图片来源.isEmpty ())
+			{
+				sbInfo.append ("\n\n" + e图片来源.select (".rg-header").first ().text ());	// "包含匹配图片的页面"
+				Elements e图片来源标题链接 = e图片来源.select ("h3.r > a");
+				for (int i=0; i<e图片来源标题链接.size (); i++)
+				{
+					Element e = e图片来源标题链接.get (i);
+					sbInfo.append ("\n\n");
+					sbInfo.append (i+1);
+					sbInfo.append (". ");
+					sbInfo.append (e.text ());
+					sbInfo.append ("\n");
+					sbInfo.append (e.absUrl ("href"));
+				}
+			}
+//System.out.println (sbInfo);
+			SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, sbInfo.toString ());
+
+			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED | net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 		}
 		catch (Throwable e)
 		{
