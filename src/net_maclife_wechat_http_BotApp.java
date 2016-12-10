@@ -53,7 +53,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 		try
 		{
 			configParameters = new Parameters ();
-			ConfigurationBuilder<PropertiesConfiguration> configBuilder =
+			FileBasedConfigurationBuilder<PropertiesConfiguration> configBuilder =
 				new ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> (PropertiesConfiguration.class)
 					.configure
 					(
@@ -62,6 +62,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 							.setFileName (configFileName)
 					)
 				;
+			configBuilder.setAutoSave (true);
 			//config = configs.properties (new File(configFileName));
 			config = configBuilder.getConfiguration ();
 		}
@@ -838,12 +839,12 @@ logger.info (sb.toString ());
 		}
 		return sbResult.toString ();
 	}
-	public static JsonNode WebWeChatGetMessages (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException
+	public static JsonNode WebWeChatGetMessagePackage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException
 	{
-logger.fine ("等待并获取新消息 WebWeChatGetMessages (synccheck & webwxsync) …");	// 这里的日志级别改为了 fine，因这个在死循环中，产生太多日志
+logger.fine ("等待并获取新消息 WebWeChatGetMessagePackage (synccheck & webwxsync) …");	// 这里的日志级别改为了 fine，因这个在死循环中，产生太多日志
 		String sSyncCheckKeys = MakeSyncCheckKeys (jsonSyncCheckKeys);
 		String sSyncCheckURL = "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck?r=" + System.currentTimeMillis () + "&skey=" + URLEncoder.encode (sSessionKey, utf8) + "&sid=" + URLEncoder.encode (sSessionID, utf8) + "&uin=" + sUserID + "&deviceid=" + MakeDeviceID () + "&synckey=" +  sSyncCheckKeys + "&_=" + System.currentTimeMillis ();
-logger.fine ("WebWeChatGetMessages 中 synccheck 的 URL:");
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 的 URL:");
 logger.fine ("	" + sSyncCheckURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
@@ -872,7 +873,7 @@ logger.fine ("	" + sSyncCheckURL);
 		*/
 		sCookieValue = MakeCookieValue (listCookies);
 		mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 1100 1102 代码？
-logger.finer ("发送 WebWeChatGetMessages 中 synccheck 的 http 请求消息头 (Cookie):");
+logger.finer ("发送 WebWeChatGetMessagePackage 中 synccheck 的 http 请求消息头 (Cookie):");
 logger.finer ("	" + mapRequestHeaders);
 
 		String sContent = null;
@@ -889,7 +890,7 @@ logger.finer ("	" + mapRequestHeaders);
 				continue _适应临时网络错误_TolerateTemporarilyNetworkIssue;
 			}
 		}
-logger.fine ("获取 WebWeChatGetMessages 中 synccheck 的 http 响应消息体:");
+logger.fine ("获取 WebWeChatGetMessagePackage 中 synccheck 的 http 响应消息体:");
 logger.fine ("	" + sContent);
 
 		String sJSCode = StringUtils.replace (sContent, "window.", "var ");
@@ -903,28 +904,28 @@ logger.fine ("	" + sContent);
 			{
 				case "2":	// 有新消息
 					String sSyncURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=" + URLEncoder.encode (sSessionID, utf8) + "&skey" + URLEncoder.encode (sSessionKey, utf8) + "&lang=zh_CN&pass_ticket=" +  sPassTicket;
-	logger.fine ("WebWeChatGetMessages 中 webwxsync 的 URL:");
+	logger.fine ("WebWeChatGetMessagePackage 中 webwxsync 的 URL:");
 logger.fine ("	" + sSyncURL);
 
 					//mapRequestHeaders = new HashMap<String, Object> ();
 					mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
 					//mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 "Ret": 1 代码
 					String sRequestBody_JSONString = MakeFullWeChatSyncJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys);
-logger.finer ("发送 WebWeChatGetMessages 中 webwxsync 的 http 请求消息头 (Cookie & Content-Type):");
+logger.finer ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息头 (Cookie & Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
-logger.finer ("发送 WebWeChatGetMessages 中 webwxsync 的 http 请求消息体:");
+logger.finer ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息体:");
 logger.finer ("	\n" + sRequestBody_JSONString);
 					InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 					JsonNode node = jacksonObjectMapper_Loose.readTree (is);
-logger.fine ("获取 WebWeChatGetMessages 中 webwxsync 的 http 响应消息体:");
+logger.fine ("获取 WebWeChatGetMessagePackage 中 webwxsync 的 http 响应消息体:");
 logger.fine ("\n" + node);
 					jsonResult = node;
 					break;
 				case "0":	// nothing
-logger.fine ("WebWeChatGetMessages 中 synccheck 返回 0 -- 无消息");
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 0 -- 无消息");
 					break;
 				case "7":	// 进入离开聊天页面？
-logger.fine ("WebWeChatGetMessages 中 synccheck 返回 7 -- 进入/离开聊天页面？");
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 7 -- 进入/离开聊天页面？");
 					break;
 				default:
 					break;
@@ -932,7 +933,7 @@ logger.fine ("WebWeChatGetMessages 中 synccheck 返回 7 -- 进入/离开聊天
 		}
 		else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1100") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1101") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))
 		{
-logger.warning ("WebWeChatGetMessages 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能微信网页版（含 Windows 版）在其他地方登录了、或者 SyncCheckKey 参数不正确");
+logger.warning ("WebWeChatGetMessagePackage 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能微信网页版（含 Windows 版）在其他地方登录了、或者 SyncCheckKey 参数不正确");
 			throw new IllegalStateException ("微信被退出 / 被踢出了");
 		}
 		//else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))	// 当 skey=*** 不小心输错变成 skey*** 时返回了 1102 错误
@@ -1260,6 +1261,53 @@ logger.fine ("	" + fMediaFile);
 		return (nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Tencent) == WECHAT_ACCOUNT_TYPE_MASK__Tencent;
 	}
 
+	/**
+	 * 群聊文本消息中是否提到了某人。
+	 * @param sRoomTextMessage 群文本消息
+	 * @param sNickName 某人的昵称
+	 * @param sDisplayName 某人的群昵称（显示名）
+	 * @return
+	 */
+	public static boolean IsRoomTextMessageMentionedThisOne (String sRoomTextMessage, String sNickName, String sDisplayName)
+	{
+		boolean bMentioned = false;
+		if (StringUtils.isNotEmpty (sDisplayName))
+			bMentioned = StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sDisplayName + " ");
+		if (! bMentioned)
+			bMentioned = StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sNickName + " ");
+		return bMentioned;
+	}
+	public static boolean IsRoomTextMessageMentionedThisOne (String sRoomTextMessage, JsonNode jsonContactInRoom)
+	{
+		String sNickName = GetJSONText (jsonContactInRoom, "NickName");
+		String sDisplayName = GetJSONText (jsonContactInRoom, "DisplayName");
+		return IsRoomTextMessageMentionedThisOne (sRoomTextMessage, sNickName, sDisplayName);
+	}
+
+	/**
+	 * 群文本消息是否指名道姓的 @ 某人，即：群文本消息以 @某人 为开头。
+	 * （很奇怪，微信消息包中并没有 “消息是否 @自己” 的信息）
+	 * @param sRoomTextMessage 群文本消息
+	 * @param sNickName 某人的昵称
+	 * @param sDisplayName 某人的群昵称（显示名）
+	 * @return
+	 */
+	public static boolean IsRoomTextMessageMentionedThisOneFirst (String sRoomTextMessage, String sNickName, String sDisplayName)
+	{
+		boolean bMentionedFirst = false;
+		if (StringUtils.isNotEmpty (sDisplayName))
+			bMentionedFirst = StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sDisplayName + " ");
+		if (! bMentionedFirst)
+			bMentionedFirst = StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sNickName + " ");
+		return bMentionedFirst;
+	}
+	public static boolean IsRoomTextMessageMentionedThisOneFirst (String sRoomTextMessage, JsonNode jsonContactInRoom)
+	{
+		String sNickName = GetJSONText (jsonContactInRoom, "NickName");
+		String sDisplayName = GetJSONText (jsonContactInRoom, "DisplayName");
+		return IsRoomTextMessageMentionedThisOneFirst (sRoomTextMessage, sNickName, sDisplayName);
+	}
+
 
 	/**
 	 * App 线程： 接受命令行输入，进行简单的维护操作(含退出命令 /quit)。
@@ -1293,11 +1341,27 @@ logger.fine ("	" + fMediaFile);
 					{
 						// 本微信号现在人机已合一，具体命令请用 @xxx help 获得帮助
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "enableFromUser"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "EnableEngineFor"))
+					{	// 针对某个群聊或某个联系人）启用引擎
+						// sParam
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "DisableEngineFor"))
 					{
 						//
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "disableFromUser"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "EnableBotFor"))
+					{	// 针对某个群聊或某个联系人）启用某个 Bot
+						String[] arrayTemp = sParam.split (" +", 2);
+						String sBotClassName = null;
+						String sTarget = null;
+						if (arrayTemp.length > 0)
+							sBotClassName = arrayTemp[0];
+						if (arrayTemp.length > 0)
+							sTarget = arrayTemp[1];
+
+						//config.setProperty (key, value);
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "DisableBotFor"))
 					{
 						//
 					}
