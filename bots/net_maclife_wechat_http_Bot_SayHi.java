@@ -38,7 +38,7 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 				jsonContact = engine.SearchForSingleContact (null, sTemp, null, null);
 				if (jsonContact == null)
 					continue;
-				engine.SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
+				SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
 				bProcessed = true;
 			}
 
@@ -51,7 +51,7 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 				jsonContact = engine.SearchForSingleContact (null, null, sTemp, null);
 				if (jsonContact == null)
 					continue;
-				engine.SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
+				SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
 				bProcessed = true;
 			}
 
@@ -64,7 +64,7 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 				jsonContact = engine.SearchForSingleContact (null, null, null, sTemp);
 				if (jsonContact == null)
 					continue;
-				engine.SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
+				SendTextMessage (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"), sMessage + "\n\n" + new java.sql.Timestamp(System.currentTimeMillis ()));
 				bProcessed = true;
 			}
 		}
