@@ -24,15 +24,15 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 	@Override
 	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFromName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
-		List<String> listCommands = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.baidu.translate.commands");
+		List<String> listCommands = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.baidu-translate.commands");
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
-		String sFromLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.translate.from-language");
-		String sToLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.translate.to-language");
+		String sFromLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.from-language");
+		String sToLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.to-language");
 		if (StringUtils.equalsIgnoreCase (sToLanguage, "auto"))
 		{
-net_maclife_wechat_http_BotApp.logger.warning ("百度翻译机器设置的目标语言不能为 auto");
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + "机器人设置的目标语言不能为 auto");
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 		}
 
@@ -51,7 +51,7 @@ net_maclife_wechat_http_BotApp.logger.warning ("百度翻译机器设置的目�
 					sMessage = StringUtils.trimToEmpty (arrayMessages[1]);
 					if (StringUtils.isEmpty (sMessage))
 					{
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, "百度翻译 需要指定要翻译的内容");
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 需要指定要翻译的内容");
 					}
 					else
 					{
@@ -103,8 +103,8 @@ net_maclife_wechat_http_BotApp.logger.warning (GetName() + " 返回错误结果:
 
 	public static JsonNode GetTranslation (String sSource, String sFromLanguage, String sToLanguage)
 	{
-		String sAppID = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.translate.app.id");
-		String sAppKey = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.translate.app.key");
+		String sAppID = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.app.id");
+		String sAppKey = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.app.key");
 		int iSalt随机数佐料 = net_maclife_wechat_http_BotApp.random.nextInt ();
 		String sSign = DigestUtils.md5Hex (sAppID + sSource + iSalt随机数佐料 + sAppKey);
 		try
