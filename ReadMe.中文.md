@@ -1,4 +1,4 @@
-<div style='text-align:right;'><a href='ReadMe.Chinglish.md'>Chinglish</a> | <span>中文</span></div>
+<div style='text-align:right;'><span>中文</span> | <a href='ReadMe.Chinglish.md'>Chinglish</a></div>
 
 ----
 
@@ -34,6 +34,21 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 
 	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
 	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。</dd>
+
+	<dt><strong>BaiduImageSearch</strong>: 百度图片搜索（百度识图）</dt>
+	<dd>当有人发了图片时，提交给百度图片搜索，给出百度图片搜索的结果、可能的图片来源。</dd>
+
+	<dt><strong>BaiduVoice</strong>: 百度语音识别、语音合成机器人</dt>
+	<dd>当有人发了音频、视频时，将音频、视频中的音频提交给百度语音识别（语音转文字），给出识别后的文字结果。 -- 因为在搜索聊天记录只能用文字来搜索，所以，非常实用。</dd>
+
+	<dt><strong>BaiduTranslate</strong>: 百度翻译机器人</dt>
+	<dd>利用百度翻译接口，提供翻译功能。</dd>
+
+	<dt><strong>GoogleImageSearch</strong>: Google 图片搜索</dt>
+	<dd>当有人发了图片时，提交给 Google 图片搜索，给出 Google 图片搜索的结果、可能的图片来源。</dd>
+
+	<dt><strong>MissleLaunched</strong>: 用来恶搞地理位置信息的机器人</dt>
+	<dd>当有人发了地理位置信息时，把经纬度报出来，然后加上一句随机可设置的“导弹准备就绪”的恶搞话语…… = =</dd>
 </dl>
 
 #怎样开发自己的 Bot#

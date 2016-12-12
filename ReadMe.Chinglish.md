@@ -1,4 +1,4 @@
-<div style='text-align:right;'><span>Chinglish</span> | <a href='ReadMe.中文.md'>中文</a></div>
+<div style='text-align:right;'><a href='ReadMe.中文.md'>中文</a> | <span>Chinglish</span></div>
 
 ----
 
@@ -34,6 +34,21 @@ Those bot applets are:
 
 	<dt><strong>HCICloudCSR</strong>: HCICloud customer service representative chat bot</dt>
 	<dd>Using the HTTP protocol from HCICloud CSR, fetch the answer from CSR bot, then reply to user.</dd>
+
+	<dt><strong>BaiduImageSearch</strong>: Baidu image search</dt>
+	<dd>When an image message posted, send the image to baidu image search, return the guess information and possible image sources.</dd>
+
+	<dt><strong>BaiduVoice</strong>: Baidi Automatic Speech Recognition (ASR) and Text To Speech (TTS)</dt>
+	<dd>When an audio or short video message is posted, send the audio to baidu ASR api, and return the text result. -- Because you can only use text when searching chat history, so it's very useful.</dd>
+
+	<dt><strong>BaiduTranslate</strong>: Baid translate</dt>
+	<dd>Provide translation service via baidu translate API.</dd>
+
+	<dt><strong>GoogleImageSearch</strong>: Google Image Search</dt>
+	<dd>When an image message posted, send the image to Google image search, return the guess information and possible image sources.</dd>
+
+	<dt><strong>MissleLaunched</strong>: Send a 'missile launched' message when someone shared a geographic position (just for fun)</dt>
+	<dd>When someone send a geographic position message, read the longtitude and latitude value, and append a random customable joke</dd>
 </dl>
 
 #How to build a Bot Applet by myself#
