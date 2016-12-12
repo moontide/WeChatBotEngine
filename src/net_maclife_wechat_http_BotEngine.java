@@ -312,11 +312,11 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 
 	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage, boolean bAppendExtraNewLine) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		SendTextMessage (null, sTo_EncryptedAccount, sTo_NickName, sMessage, true, false, false);
+		SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage, true, false, false);
 	}
 	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		SendTextMessage (null, sTo_EncryptedAccount, sTo_NickName, sMessage, true);
+		SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage, true);
 	}
 	public void SendTextMessage (String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
@@ -701,28 +701,40 @@ net_maclife_wechat_http_BotApp.logger.info ("* 是自己发出的消息，现在
 			String sToNickName = null;
 			String sToName = null;
 			JsonNode jsonTo = null;
-			boolean isFromRoom = net_maclife_wechat_http_BotApp.IsRoomAccount (sEncryptedFromAccount);	// 是否来自（或者发往（上面交换 From To 后））
-			if (isFromRoom)
+			boolean isFromOrToRoom = net_maclife_wechat_http_BotApp.IsRoomAccount (sEncryptedFromAccount);	// 是否来自（或者发往（上面交换 From To 后））
+			if (isFromOrToRoom)
 			{	// 如果是发自聊天室，则从聊天室的成员列表中获取真正的发送人（可能不在自己的联系人内，只能从聊天室成员列表中获取）
 				sEncryptedRoomAccount = sEncryptedFromAccount;
 				JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sEncryptedRoomAccount);
 				sRoomNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "NickName");
 
 				// 找出发送人的 UserID
-				String[] arrayContents = sContent.split (":\n", 2);
-				sEncryptedFromAccount = arrayContents[0];
-				//jsonFrom = SearchForSingleContactInRoom (sEncryptedRoomAccount, sEncryptedFromAccount, null, null, null);
-				sFromName = GetContactNameInRoom (sEncryptedRoomAccount, sEncryptedFromAccount);
-				//sFromDisplayName = net_maclife_wechat_http_BotApp.GetJSONText (jsonFrom, "DisplayName");
-				//if (StringUtils.isNotEmpty (sFromDisplayName))
-				//	sFromNickName = sFromDisplayName;
-				//else
-				//	sFromNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonFrom, "NickName");
-
-				if (arrayContents.length > 1)
-					sContent = arrayContents[1];
+				if (isFromMe)
+				{
+					sEncryptedFromAccount = sEncryptedToAccount;
+					//sFromName = GetContactName (sEncryptedFromAccount);
+					sFromName = GetContactNameInRoom (sEncryptedRoomAccount, sEncryptedFromAccount);
+					sToName = sFromName;
+				}
 				else
-					sContent = "";
+				{	// 因为之前已经交换过收发人，所以，自己点开群聊窗口后，不再做【获取真实发件人】的处理（只有真正别人在群里发过来的信息才需要这样处理）
+					String[] arrayContents = sContent.split (":\n", 2);
+					sEncryptedFromAccount = arrayContents[0];
+					//jsonFrom = SearchForSingleContactInRoom (sEncryptedRoomAccount, sEncryptedFromAccount, null, null, null);
+					sFromName = GetContactNameInRoom (sEncryptedRoomAccount, sEncryptedFromAccount);
+					//sFromDisplayName = net_maclife_wechat_http_BotApp.GetJSONText (jsonFrom, "DisplayName");
+					//if (StringUtils.isNotEmpty (sFromDisplayName))
+					//	sFromNickName = sFromDisplayName;
+					//else
+					//	sFromNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonFrom, "NickName");
+
+					if (arrayContents.length > 1)
+						sContent = arrayContents[1];
+					else
+						sContent = "";
+
+					sToName = this.sMyNickName;
+				}
 			}
 			else
 			{	//
@@ -736,7 +748,7 @@ net_maclife_wechat_http_BotApp.logger.info ("* 是自己发出的消息，现在
 				isFromPublicAccount = net_maclife_wechat_http_BotApp.IsPublicAccount (net_maclife_wechat_http_BotApp.GetJSONInt (jsonFrom, "VerifyFlag"));
 
 				jsonTo = SearchForSingleContact (sEncryptedToAccount, null, null, null);
-				sToNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonTo, "NickName");
+				sToName = net_maclife_wechat_http_BotApp.GetJSONText (jsonTo, "NickName");
 			}
 
 			/*
@@ -771,7 +783,7 @@ net_maclife_wechat_http_BotApp.logger.info ("* 是自己发出的消息，现在
 					continue;
 			}
 
-net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromName + " 发给 " + sToName + " 的消息 (类型=" + nMsgType + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : ", 聊天室: " + sRoomNickName) + ")：" + sContent);
+net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromName + " 发给 " + sToName + " 的消息 (类型=" + nMsgType + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : ", 聊天室: " + sRoomNickName) + ")：\n" + sContent);
 
 			File fMedia = null;
 			switch (nMsgType)
@@ -780,7 +792,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromName + " 发�
 					boolean bMentionedMeInRoomMessage = false;
 					boolean bMentionedMeFirstInRoomMessage = false;
 
-					if (isFromRoom)
+					if (isFromOrToRoom)
 					{
 						JsonNode jsonMeInThisRoom = SearchForSingleContactInRoom (sEncryptedRoomAccount, sMyEncryptedAccountInThisSession, null, null, null);
 						String sMyDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.GetJSONText (jsonMeInThisRoom, "DisplayName");
@@ -980,6 +992,16 @@ net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModChatRoomMemerCount +
 //</msg>
 					sTargetAccount = op.getFirstChildElement ("username").getValue ();
 net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗口，联系人/聊天室的未加密的帐号：" + sTargetAccount);
+					DispatchEvent ("OnChatWindowOpenedMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, sTargetAccount, null);
+					break;
+				case "5":	// 微信手机端关闭（后退）订阅号列表窗口时收到该类型的消息
+//<msg>
+//	<op id='5'>
+//		<username>未加密的帐号（打开的联系人的帐号）</username>
+//	</op>
+//</msg>
+					sTargetAccount = op.getFirstChildElement ("username").getValue ();
+net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表窗口，之前打开联系人/聊天室的未加密的帐号：" + sTargetAccount);
 					DispatchEvent ("OnChatWindowOpenedMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, sTargetAccount, null);
 					break;
 				case "4":
