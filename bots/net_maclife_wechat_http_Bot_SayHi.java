@@ -16,8 +16,8 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 	public net_maclife_wechat_http_Bot_SayHi ()
 	{
 		listTargetAliases     = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.aliases");
-		listTargetRemarkNames = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.RemarkNames");
-		listTargetNickNames   = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.NickNames");
+		listTargetRemarkNames = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.remark-names");
+		listTargetNickNames   = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.nick-names");
 	}
 
 	int ProcessMessage (String sMessage)

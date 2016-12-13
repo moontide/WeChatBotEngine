@@ -25,9 +25,9 @@ public class net_maclife_wechat_http_Bot_GoogleImageSearch extends net_maclife_w
 	public static String GOOGLE_BASE_URL = "https://www.google.com.hk";
 	public static String GOOGLE_IMAGE_SEARCH_URL = GOOGLE_BASE_URL + "/searchbyimage";
 	public static boolean USE_GFW_PROXY = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("google.useGFWProxy"), true);
-	public static String GFW_PROXY_TYPE = StringUtils.upperCase (net_maclife_wechat_http_BotApp.config.getString ("gfw.proxy.type"));
-	public static String GFW_PROXY_HOST = net_maclife_wechat_http_BotApp.config.getString ("gfw.proxy.host");
-	public static int GFW_PROXY_PORT = net_maclife_wechat_http_BotApp.config.getInt ("gfw.proxy.port");
+	public static String GFW_PROXY_TYPE = StringUtils.upperCase (net_maclife_wechat_http_BotApp.config.getString ("app.gfw.proxy.type"));
+	public static String GFW_PROXY_HOST = net_maclife_wechat_http_BotApp.config.getString ("app.gfw.proxy.host");
+	public static int GFW_PROXY_PORT = net_maclife_wechat_http_BotApp.config.getInt ("app.gfw.proxy.port");
 	static Proxy gfwProxy = null;
 	//static HttpHost gfwProxy_forApacheHttpCore = null;
 	static

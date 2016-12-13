@@ -17,7 +17,7 @@ public class net_maclife_wechat_http_Bot_MissileLaunched_JustForFun extends net_
 		try
 		{
 			String sReply = null;
-			List<String> listReplies = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.missilelaunched.replies");
+			List<String> listReplies = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.missile-launched.replies");
 			if (listReplies!=null && listReplies.size ()>0)
 			{
 				int iRandom = net_maclife_wechat_http_BotApp.random.nextInt (listReplies.size ());
