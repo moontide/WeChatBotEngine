@@ -31,37 +31,39 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 
 		try
 		{
-			if (StringUtils.isEmpty (sFrom_RoomNickName))
-			{
-				SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 需要在群聊中执行。如果你确实是在群聊中执行的，请务必设置好群名称，并告知管理员（我）。");
-				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-			}
-
 			String[] arrayMessages = sMessage.split (" +", 2);
-			if (arrayMessages==null || arrayMessages.length<2)
+			if (arrayMessages==null || arrayMessages.length<1)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
+			String sCommandInputed = arrayMessages[0];
+			String sCommandParametersInputed = null;
+			if (arrayMessages.length >= 2)
+				sCommandParametersInputed = arrayMessages[1];
+
+			// 命令行命令格式没问题，现在开始查询数据库
 			for (int i=0; i<listCommands.size (); i++)
 			{
 				String sCommand = listCommands.get (i);
-				if (StringUtils.startsWithIgnoreCase (arrayMessages[0], sCommand))
+				if (StringUtils.startsWithIgnoreCase (sCommandInputed, sCommand))
 				{
-					//sMessage = StringUtils.substring (sMessage, sCommand.length ());
-					sMessage = StringUtils.trimToEmpty (arrayMessages[1]);
-					if (StringUtils.isEmpty (sMessage))
+					if (StringUtils.isEmpty (sFrom_RoomNickName))
 					{
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 在查询时需要指定要姓名。\n\n用法:..................\n");
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 需要在群聊中执行。如果你确实是在群聊中执行的，请务必设置好群名称，并告知管理员（我）。");
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
-					else
+					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						String sResult = Query (sFrom_RoomNickName, sMessage);
-						if (StringUtils.isEmpty (sResult))
-						{
-							SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, "未找到姓名为【" + sMessage + "】的联系信息");
-							return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-						}
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sResult);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 在查询时需要指定要姓名。\n\n用法:\n" + sCommand + "  <通讯录中的姓名(通常是真实姓名)>");
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
+
+					String sResult = Query (sFrom_RoomNickName, sCommandParametersInputed);
+					if (StringUtils.isEmpty (sResult))
+					{
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, "在通讯簿【" + sFrom_RoomNickName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					}
+					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sResult);
 					break;
 				}
 			}
