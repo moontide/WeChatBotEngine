@@ -1,14 +1,9 @@
-import java.io.*;
 import java.net.*;
-import java.security.*;
-import java.security.cert.*;
 import java.util.*;
 
 import org.apache.commons.codec.digest.*;
-import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
 /**
@@ -21,6 +16,9 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 	public static final String BAIDU_TRANSLATE_HTTP_URL  = "http://api.fanyi.baidu.com/api/trans/vip/translate";
 	public static final String BAIDU_TRANSLATE_HTTPS_URL = "https://fanyi-api.baidu.com/api/trans/vip/translate";
 
+	//public static final String REGEXP_LanguageOptions = "(\\w*)(2*)(\\w*)";
+	//public static final Pattern PATTERN_LanguageOptions = Pattern.compile (REGEXP_LanguageOptions);
+
 	@Override
 	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFromName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
@@ -30,62 +28,108 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 
 		String sFromLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.from-language");
 		String sToLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.to-language");
-		if (StringUtils.equalsIgnoreCase (sToLanguage, "auto"))
-		{
-net_maclife_wechat_http_BotApp.logger.warning (GetName() + "机器人设置的目标语言不能为 auto");
-			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-		}
 
 		try
 		{
 			String[] arrayMessages = sMessage.split (" +", 2);
-			if (arrayMessages==null || arrayMessages.length<2)
+			if (arrayMessages==null || arrayMessages.length<1)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+
+			String sCommandInputed = arrayMessages[0];
+			String sCommandParametersInputed = null;
+			if (arrayMessages.length >= 2)
+				sCommandParametersInputed = arrayMessages[1];
 
 			for (int i=0; i<listCommands.size (); i++)
 			{
 				String sCommand = listCommands.get (i);
-				if (StringUtils.startsWithIgnoreCase (arrayMessages[0], sCommand))
+				if (StringUtils.startsWithIgnoreCase (sCommandInputed, sCommand))
 				{
-					//sMessage = StringUtils.substring (sMessage, sCommand.length ());
-					sMessage = StringUtils.trimToEmpty (arrayMessages[1]);
-					if (StringUtils.isEmpty (sMessage))
+					// 只有命令时，打印帮助信息
+					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 需要指定要翻译的内容");
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 需要指定要翻译的内容。\n\n命令格式：\n" + sCommand + "[.可选的语言代码选项]  <必填的要翻译的原文>\n\n可选的语言代码选项的格式：\n  - .原文语言代码\n  - .2译文语言代码\n  - .原文语言代码2译文语言代码\n\n具体能用哪些语言代码，请参照： http://api.fanyi.baidu.com/api/trans/product/apidoc#languageList 给出的语言代码列表");
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					}
+
+					// 解析命令“翻译语言选项”：.src2dst、.src、.2dst
+					String[] arrayCommandOptions = sCommandInputed.split ("\\.+", 2);
+					sCommandInputed = arrayCommandOptions[0];
+					String sCommandOptionsInputed = null;
+					if (arrayCommandOptions.length >= 2)
+						sCommandOptionsInputed = arrayCommandOptions[1];
+					if (StringUtils.isNotEmpty (sCommandOptionsInputed))
+					{
+						//Matcher matcher = PATTERN_LanguageOptions.matcher (sCommandOptionsInputed);
+						//if (sCommandOptionsInputed.matches ()
+						//不用规则表达式来解析了，还不如用简单的字符串格式判断
+						if (StringUtils.contains (sCommandOptionsInputed, "2"))
+						{
+							if (sCommandOptionsInputed.startsWith ("2"))
+							{	// 只指定了译文语言代码
+								sToLanguage = sCommandOptionsInputed.substring (1);
+							}
+							else
+							{
+								String[] arrayFromTo = sCommandOptionsInputed.split ("2");
+								sFromLanguage = arrayFromTo[0];
+								sToLanguage = arrayFromTo[1];
+							}
+						}
+						else
+						{	// 只指定了原文的语言代码
+							sFromLanguage = sCommandOptionsInputed;
+						}
+					}
+					if (StringUtils.isEmpty (sFromLanguage) || StringUtils.isEmpty (sToLanguage))
+					{
+						String sErrorInfo = GetName() + " 的原文、译文的语言代码不能为空";
+//net_maclife_wechat_http_BotApp.logger.warning (sErrorInfo);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sErrorInfo);
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					}
+					if (StringUtils.equalsIgnoreCase (sToLanguage, "auto"))
+					{
+						String sErrorInfo = GetName() + "机器人设置的目标语言不能为 auto";
+//net_maclife_wechat_http_BotApp.logger.warning (sErrorInfo);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sErrorInfo);
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					}
+
+
+					// 命令行命令格式没问题，现在开始查询数据库
+					String sTranslation = null;
+					JsonNode jsonResult = GetTranslation (sCommandParametersInputed, sFromLanguage, sToLanguage);
+					if (jsonResult == null)
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					JsonNode jsonErrorCode = jsonResult.get ("error_code");
+					if (jsonErrorCode != null && !jsonErrorCode.isNull ())
+					{
+						String sErrorInfo = GetName() + " 返回错误结果: " + net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_code") + ": " + net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_msg");
+//net_maclife_wechat_http_BotApp.logger.warning (sErrorInfo);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sErrorInfo);
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					}
+					JsonNode jsonTransResults = jsonResult.get ("trans_result");
+					if (jsonTransResults.size () == 1)
+					{
+						JsonNode jsonTransResult = jsonTransResults.get (0);
+						sTranslation = net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst");
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sTranslation);
 					}
 					else
 					{
-						String sTranslation = null;
-						JsonNode jsonResult = GetTranslation (sMessage, sFromLanguage, sToLanguage);
-						if (jsonResult == null)
-							return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-						JsonNode jsonErrorCode = jsonResult.get ("error_code");
-						if (jsonErrorCode != null && !jsonErrorCode.isNull ())
+						StringBuilder sb = new StringBuilder ();
+						for (int j=0; j<jsonTransResults.size (); j++)
 						{
-net_maclife_wechat_http_BotApp.logger.warning (GetName() + " 返回错误结果: " + net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_code") + ": " + net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_msg"));
-							return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+							JsonNode jsonTransResult = jsonTransResults.get (j);
+							//net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "src");
+							sb.append (j+1);
+							sb.append (". ");
+							sb.append (net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst"));
+							sb.append ("\n");
 						}
-						JsonNode jsonTransResults = jsonResult.get ("trans_result");
-						if (jsonTransResults.size () == 1)
-						{
-							JsonNode jsonTransResult = jsonTransResults.get (0);
-							sTranslation = net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst");
-							SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sTranslation);
-						}
-						else
-						{
-							StringBuilder sb = new StringBuilder ();
-							for (int j=0; j<jsonTransResults.size (); j++)
-							{
-								JsonNode jsonTransResult = jsonTransResults.get (j);
-								//net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "src");
-								sb.append (j+1);
-								sb.append (". ");
-								sb.append (net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst"));
-								sb.append ("\n");
-							}
-							SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sTranslation);
-						}
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sTranslation);
 					}
 					break;
 				}
