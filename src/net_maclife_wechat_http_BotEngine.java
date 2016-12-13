@@ -19,7 +19,7 @@ import nu.xom.*;
 class net_maclife_wechat_http_BotEngine implements Runnable
 {
 	public static String sSessionCacheFileName = net_maclife_wechat_http_BotApp.cacheDirectory + File.separator + "wechat-session-cache.json";
-	// 几种 Bot 链处理方式标志（Bot 链处理方式仅仅在 ${engine.message.dispatch.ThreadMode} 配置为【单线程/共享线程】时才有用）。组合值列表：
+	// 几种 Bot 链处理方式标志（Bot 链处理方式仅仅在 ${engine.message.dispatch.thread-mode} 配置为【单线程/共享线程】时才有用）。组合值列表：
 	// 0: 本 Bot 没处理，后面的 Bot 也别处理了
 	// 1: 本 Bot 已处理，后面的 Bot 别处理了
 	// 2: 本 Bot 没处理，但后面的 Bot 请继续处理，别管我……
@@ -110,7 +110,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 
 	public net_maclife_wechat_http_BotEngine ()
 	{
-		bMultithread = StringUtils.equalsIgnoreCase (net_maclife_wechat_http_BotApp.config.getString ("engine.message.dispatch.ThreadMode", ""), "multithread");
+		bMultithread = StringUtils.equalsIgnoreCase (net_maclife_wechat_http_BotApp.config.getString ("engine.message.dispatch.thread-mode", ""), "multithread");
 	}
 
 	public void Start ()
@@ -292,13 +292,30 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 		}
 	}
 
-	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage, boolean bAppendExtraNewLine, boolean bMentionedMeInIncomingRoomMessage, boolean bMentionedMeFirstnIncomingRoomMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	/**
+	 * 发送文本消息。发送文本消息时，会根据传入的参数做以下处理：
+	 *  1.在附加时间信息时插入一个空行（排版目的）；
+	 *  2. 如果接收人昵称不为空，并且他/她以 @我 的方式发送的消息，则也加上一个 @对方 的信息行。
+	 * @param sTo_EncryptedRoomAccount
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param sMessage
+	 * @param bInsertExtraNewLineBeforeTimestamp
+	 * @param bMentionedMeInIncomingRoomMessage
+	 * @param bMentionedMeFirstnIncomingRoomMessage
+	 * @throws KeyManagementException
+	 * @throws UnrecoverableKeyException
+	 * @throws JsonProcessingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws KeyStoreException
+	 * @throws CertificateException
+	 * @throws IOException
+	 */
+	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_Name, String sMessage, boolean bInsertExtraNewLineBeforeTimestamp, boolean bMentionedMeInIncomingRoomMessage, boolean bMentionedMeFirstnIncomingRoomMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		if (bAppendExtraNewLine)
-			sMessage = sMessage + "\n";
-		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.text.appendTimestamp", "yes")))
+		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.text.append-timestamp", "yes")))
 		{
-			sMessage = sMessage + "\n" + new java.sql.Timestamp (System.currentTimeMillis ());
+			sMessage = sMessage + (bInsertExtraNewLineBeforeTimestamp ? "\n" : "") + "\n" + new java.sql.Timestamp (System.currentTimeMillis ());
 		}
 		if (StringUtils.isEmpty (sTo_EncryptedRoomAccount))
 		{	// 私信，直接发送
@@ -306,40 +323,56 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 		}
 		else
 		{	// 聊天室，需要做一下处理： @一下发送人，然后是消息
-			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sTo_EncryptedRoomAccount, (StringUtils.isNotEmpty (sTo_NickName) ? "@" + sTo_NickName + "\n" : "") + sMessage);
+			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sTo_EncryptedRoomAccount, (bMentionedMeFirstnIncomingRoomMessage && StringUtils.isNotEmpty (sTo_Name) ? "@" + sTo_Name + "\n" : "") + sMessage);
 		}
 	}
 
-	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage, boolean bAppendExtraNewLine) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_Name, String sMessage, boolean bInsertExtraNewLineBeforeTimestamp) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage, true, false, false);
+		SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_Name, sMessage, bInsertExtraNewLineBeforeTimestamp, false, false);
 	}
-	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_Name, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage, true);
+		SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_Name, sMessage, true);
 	}
-	public void SendTextMessage (String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sTo_EncryptedAccount, String sTo_Name, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		SendTextMessage (null, sTo_EncryptedAccount, sTo_NickName, sMessage);
+		SendTextMessage (null, sTo_EncryptedAccount, sTo_Name, sMessage);
 	}
 	public void SendTextMessage (String sTo_EncryptedAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		SendTextMessage (null, sTo_EncryptedAccount, null, sMessage);
 	}
 
-	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	/**
+	 * Bot 发送文本消息。Bot 发送文本消息时，会把消息前后的空白剔除，然后根据配置，可能附加上 Bot 名称。
+	 * @param bot
+	 * @param sTo_EncryptedRoomAccount
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param sMessage
+	 * @throws KeyManagementException
+	 * @throws UnrecoverableKeyException
+	 * @throws JsonProcessingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws KeyStoreException
+	 * @throws CertificateException
+	 * @throws IOException
+	 */
+	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedRoomAccount, String sTo_EncryptedAccount, String sTo_Name, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.text.appendBotName", "yes")))
+		sMessage = StringUtils.trimToEmpty (sMessage);
+		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.text.append-bot-name", "yes")))
 		{
-			sMessage = sMessage + "\n-- " + bot.GetName ();
-			SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage);
+			sMessage = sMessage + "\n\n-- " + bot.GetName ();
+			SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_Name, sMessage, false);
 		}
 		else
-			SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_NickName, sMessage, true);
+			SendTextMessage (sTo_EncryptedRoomAccount, sTo_EncryptedAccount, sTo_Name, sMessage, true);
 	}
-	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedAccount, String sTo_NickName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedAccount, String sTo_Name, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		BotSendTextMessage (bot, null, sTo_EncryptedAccount, sTo_NickName, sMessage);
+		BotSendTextMessage (bot, null, sTo_EncryptedAccount, sTo_Name, sMessage);
 	}
 	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sTo_EncryptedAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
@@ -348,11 +381,11 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 
 	public List<JsonNode> SearchForContacts (String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
 	{
-		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonContacts.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
+		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonContacts.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, null, sNickName);
 	}
 	public JsonNode SearchForSingleContact (String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
 	{
-		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonContacts.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
+		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonContacts.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, null, sNickName);
 	}
 
 	public JsonNode GetRoomByRoomEncryptedAccount (String sRoomEncryptedAccountInThisSession)
@@ -380,21 +413,21 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 				return jsonRoom;
 			}
 		}
-		catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
 		return null;
 	}
-	public List<JsonNode> SearchForContactsInRoom (String sRoomEncryptedAccountInThisSession, String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
+	public List<JsonNode> SearchForContactsInRoom (String sRoomEncryptedAccountInThisSession, String sEncryptedAccountInThisSession, String sAliasAccount, String sDisplayName, String sNickName)
 	{
 		JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sRoomEncryptedAccountInThisSession);
-		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonRoom.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
+		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonRoom.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, null, sDisplayName, sNickName);
 	}
-	public JsonNode SearchForSingleContactInRoom (String sRoomEncryptedAccountInThisSession, String sEncryptedAccountInThisSession, String sAliasAccount, String sRemarkName, String sNickName)
+	public JsonNode SearchForSingleContactInRoom (String sRoomEncryptedAccountInThisSession, String sEncryptedAccountInThisSession, String sAliasAccount, String sDisplayName, String sNickName)
 	{
 		JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sRoomEncryptedAccountInThisSession);
-		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonRoom.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, sRemarkName, sNickName);
+		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonRoom.get ("MemberList"), sEncryptedAccountInThisSession, sAliasAccount, null, sDisplayName, sNickName);
 	}
 
 	private JsonNode GetSessionCache () throws JsonProcessingException, IOException
@@ -690,20 +723,21 @@ net_maclife_wechat_http_BotApp.logger.info ("收到 " + nAddMsgCount + " 个新�
 			boolean isFromMe = IsMe (sEncryptedFromAccount);	// 要在交换 From 和 To 之前判断
 			boolean isFromPublicAccount = false;
 			String sEncryptedToAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "ToUserName");
+			boolean isToMe = IsMe (sEncryptedToAccount);	// 要在交换 From 和 To 之前判断
 			if (isFromMe)
 			{	// 收到自己的帐号从其他设备发的消息：发件人是自己、收件人是其他人（含自己，私聊）、聊天室（群聊）
 				// 交换一下 From 和 To
 				String sTemp = sEncryptedFromAccount;
 				sEncryptedFromAccount = sEncryptedToAccount;
 				sEncryptedToAccount = sTemp;
-net_maclife_wechat_http_BotApp.logger.info ("* 是自己发出的消息，现在交换一下收发人");
+net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在交换一下收发人");
 			}
 			String sToNickName = null;
 			String sToName = null;
 			JsonNode jsonTo = null;
 			boolean isFromOrToRoom = net_maclife_wechat_http_BotApp.IsRoomAccount (sEncryptedFromAccount);	// 是否来自（或者发往（上面交换 From To 后））
 			if (isFromOrToRoom)
-			{	// 如果是发自聊天室，则从聊天室的成员列表中获取真正的发送人（可能不在自己的联系人内，只能从聊天室成员列表中获取）
+			{	// 如果是发自聊天室，则从聊天室的成员列表中获取真正的发送人（可能不在自己的联系人内，只能从聊天室成员列表中获取），使其跟 IRC 机器人类似
 				sEncryptedRoomAccount = sEncryptedFromAccount;
 				JsonNode jsonRoom = GetRoomByRoomEncryptedAccount (sEncryptedRoomAccount);
 				sRoomNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "NickName");
@@ -777,13 +811,32 @@ net_maclife_wechat_http_BotApp.logger.info ("* 是自己发出的消息，现在
 			}
 			//*/
 
-			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.ignoreMySelf", "no"), false))
+			if (isFromMe)
 			{
-				if (isFromMe)	// 自己发送的消息，不再处理
-					continue;
+net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发给 " + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : "【" + sRoomNickName + "】 ") + (isToMe ? "自己" : sFromName) + " 的消息 (类型=" + nMsgType + ")：\n" + sContent);
+			}
+			else
+			{
+net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : "【" + sRoomNickName + "】 ") + sFromName + " 发给 " + (isToMe ? "自己" : sToName) + " 的消息 (类型=" + nMsgType + ")：\n" + sContent);
 			}
 
-net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + sFromName + " 发给 " + sToName + " 的消息 (类型=" + nMsgType + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : ", 聊天室: " + sRoomNickName) + ")：\n" + sContent);
+			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.ignore-my-own-message", "no"), false))
+			{
+				if (isFromMe)	// 自己发送的消息，不再处理
+				{
+net_maclife_wechat_http_BotApp.logger.fine ("是自己发的消息，且配置文件里已配置为“忽略自己发的消息”，所以，忽略本消息…");
+					continue;
+				}
+			}
+
+			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.config.getString ("engine.message.ignore-public-account", "no"), false))
+			{
+				if (isFromPublicAccount)	// 公众号发送的消息，不再处理
+				{
+net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配置文件里已配置为“忽略公众号发的消息”，所以，忽略本消息…");
+					continue;
+				}
+			}
 
 			File fMedia = null;
 			switch (nMsgType)
@@ -1055,10 +1108,10 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 		String sTriggerMode = null;
 		if (StringUtils.isNotEmpty (sFrom_EncryptedRoomAccount))
 		{
-			sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.GroupChat.NickName." + sFrom_RoomNickName);
+			sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.group-chat.nick-name." + sFrom_RoomNickName);
 			if (StringUtils.isEmpty (sTriggerMode))
 			{	// 如果没有针对该聊天室单独设置，则寻找群聊的默认设置
-				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.GroupChat");
+				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.group-chat");
 				if (StringUtils.isEmpty (sTriggerMode))
 				{	// 如果也没有针对群聊的默认设置，则寻找全局的默认设置。如果全局默认设置也没有，则默认为 false
 					sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.default");
@@ -1067,15 +1120,15 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 		}
 		else
 		{
-			sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.PrivateChat.alias." + sTo_NickName);
+			sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.private-chat.alias." + sTo_NickName);
 			if (StringUtils.isEmpty (sTriggerMode))
-				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.PrivateChat.RemarkName." + sTo_NickName);
+				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.private-chat.remark-name." + sTo_NickName);
 			if (StringUtils.isEmpty (sTriggerMode))
-				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.PrivateChat.NickName." + sTo_NickName);
+				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.private-chat.nick-name." + sTo_NickName);
 
 			if (StringUtils.isEmpty (sTriggerMode))
 			{	// 如果没有针对该聊天室单独设置，则寻找群聊的默认设置
-				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.PrivateChat");
+				sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.private-chat");
 				if (StringUtils.isEmpty (sTriggerMode))
 				{	// 如果也没有针对群聊的默认设置，则寻找全局的默认设置。如果全局默认设置也没有，则默认为 false
 					sTriggerMode = net_maclife_wechat_http_BotApp.config.getString ("engine.trigger.mode.default");

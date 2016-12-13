@@ -41,7 +41,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Public = 0x08;	// 公众号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Subscriber = 0x10;	// 订阅号
-	public static final int WECHAT_ACCOUNT_TYPE_MASK__Tencent = 0x20;	// 腾讯自己的公众号
+	public static final int WECHAT_ACCOUNT_TYPE_MASK__WeChatTeam = 0x20;	// 微信团队自己的公众号
 
 	private static final String configFileName = "src" + File.separator + "config.properties";
 	private static Parameters configParameters = null;
@@ -72,7 +72,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 		}
 	}
 
-	public static String cacheDirectory = config.getString ("app.running.CacheDirectory", "run");
+	public static String cacheDirectory = config.getString ("app.running.cache-directory", "run");
 	public static String qrcodeFilesDirectory = cacheDirectory + "/qrcodes";
 	public static String mediaFilesDirectory = cacheDirectory + "/medias";
 	static
@@ -183,10 +183,10 @@ logger.info ("根据登录 ID 获取二维码图片");
 logger.info ("获取二维码图片的 http 响应消息体（保存到文件）:");
 logger.info ("	" + fOutputFile);
 
-		if (ParseBoolean(config.getString ("app.textQRCode.displayInTerminal"), true))
+		if (ParseBoolean(config.getString ("app.text-QR-Code.display-in-terminal"), true))
 		{
-			boolean bBackgroundIsDarker = ParseBoolean(config.getString ("app.textQRCode.terminal.backgroundIsDarkerThanForeground"), true);
-			boolean bUseANSIEscape = ParseBoolean(config.getString ("app.textQRCode.useANSIEscape"), true);
+			boolean bBackgroundIsDarker = ParseBoolean(config.getString ("app.text-QR-Code.terminal.background-is-darker-than-foreground"), true);
+			boolean bUseANSIEscape = ParseBoolean(config.getString ("app.text-QR-Code.use-ANSI-Escape"), true);
 			ConvertQRCodeImage (sFileName, sFileName_PNG);
 			DisplayQRCodeInConsole (sFileName_PNG, bBackgroundIsDarker, bUseANSIEscape);
 		}
@@ -206,7 +206,7 @@ logger.info ("	" + fOutputFile);
 logger.info ("将二维码 jpg 文件【转换并缩小】适合文字输出大小的 png 文件: " + sPNGFileName);
 		List<String> listImageMagickConvertArgs = new ArrayList<String> ();
 		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
-		listImageMagickConvertArgs.add (net_maclife_wechat_http_BotApp.config.getString ("app.imagemagick.path") + File.separator + "convert");
+		listImageMagickConvertArgs.add (net_maclife_wechat_http_BotApp.config.getString ("app.external-utils.imagemagick.path") + File.separator + "convert");
 		listImageMagickConvertArgs.add (sJPGFileName);
 		listImageMagickConvertArgs.add ("-resize");
 		listImageMagickConvertArgs.add ("10%");
@@ -429,6 +429,44 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		return "e" + String.format ("%015d", nRand).substring (0, 15);	// System.currentTimeMillis ();
 	}
 
+	public static void AppendContactInformation (StringBuilder sb, JsonNode jsonContact, boolean bIsRoomMember)
+	{
+		String sNickName = GetJSONText (jsonContact, "NickName");
+		sb.append (sNickName);
+		String sRemarkNameOrDisplayName = GetJSONText (jsonContact, bIsRoomMember ? "DisplayName" : "RemarkName");
+
+		int nVerifyFlag = GetJSONInt (jsonContact, "VerifyFlag");
+		boolean isPublicAccount = IsPublicAccount (nVerifyFlag);
+		boolean isRoomAccount = IsRoomAccount (GetJSONText (jsonContact, "UserName"));
+		if (isRoomAccount || isPublicAccount || (StringUtils.isNotBlank (sRemarkNameOrDisplayName) && ! StringUtils.equalsIgnoreCase (sNickName, sRemarkNameOrDisplayName)))
+		{
+			sb.append (" (");
+			if (StringUtils.isNotBlank (sRemarkNameOrDisplayName) && ! StringUtils.equalsIgnoreCase (sNickName, sRemarkNameOrDisplayName))
+			{
+				sb.append (sRemarkNameOrDisplayName);
+			}
+			if (isRoomAccount)
+				sb.append ("聊天室/群");
+			if (isPublicAccount)
+			{
+				sb.append ("公众号");
+				if (IsSubscriberAccount (nVerifyFlag))
+				{
+					sb.append (", 订阅号");
+					if (IsWeChatTeamAccount (nVerifyFlag))
+					{
+						sb.append (", 微信团队号");
+					}
+				}
+			}
+			sb.append (")");
+		}
+	}
+	public static void AppendContactInformation (StringBuilder sb, JsonNode jsonContact)
+	{
+		AppendContactInformation (sb, jsonContact, false);
+	}
+
 	public static JsonNode WebWeChatInit (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("初始化 …");
@@ -470,29 +508,7 @@ logger.fine ("	" + node);
 		{
 			JsonNode jsonContact = jsonRecentContactList.get (i);
 			sb.append ("	");
-			sb.append (GetJSONText (jsonContact, "NickName"));
-			int nVerifyFlag = GetJSONInt (jsonContact, "VerifyFlag");
-			boolean isPublicAccount = IsPublicAccount (nVerifyFlag);
-			boolean isRoomAccount = IsRoomAccount (GetJSONText (jsonContact, "UserName"));
-			if (isRoomAccount || isPublicAccount)
-			{
-				sb.append (" (");
-				if (isRoomAccount)
-					sb.append ("聊天室/群");
-				if (isPublicAccount)
-				{
-					sb.append ("公众号");
-					if (IsPublicAccount (nVerifyFlag))
-					{
-						sb.append (", 订阅号");
-						if (IsTencentAccount (nVerifyFlag))
-						{
-							sb.append (", 腾讯号");
-						}
-					}
-				}
-				sb.append (")");
-			}
+			AppendContactInformation (sb, jsonContact);
 			sb.append ("\n");
 		}
 logger.info (sb.toString ());
@@ -581,16 +597,7 @@ logger.fine  ("	" + node);
 			sb.append (". ");
 
 			JsonNode jsonMember = jsonMemberList.get (i);
-			String sNickName = GetJSONText (jsonMember, "NickName");
-			sb.append (sNickName);
-
-			String sRemarkName = GetJSONText (jsonMember, "RemarkName");
-			if (! StringUtils.equalsIgnoreCase (sNickName, sRemarkName) && StringUtils.isNotBlank (sRemarkName))
-			{
-				sb.append (" (");
-				sb.append (sRemarkName);
-				sb.append (")");
-			}
+			AppendContactInformation (sb, jsonMember);
 			sb.append ("    ");
 		}
 logger.info (sb.toString ());
@@ -676,16 +683,7 @@ logger.fine ("	" + node);
 				sb.append (". ");
 
 				JsonNode jsonMember = jsonMemberList.get (j);
-				String sNickName = GetJSONText (jsonMember, "NickName");
-				sb.append (sNickName);
-
-				String sDisplayName = GetJSONText (jsonMember, "DisplayName");
-				if (! StringUtils.equalsIgnoreCase (sNickName, sDisplayName) && StringUtils.isNotBlank (sDisplayName))
-				{
-					sb.append (" (");
-					sb.append (sDisplayName);
-					sb.append (")");
-				}
+				AppendContactInformation (sb, jsonMember, true);
 				sb.append ("    ");
 			}
 			sb.append ("\n");
@@ -703,10 +701,11 @@ logger.info (sb.toString ());
 	 * @param sEncryptedAccountInASession 类似  @********** filehelper weixin 等 ID，可以唯一对应一个联系人。最高优先级。
 	 * @param sAliasAccount 自定义帐号。如果 UserIDInThisSession 为空，则尝试根据 sAlias 获取。次优先级。
 	 * @param sRemarkName 备注名。如果 Alias 也为空，则根据备注名称获取。再次优先级。
+	 * @param sDisplayName 显示名/群昵称。如果 Alias 也为空，则根据显示名/群昵称获取。再次优先级。 注意：DisplayName 通常只在群联系人中才有可能有值。
 	 * @param sNickName 昵称。如果 Alias 也为空，则根据昵称获取。这个优先级在最后，因为，用户自己更改昵称的情况应该比前面的更常见，导致不确定性更容易出现。
 	 * @return 搜索到的联系人的 JsonNode 列表。正常情况下应该为 1 个，但也可能为空，也可能为多个。
 	 */
-	public static List<JsonNode> SearchForContacts (JsonNode jsonMemberList, String sEncryptedAccountInASession, String sAliasAccount, String sRemarkName, String sNickName)
+	public static List<JsonNode> SearchForContacts (JsonNode jsonMemberList, String sEncryptedAccountInASession, String sAliasAccount, String sRemarkName, String sDisplayName, String sNickName)
 	{
 		List<JsonNode> listUsersMatched = new ArrayList <JsonNode> ();
 		JsonNode jsonUser = null;
@@ -721,7 +720,7 @@ logger.info (sb.toString ());
 				{
 					//jsonUser = node;
 					listUsersMatched.add (node);
-					break;
+					break;	// 加密帐号是唯一的，找到了就不再继续找了
 				}
 			}
 
@@ -733,6 +732,7 @@ logger.info (sb.toString ());
 					//jsonUser = node;
 					//break;
 					listUsersMatched.add (node);
+					break;	// 微信号也应该是唯一的，找到了就不再继续找了
 				}
 			}
 
@@ -740,6 +740,17 @@ logger.info (sb.toString ());
 			{
 				String sTemp = GetJSONText (node, "RemarkName");
 				if (StringUtils.equalsIgnoreCase (sRemarkName, sTemp))
+				{
+					//jsonUser = node;
+					//break;
+					listUsersMatched.add (node);
+				}
+			}
+
+			else if (StringUtils.isNotEmpty (sDisplayName))
+			{
+				String sTemp = GetJSONText (node, "DisplayName");
+				if (StringUtils.equalsIgnoreCase (sDisplayName, sTemp))
 				{
 					//jsonUser = node;
 					//break;
@@ -776,12 +787,13 @@ logger.info (sb.toString ());
 	 * @param sEncryptedAccountInThisSession
 	 * @param sAlias
 	 * @param sRemarkName
+	 * @param sDisplayName
 	 * @param sNickName
 	 * @return
 	 */
-	public static JsonNode SearchForSingleContact (JsonNode jsonMemberList, String sEncryptedAccountInThisSession, String sAlias, String sRemarkName, String sNickName)
+	public static JsonNode SearchForSingleContact (JsonNode jsonMemberList, String sEncryptedAccountInThisSession, String sAlias, String sRemarkName, String sDisplayName, String sNickName)
 	{
-		List<JsonNode> listUsers = SearchForContacts (jsonMemberList, sEncryptedAccountInThisSession, sAlias, sRemarkName, sNickName);
+		List<JsonNode> listUsers = SearchForContacts (jsonMemberList, sEncryptedAccountInThisSession, sAlias, sRemarkName, sDisplayName, sNickName);
 		return listUsers.size ()==0 ? null : listUsers.get (0);
 	}
 
@@ -903,8 +915,9 @@ logger.fine ("	" + sContent);
 			switch (sSyncCheckSelector)
 			{
 				case "2":	// 有新消息
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 2 -- 有新消息");
 					String sSyncURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=" + URLEncoder.encode (sSessionID, utf8) + "&skey" + URLEncoder.encode (sSessionKey, utf8) + "&lang=zh_CN&pass_ticket=" +  sPassTicket;
-	logger.fine ("WebWeChatGetMessagePackage 中 webwxsync 的 URL:");
+logger.fine ("WebWeChatGetMessagePackage 中 webwxsync 的 URL:");
 logger.fine ("	" + sSyncURL);
 
 					//mapRequestHeaders = new HashMap<String, Object> ();
@@ -922,12 +935,16 @@ logger.fine ("\n" + node);
 					jsonResult = node;
 					break;
 				case "0":	// nothing
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 0 -- 无消息");
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 0 -- 无消息");
+					break;
+				case "6":	// 这个是啥？昨天晚上遇到过了，貌似是别人请求添加好友时遇到的，然后就一直返回 6，死循环出不来了
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 6 -- 别人请求添加好友？");
 					break;
 				case "7":	// 进入离开聊天页面？
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 7 -- 进入/离开聊天页面？");
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 7 -- 进入/离开聊天页面？");
 					break;
 				default:
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回未知的 selector: " + sSyncCheckSelector);
 					break;
 			}
 		}
@@ -1250,15 +1267,15 @@ logger.fine ("	" + fMediaFile);
 	 */
 	public static boolean IsPublicAccount (int nVerifyFlag)
 	{
-		return (nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Public) == WECHAT_ACCOUNT_TYPE_MASK__Public;
+		return nVerifyFlag!=-1 && ((nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Public) == WECHAT_ACCOUNT_TYPE_MASK__Public);
 	}
 	public static boolean IsSubscriberAccount (int nVerifyFlag)
 	{
-		return (nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Subscriber) == WECHAT_ACCOUNT_TYPE_MASK__Subscriber;
+		return nVerifyFlag!=-1 && ((nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Subscriber) == WECHAT_ACCOUNT_TYPE_MASK__Subscriber);
 	}
-	public static boolean IsTencentAccount (int nVerifyFlag)
+	public static boolean IsWeChatTeamAccount (int nVerifyFlag)
 	{
-		return (nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Tencent) == WECHAT_ACCOUNT_TYPE_MASK__Tencent;
+		return nVerifyFlag!=-1 && ((nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__WeChatTeam) == WECHAT_ACCOUNT_TYPE_MASK__WeChatTeam);
 	}
 
 	/**
