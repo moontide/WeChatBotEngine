@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.*;
  * @author liuyan
  *
  */
-public class net_maclife_wechat_http_Bot_MissleLaunched_JustForFun extends net_maclife_wechat_http_Bot
+public class net_maclife_wechat_http_Bot_MissileLaunched_JustForFun extends net_maclife_wechat_http_Bot
 {
 	@Override
 	public int OnGeoLocationMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sLocation, String sLongtitude, String sLatitude)
@@ -17,7 +17,7 @@ public class net_maclife_wechat_http_Bot_MissleLaunched_JustForFun extends net_m
 		try
 		{
 			String sReply = null;
-			List<String> listReplies = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.misslelaunched.replies");
+			List<String> listReplies = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.missilelaunched.replies");
 			if (listReplies!=null && listReplies.size ()>0)
 			{
 				int iRandom = net_maclife_wechat_http_BotApp.random.nextInt (listReplies.size ());
