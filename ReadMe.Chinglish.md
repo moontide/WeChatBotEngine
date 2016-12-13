@@ -47,7 +47,7 @@ Those bot applets are:
 	<dt><strong>GoogleImageSearch</strong>: Google Image Search</dt>
 	<dd>When an image message posted, send the image to Google image search, return the guess information and possible image sources.</dd>
 
-	<dt><strong>MissleLaunched</strong>: Send a 'missile launched' message when someone shared a geographic position (just for fun)</dt>
+	<dt><strong>MissileLaunched</strong>: Send a 'missile launched' message when someone shared a geographic position (just for fun)</dt>
 	<dd>When someone send a geographic position message, read the longtitude and latitude value, and append a random customable joke</dd>
 </dl>
 

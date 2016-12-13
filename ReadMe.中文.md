@@ -47,7 +47,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	<dt><strong>GoogleImageSearch</strong>: Google 图片搜索</dt>
 	<dd>当有人发了图片时，提交给 Google 图片搜索，给出 Google 图片搜索的结果、可能的图片来源。</dd>
 
-	<dt><strong>MissleLaunched</strong>: 用来恶搞地理位置信息的机器人</dt>
+	<dt><strong>MissileLaunched</strong>: 用来恶搞地理位置信息的机器人</dt>
 	<dd>当有人发了地理位置信息时，把经纬度报出来，然后加上一句随机可设置的“导弹准备就绪”的恶搞话语…… = =</dd>
 </dl>
 
