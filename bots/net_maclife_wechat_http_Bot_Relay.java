@@ -36,11 +36,6 @@ import com.fasterxml.jackson.databind.*;
  */
 public class net_maclife_wechat_http_Bot_Relay extends net_maclife_wechat_http_Bot implements Runnable
 {
-	//public static final List<String> listListenAddresses = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.relay.listen.address");
-	//public static final List<Integer> listListenPorts = net_maclife_wechat_http_BotApp.config.getList (int.class, "bot.relay.listen.port");
-	public static final String sListenddress = net_maclife_wechat_http_BotApp.config.getString ("bot.relay.listen.address");
-	public static final int nListenPort = net_maclife_wechat_http_BotApp.config.getInt ("bot.relay.listen.port");
-
 	ServerSocket ss = null;
 
 	@Override
@@ -48,13 +43,17 @@ public class net_maclife_wechat_http_Bot_Relay extends net_maclife_wechat_http_B
 	{
 		try
 		{
+			String sListenddress = net_maclife_wechat_http_BotApp.config.getString ("bot.relay.listen.address");
+			int nListenPort = net_maclife_wechat_http_BotApp.config.getInt ("bot.relay.listen.port");
+
 			ss = new ServerSocket ();
 			ss.bind (new InetSocketAddress (InetAddress.getByName (sListenddress), nListenPort));
 		}
 		catch (IOException e)
 		{
-net_maclife_wechat_http_BotApp.logger.severe ("bot 启动失败: " + e);
+net_maclife_wechat_http_BotApp.logger.severe (GetName () + " 启动失败: " + e);
 			e.printStackTrace();
+			return;
 		}
 
 		botTask = net_maclife_wechat_http_BotApp.executor.submit (this);
@@ -118,7 +117,7 @@ net_maclife_wechat_http_BotApp.logger.severe ("bot 启动失败: " + e);
 			}
 			if (StringUtils.isNotEmpty (sFrom))
 			{
-				sMessage = sMessage + "\n\t-- " + sFrom;
+				sMessage = sMessage + "\n-- 消息来源: " + sFrom;
 			}
 
 			JsonNode jsonTOs = jsonMessageToRelay.get ("To");

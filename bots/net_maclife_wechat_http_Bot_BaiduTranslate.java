@@ -20,7 +20,7 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 	//public static final Pattern PATTERN_LanguageOptions = Pattern.compile (REGEXP_LanguageOptions);
 
 	@Override
-	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFromName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
+	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
 		List<String> listCommands = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.baidu-translate.commands");
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理
@@ -48,7 +48,7 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 					// 只有命令时，打印帮助信息
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, GetName() + " 需要指定要翻译的内容。\n\n用法:\n" + sCommand + "[.可选的语言代码选项]  <必填的要翻译的原文>\n\n可选的语言代码选项的格式：\n  - .原文语言代码\n  - .2译文语言代码\n  - .原文语言代码2译文语言代码\n\n具体能用哪些语言代码，请参照： http://api.fanyi.baidu.com/api/trans/product/apidoc#languageList 给出的语言代码列表");
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, GetName() + " 需要指定要翻译的内容。\n\n用法:\n" + sCommand + "[.可选的语言代码选项]  <必填的要翻译的原文>\n\n可选的语言代码选项的格式：\n  - .原文语言代码\n  - .2译文语言代码\n  - .原文语言代码2译文语言代码\n\n具体能用哪些语言代码，请参照： http://api.fanyi.baidu.com/api/trans/product/apidoc#languageList 给出的语言代码列表");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
@@ -85,14 +85,14 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 					{
 						String sErrorInfo = GetName() + " 的原文、译文的语言代码不能为空";
 //net_maclife_wechat_http_BotApp.logger.warning (sErrorInfo);
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sErrorInfo);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sErrorInfo);
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 					if (StringUtils.equalsIgnoreCase (sToLanguage, "auto"))
 					{
 						String sErrorInfo = GetName() + "机器人设置的目标语言不能为 auto";
 //net_maclife_wechat_http_BotApp.logger.warning (sErrorInfo);
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sErrorInfo);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sErrorInfo);
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
@@ -107,7 +107,7 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 					{
 						String sErrorInfo = GetName() + " 返回错误结果: " + net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_code") + ": " + net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_msg");
 //net_maclife_wechat_http_BotApp.logger.warning (sErrorInfo);
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sErrorInfo);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sErrorInfo);
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 					JsonNode jsonTransResults = jsonResult.get ("trans_result");
@@ -115,7 +115,7 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 					{
 						JsonNode jsonTransResult = jsonTransResults.get (0);
 						sTranslation = net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst");
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sTranslation);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sTranslation);
 					}
 					else
 					{
@@ -129,7 +129,7 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 							sb.append (net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst"));
 							sb.append ("\n");
 						}
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFromName, sTranslation);
+						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sTranslation);
 					}
 					break;
 				}

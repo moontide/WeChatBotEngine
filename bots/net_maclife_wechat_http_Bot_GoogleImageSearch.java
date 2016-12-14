@@ -42,7 +42,7 @@ public class net_maclife_wechat_http_Bot_GoogleImageSearch extends net_maclife_w
 	static final String sMultipartBoundary = "JsoupDoesNotSupportFormDataWell, and, ApacheHCDoesNotSupportSOCKSProxy";
 
 	@Override
-	public int OnImageMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
+	public int OnImageMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
 	{
 		if (! fMedia.exists () && StringUtils.isEmpty (sImageURL))
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -284,7 +284,7 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 ._gUb，也�
 				}
 			}
 //System.out.println (sbInfo);
-			SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, sbInfo.toString ());
+			SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sbInfo.toString ());
 
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED | net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 		}
@@ -336,9 +336,9 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 ._gUb，也�
 	}
 
 	@Override
-	public int OnEmotionMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
+	public int OnEmotionMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
 	{
-		return OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_NickName, sTo_EncryptedAccount, sTo_NickName, jsonMessage, sContent, fMedia, sImageURL);
+		return OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonMessage, sContent, fMedia, sImageURL);
 	}
 
 	public static void main (String[] args)

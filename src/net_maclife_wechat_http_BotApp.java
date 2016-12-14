@@ -180,7 +180,9 @@ logger.info ("根据登录 ID 获取二维码图片");
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Stream (sURL);
 		OutputStream os = new FileOutputStream (fOutputFile);
 		IOUtils.copy (is, os);
-logger.info ("获取二维码图片的 http 响应消息体（保存到文件）:");
+		is.close ();
+		os.close ();
+logger.fine ("获取二维码图片的 http 响应消息体（保存到文件）:");
 logger.info ("	" + fOutputFile);
 
 		if (ParseBoolean(config.getString ("app.text-QR-Code.display-in-terminal"), true))
@@ -486,6 +488,7 @@ logger.finer (sRequestBody_JSONString);
 
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+		is.close ();
 logger.fine ("获取 WebWeChatInit 的 http 响应消息体:");
 logger.fine ("	" + node);
 
@@ -552,6 +555,7 @@ logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+		is.close ();
 logger.fine ("获取 WebWeChatStatusNotify 的 http 响应消息体:");
 logger.fine ("	" + node);
 		//
@@ -576,6 +580,7 @@ logger.finer  ("	" + sRequestBody_JSONString);
 
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+		is.close ();
 logger.fine  ("获取 WebWeChatGetContacts 的 http 响应消息体:");
 logger.fine  ("	" + node);
 
@@ -656,6 +661,7 @@ logger.finer ("发送 WebWeChatGetRoomContacts 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+		is.close ();
 logger.fine ("获取 WebWeChatGetRoomContacts 的 http 响应消息体:");
 logger.fine ("	" + node);
 
@@ -930,6 +936,7 @@ logger.finer ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求�
 logger.finer ("	\n" + sRequestBody_JSONString);
 					InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 					JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+					is.close ();
 logger.fine ("获取 WebWeChatGetMessagePackage 中 webwxsync 的 http 响应消息体:");
 logger.fine ("\n" + node);
 					jsonResult = node;
@@ -1030,6 +1037,7 @@ logger.finer ("发送 WebWeChatSendMessage 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+		is.close ();
 logger.fine ("获取 WebWeChatSendMessage 的 http 响应消息体:");
 logger.fine ("\n" + node);
 		//
@@ -1243,6 +1251,8 @@ logger.finer ("	" + mapRequestHeaders);
 			InputStream is = http.getInputStream ();
 			OutputStream os = new FileOutputStream (fMediaFile);
 			IOUtils.copy (is, os);
+			is.close ();
+			os.close ();
 		}
 logger.fine ("获取 WebWeChatGetMedia 的 http 响应消息体 (保存到文件)");
 logger.fine ("	" + fMediaFile);

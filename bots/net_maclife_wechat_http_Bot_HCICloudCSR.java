@@ -27,7 +27,7 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 	String HCICLOUD_CHARSET_ENCODING = net_maclife_wechat_http_BotApp.utf8;
 
 	@Override
-	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_NickName, String sTo_EncryptedAccount, String sTo_NickName, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
+	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
 		try
 		{
@@ -38,7 +38,7 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 			String sResponse = ParseCSRResponse (jsonCSRResponse);
 			if (StringUtils.isNotEmpty (sResponse))
 			{
-				SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_NickName, sResponse);
+				SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sResponse);
 			}
 		}
 		catch (Exception e)
