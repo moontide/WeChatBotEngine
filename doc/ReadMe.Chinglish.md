@@ -20,7 +20,7 @@ Those bot applets are:
 	<dt><strong>Repeater</strong>: A bot which repeat sender's message</dt>
 	<dd>Repeat the message sent by sender. This bot is only for demonstration or test purpose, running for long term is not recommended.</dd>
 
-	<dt><strong>Relay</strong>: A bot which relay messages from outside to a WeChat friend in your contacts</dt>
+	<dt><strong>Relay</strong>: A bot which relay messages from outside to a WeChat friend in your contacts (Incomig only, no outgoing)</dt>
 	<dd>Receive message from outside via Socket (TCP/IP), and send it to a friend (person or room) in your WeChat contacts according the target given in the message. Other applications can send message to WeChat via this relay bot, hence expanded the power of WeChatBotEngine, such as:
 		<br/>
 		<ul>
