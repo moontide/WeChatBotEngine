@@ -878,6 +878,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 				case WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG:
 					break;
 				case WECHAT_MSG_TYPE__WECHAT_VCARD:
+					OnVCardMessageReceived (sEncryptedRoomAccount, sRoomNickName, sEncryptedFromAccount, sFromName, sEncryptedToAccount, sToName, jsonNode, sContent);
 					break;
 				case WECHAT_MSG_TYPE__VIDEO_CALL:
 					break;
@@ -1028,6 +1029,84 @@ net_maclife_wechat_http_BotApp.logger.info ("收到 " + nModChatRoomMemerCount +
 	void OnImageMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_Name, final String sTo_EncryptedAccount, final String sTo_Name, final JsonNode jsonMessage, final String sContent, final File fMedia)
 	{
 		DispatchEvent ("OnImageMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonMessage, sContent, fMedia, null);
+	}
+
+	void OnVCardMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_Name, final String sTo_EncryptedAccount, final String sTo_Name, final JsonNode jsonMessage, final String sContent)
+	{
+		try
+		{
+			JsonNode jsonRecommenedInfo = jsonMessage.get ("RecommendInfo");
+			String 昵称 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "NickName");
+			String 微信号 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Alias");
+			int n性别 = net_maclife_wechat_http_BotApp.GetJSONInt (jsonRecommenedInfo, "Sex");
+			String 省 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Province");
+			String 市 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "City");
+
+			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+			Element msg = doc.getRootElement ();
+			String 大头像图片网址 = msg.getAttributeValue ("bigheadimgurl");
+			String 小头像图片网址 = msg.getAttributeValue ("smallheadimgurl");
+			String 地区代码 = msg.getAttributeValue ("regionCode");
+
+			StringBuilder sb = new StringBuilder ();
+			if (StringUtils.isNotEmpty (昵称))
+			{
+				sb.append ("昵称:   ");
+				sb.append (昵称);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (微信号))
+			{
+				sb.append ("微信号: ");
+				sb.append (微信号);
+				sb.append ("\n");
+			}
+			if (n性别 != 0)
+			{
+				sb.append ("性别:   ");
+				if (n性别 == 1)
+					sb.append ("男");
+				else if (n性别 == 2)
+					sb.append ("女");
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (省))
+			{
+				sb.append ("省份:   ");
+				sb.append (省);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (市))
+			{
+				sb.append ("城市:   ");
+				sb.append (市);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (地区代码))
+			{
+				sb.append ("地区代码: ");
+				sb.append (地区代码);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (大头像图片网址))
+			{
+				sb.append ("大头像: ");
+				sb.append (大头像图片网址);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (小头像图片网址))
+			{
+				sb.append ("小头像: ");
+				sb.append (小头像图片网址);
+				sb.append ("\n");
+			}
+net_maclife_wechat_http_BotApp.logger.info ("名片信息：\n" + sb);
+			DispatchEvent ("OnVCardMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonMessage, sContent, jsonRecommenedInfo, msg);
+		}
+		catch (ParsingException | IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	void OnOperationMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_Name, final String sTo_EncryptedAccount, final String sTo_Name, final JsonNode jsonMessage, final String sContent)
@@ -1203,36 +1282,28 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 			{
 				case "onloggedin":
 					return bot.OnLoggedIn ();
-					//break;
 				case "onloggedout":
 					return bot.OnLoggedOut ();
-					//break;
 				case "onshutdown":
 					return bot.OnShutdown ();
-					//break;
 				case "onmessage":
 					return bot.OnMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, (JsonNode)data);
-					//break;
 				case "ontextmessage":
 					return bot.OnTextMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (boolean)data, (boolean)data2);
-					//break;
 				case "ongeolocationmessage":
 					return bot.OnGeoLocationMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (String)data, (String)data2);
 				case "onimagemessage":
 					return bot.OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (File)data, (String)data2);
-					//break;
 				case "onvoicemessage":
 					return bot.OnVoiceMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (File)data);
-					//break;
+				case "onvcardmessage":
+					return bot.OnVCardMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (JsonNode)data, (Element)data2);
 				case "onvideomessage":
 					return bot.OnVideoMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (File)data);
-					//break;
 				case "onemotionmessage":
 					return bot.OnEmotionMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (File)data, (String)data2);
-					//break;
 				case "onchatwindowopenedmessage":
 					return bot.OnChatWindowOpenedMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (String)data);
-					//break;
 				default:
 					break;
 			}
