@@ -117,16 +117,65 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	// AddMsgList 节点处理
 	////////////////////////////////
+	/**
+	 * 当收到了文本消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 json 消息
+	 * @param sMessage 文本内容
+	 * @param bMentionedMeInRoomChat 该消息是否提到了我（仅群聊时才会设置）
+	 * @param bMentionedMeFirstInRoomChat 该消息是否在消息开头提到了我，即：指名道姓对我发的消息（仅群聊时才会设置）
+	 * @return
+	 */
 	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
+
+	/**
+	 * 当收到了地理位置消息时…… （注意，这个本质上也是一个文本消息）
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 json 消息
+	 * @param sLocation 位置
+	 * @param sLongtitude 经度
+	 * @param sLatitude 纬度
+	 * @return
+	 */
 	public int OnGeoLocationMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sLocation, String sLongtitude, String sLatitude)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
+
 	/**
-	 *
+	 * 当收到了链接分享消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 json 消息
+	 * @param sLocation 位置
+	 * @param sLongtitude 经度
+	 * @param sLatitude 纬度
+	 * @return
+	 */
+	public int OnURLMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, Element xmlMsg)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	/**
+	 * 当收到了图片消息时……
 	 * @param sFrom_EncryptedRoomAccount
 	 * @param sFrom_RoomNickName
 	 * @param sFrom_EncryptedAccount
@@ -135,7 +184,7 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sTo_Name
 	 * @param jsonMessage 原始 JsonNode 信息
 	 * @param sContent 文本内容
-	 * @param fMedia 图片文件，不会是 null
+	 * @param fMedia 已经下载下来的图片文件，不会是 null
 	 * @param sImageURL 图片消息自身并没有提供图片 URL 地址 (<code>null</code>)，但是表情图消息会提供，表情图的处理可能是简单的调用图片消息处理接口
 	 * @return
 	 */
@@ -143,23 +192,93 @@ public abstract class net_maclife_wechat_http_Bot
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
+
+	/**
+	 * 当收到了语音消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 JsonNode 信息
+	 * @param sContent 文本内容
+	 * @param fMedia 已经下载下来的音频文件（目前发现个人版微信只有 mp3 格式，但微信公众号里收到的是 amr 格式），不会是 null
+	 * @return
+	 */
 	public int OnVoiceMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, File fMedia)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
+
+	/**
+	 * 当收到了视频消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 JsonNode 信息
+	 * @param sContent 文本内容
+	 * @param fMedia 已经下载下来的视频文件，不会是 null
+	 * @return
+	 */
 	public int OnVideoMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, File fMedia)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
+
+	/**
+	 * 当收到了表情图消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 JsonNode 信息
+	 * @param sContent 文本内容
+	 * @param fMedia 已经下载下来的表情图片文件，不会是 null
+	 * @return
+	 */
 	public int OnEmotionMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
+
+	/**
+	 * 当收到了“打开了聊天窗口”消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 JsonNode 信息
+	 * @param sContent 文本内容（xml 格式的）
+	 * @param sTargetAccount 聊天窗口对方（个体或者群）的没加密的帐号
+	 * @return
+	 */
 	public int OnChatWindowOpenedMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, String sTargetAccount)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
+	/**
+	 * 当收到了名片消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 JsonNode 信息
+	 * @param sContent 文本内容（xml 格式的）
+	 * @param jsonRecommenedInfo jsonMessage 里面的 RecommenedInfo 节点
+	 * @param xmlMsg sContent 解析为 xml 后的 <code>msg</code> Element
+	 * @return
+	 */
 	public int OnVCardMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, JsonNode jsonRecommenedInfo, Element xmlMsg)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;

@@ -889,6 +889,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 				case WECHAT_MSG_TYPE__GPS_POSITION:
 					break;
 				case WECHAT_MSG_TYPE__URL:
+					OnURLMessageReceived (sEncryptedRoomAccount, sRoomNickName, sEncryptedFromAccount, sFromName, sEncryptedToAccount, sToName, jsonNode, sContent);
 					break;
 				case WECHAT_MSG_TYPE__VOIP_MSG:
 					break;
@@ -1109,6 +1110,72 @@ net_maclife_wechat_http_BotApp.logger.info ("名片信息：\n" + sb);
 		}
 	}
 
+	void OnURLMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_Name, final String sTo_EncryptedAccount, final String sTo_Name, final JsonNode jsonMessage, final String sContent)
+	{
+		try
+		{
+			JsonNode jsonAppInfo = jsonMessage.get ("AppInfo");
+			int 应用程序消息类型 = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessage, "AppMsgType");
+			String 应用程序ID = net_maclife_wechat_http_BotApp.GetJSONText (jsonAppInfo, "AppID");
+			String sURL = net_maclife_wechat_http_BotApp.GetJSONText (jsonMessage, "Url");
+			String sFileName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMessage, "FileName");
+
+			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+			Element msg = doc.getRootElement ();
+			String 应用程序名 = msg.getFirstChildElement ("appinfo").getFirstChildElement ("appname").getValue ();
+
+			Element appmsg = msg.getFirstChildElement ("appmsg");
+			String title = appmsg.getFirstChildElement ("title").getValue ();	// 据观察，其数值等于 等于 sFileName
+			String description = appmsg.getFirstChildElement ("des").getValue ();
+			String url_from_xml = appmsg.getFirstChildElement ("url").getValue ();	// 据观察，其数值等于 等于 sURL
+			String data_url = appmsg.getFirstChildElement ("dataurl").getValue ();	// 网易云音乐分享里，这个是个音乐文件
+
+			StringBuilder sb = new StringBuilder ();
+			if (StringUtils.isNotEmpty (title))
+			{
+				sb.append ("标题:   ");
+				sb.append (title);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (description))
+			{
+				sb.append ("详细:   ");
+				sb.append (description);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (url_from_xml))
+			{
+				sb.append ("网址:   ");
+				sb.append (url_from_xml);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (data_url))
+			{
+				sb.append ("数据网址: ");
+				sb.append (data_url);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (应用程序名))
+			{
+				sb.append ("程序名: ");
+				sb.append (应用程序名);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (应用程序ID))
+			{
+				sb.append ("程序ID: ");
+				sb.append (应用程序ID);
+				sb.append ("\n");
+			}
+net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
+			DispatchEvent ("OnURLMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonMessage, sContent, msg, jsonMessage);
+		}
+		catch (ParsingException | IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
 	void OnOperationMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_Name, final String sTo_EncryptedAccount, final String sTo_Name, final JsonNode jsonMessage, final String sContent)
 	{
 		String sOperationType = null;
@@ -1292,6 +1359,8 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 					return bot.OnTextMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (boolean)data, (boolean)data2);
 				case "ongeolocationmessage":
 					return bot.OnGeoLocationMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (String)data, (String)data2);
+				case "onurlmessage":
+					return bot.OnURLMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, (Element)data);
 				case "onimagemessage":
 					return bot.OnImageMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (File)data, (String)data2);
 				case "onvoicemessage":
