@@ -89,6 +89,12 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		{
 			return value;
 		}
+		public int ValueOf (int nType)
+		{
+			switch (nType)
+			{
+			}
+		}
 	}
 	*/
 
@@ -818,7 +824,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 
 			if (isFromMe)
 			{
-net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发给 " + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : "【" + sRoomNickName + "】 ") + (isToMe ? "自己" : sFromName) + " 的消息 (类型=" + nMsgType + ")：\n" + sContent);
+net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发给 " + (StringUtils.isEmpty (sRoomNickName) || StringUtils.equalsIgnoreCase (sRoomNickName, "null") ? "" : "【" + sRoomNickName + "】 ") + (isToMe ? "自己" : sFromName) + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
 			}
 			else
 			{
@@ -909,6 +915,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 				case WECHAT_MSG_TYPE__SYSTEM:
 					break;
 				case WECHAT_MSG_TYPE__MSG_REVOKED:
+					OnMessageIsRevokedMessageReceived (sEncryptedRoomAccount, sRoomNickName, sEncryptedFromAccount, sFromName, sEncryptedToAccount, sToName, jsonNode, sContent);
 					break;
 				default:
 					break;
@@ -1243,6 +1250,40 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 		//DispatchEvent ("OnOperationMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, sContent, null, null);
 	}
 
+	void OnMessageIsRevokedMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_Name, final String sTo_EncryptedAccount, final String sTo_Name, final JsonNode jsonMessage, final String sContent)
+	{
+		try
+		{
+			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+			Element sysmsg = doc.getRootElement ();
+			Element revokemsg = sysmsg.getFirstChildElement ("revokemsg");
+			String sMsgID_oldversion = revokemsg.getFirstChildElement ("oldmsgid").getValue ();
+			String sRevokedMsgID = revokemsg.getFirstChildElement ("msgid").getValue ();
+			String sReplacedByMsg = revokemsg.getFirstChildElement ("replacemsg").getValue ();
+
+			StringBuilder sb = new StringBuilder ();
+			if (StringUtils.isNotEmpty (sRevokedMsgID))
+			{
+				sb.append ("被撤回的消息ID: ");
+				sb.append (sRevokedMsgID);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (sReplacedByMsg))
+			{
+				sb.append ("代替的消息内容: ");
+				sb.append (sReplacedByMsg);
+				sb.append ("\n");
+			}
+net_maclife_wechat_http_BotApp.logger.info ("“消息已撤回”消息：\n" + sb);
+			DispatchEvent ("OnMessageIsRevokedMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonMessage, sContent, sRevokedMsgID, sReplacedByMsg);
+		}
+		catch (ParsingException | IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+
 	void OnVoiceMessageReceived (final String sFrom_EncryptedRoomAccount, final String sFrom_RoomNickName, final String sFrom_EncryptedAccount, final String sFrom_Name, final String sTo_EncryptedAccount, final String sTo_Name, final JsonNode jsonMessage, final String sContent, final File fMedia)
 	{
 		DispatchEvent ("OnVoiceMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonMessage, sContent, fMedia, null);
@@ -1373,6 +1414,8 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 					return bot.OnEmotionMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (File)data, (String)data2);
 				case "onchatwindowopenedmessage":
 					return bot.OnChatWindowOpenedMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (String)data);
+				case "onmessageisrevokedmessage":
+					return bot.OnMessageIsRevokedMessageReceived (sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, jsonNode, sContent, (String)data, (String)data2);
 				default:
 					break;
 			}

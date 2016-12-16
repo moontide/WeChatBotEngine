@@ -284,6 +284,25 @@ public abstract class net_maclife_wechat_http_Bot
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
+	/**
+	 * 当收到“消息被撤回”消息时……
+	 * @param sFrom_EncryptedRoomAccount
+	 * @param sFrom_RoomNickName
+	 * @param sFrom_EncryptedAccount
+	 * @param sFrom_Name
+	 * @param sTo_EncryptedAccount
+	 * @param sTo_Name
+	 * @param jsonMessage 原始 JsonNode 信息
+	 * @param sContent 文本内容（xml 格式的）
+	 * @param sRevokedMsgID 被撤回的原消息 ID
+	 * @param sReplacedByMsg 替换成的消息
+	 * @return
+	 */
+	public int OnMessageIsRevokedMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sContent, String sRevokedMsgID, String sReplacedByMsg)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
 	////////////////////////////////
 	// ModContactList 节点处理
 	////////////////////////////////

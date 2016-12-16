@@ -811,7 +811,7 @@ logger.info (sb.toString ());
 		return listUsers.size ()==0 ? null : listUsers.get (0);
 	}
 
-	public static String MakeSyncCheckKeys (JsonNode jsonSyncCheckKeys)
+	public static String MakeSyncCheckKeysQueryString (JsonNode jsonSyncCheckKeys)
 	{
 		StringBuilder sbSyncCheckKeys = new StringBuilder ();
 		JsonNode listKeys = jsonSyncCheckKeys.get ("List");
@@ -868,7 +868,7 @@ logger.info (sb.toString ());
 	public static JsonNode WebWeChatGetMessagePackage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException
 	{
 logger.fine ("等待并获取新消息 WebWeChatGetMessagePackage (synccheck & webwxsync) …");	// 这里的日志级别改为了 fine，因这个在死循环中，产生太多日志
-		String sSyncCheckKeys = MakeSyncCheckKeys (jsonSyncCheckKeys);
+		String sSyncCheckKeys = MakeSyncCheckKeysQueryString (jsonSyncCheckKeys);
 		String sSyncCheckURL = "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck?r=" + System.currentTimeMillis () + "&skey=" + URLEncoder.encode (sSessionKey, utf8) + "&sid=" + URLEncoder.encode (sSessionID, utf8) + "&uin=" + sUserID + "&deviceid=" + MakeDeviceID () + "&synckey=" +  sSyncCheckKeys + "&_=" + System.currentTimeMillis ();
 logger.fine ("WebWeChatGetMessagePackage 中 synccheck 的 URL:");
 logger.fine ("	" + sSyncCheckURL);
