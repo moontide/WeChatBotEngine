@@ -40,10 +40,16 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 			if (arrayMessages.length >= 2)
 				sCommandParametersInputed = arrayMessages[1];
 
+			String[] arrayCommandOptions = sCommandInputed.split ("\\.+", 2);
+			sCommandInputed = arrayCommandOptions[0];
+			String sCommandOptionsInputed = null;
+			if (arrayCommandOptions.length >= 2)
+				sCommandOptionsInputed = arrayCommandOptions[1];
+
 			for (int i=0; i<listCommands.size (); i++)
 			{
 				String sCommand = listCommands.get (i);
-				if (StringUtils.startsWithIgnoreCase (sCommandInputed, sCommand))
+				if (StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 				{
 					// 只有命令时，打印帮助信息
 					if (StringUtils.isEmpty (sCommandParametersInputed))
@@ -53,11 +59,6 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 					}
 
 					// 解析命令“翻译语言选项”：.src2dst、.src、.2dst
-					String[] arrayCommandOptions = sCommandInputed.split ("\\.+", 2);
-					sCommandInputed = arrayCommandOptions[0];
-					String sCommandOptionsInputed = null;
-					if (arrayCommandOptions.length >= 2)
-						sCommandOptionsInputed = arrayCommandOptions[1];
 					if (StringUtils.isNotEmpty (sCommandOptionsInputed))
 					{
 						//Matcher matcher = PATTERN_LanguageOptions.matcher (sCommandOptionsInputed);

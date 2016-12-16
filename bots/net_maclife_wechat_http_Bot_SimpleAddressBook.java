@@ -44,7 +44,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 			for (int i=0; i<listCommands.size (); i++)
 			{
 				String sCommand = listCommands.get (i);
-				if (StringUtils.startsWithIgnoreCase (sCommandInputed, sCommand))
+				if (StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 				{
 					if (StringUtils.isEmpty (sFrom_RoomNickName))
 					{
