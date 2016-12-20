@@ -50,10 +50,10 @@ public class net_maclife_wechat_http_Bot_BaiduVoice extends net_maclife_wechat_h
 	public static final String BAIDU_ASR_API_URL             = "http://vop.baidu.com/server_api";
 	public static final String BAIDU_TTS_API_URL             = "http://tsn.baidu.com/text2audio";
 
-	static String sBaiduOAuthAccessTokenFileInJSONFormat = net_maclife_wechat_http_BotApp.cacheDirectory + "/" + net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.oauth.accessTokenFile");
-	static String sBaiduCloudAppID           = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.voice.app.id");
-	static String sBaiduCloudAppKey          = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.voice.app.key");
-	static String sBaiduCloudAppPassword     = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu.voice.app.password");
+	static String sBaiduOAuthAccessTokenFileInJSONFormat = net_maclife_wechat_http_BotApp.cacheDirectory + "/" + net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.oauth.accessTokenFile");
+	static String sBaiduCloudAppID           = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.voice.app.id");
+	static String sBaiduCloudAppKey          = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.voice.app.key");
+	static String sBaiduCloudAppPassword     = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.voice.app.password");
 
 	static String sMACAddress = "BaiduVoiceBotApplet";
 	static
@@ -317,7 +317,7 @@ net_maclife_wechat_http_BotApp.logger.info ("ConvertAudioToAMRFormat 将 " + sSo
 		String sAMRFileName = sSourceAudio + ".amr";
 		List<String> listCommandArgs = new ArrayList<String> ();
 		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
-		listCommandArgs.add (net_maclife_wechat_http_BotApp.config.getString ("app.external-utils.ffmpeg.path") + File.separator + "ffmpeg");
+		listCommandArgs.add (net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.external-utils.ffmpeg.path") + File.separator + "ffmpeg");
 		listCommandArgs.add ("-i");
 		listCommandArgs.add (sSourceAudio.toString ());
 		listCommandArgs.add ("-ar");
@@ -345,7 +345,7 @@ net_maclife_wechat_http_BotApp.logger.info ("StripAudioFromVideo 将视频 " + s
 		String sAMRFileName = sSourceVideo + ".amr";
 		List<String> listCommandArgs = new ArrayList<String> ();
 		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
-		listCommandArgs.add (net_maclife_wechat_http_BotApp.config.getString ("app.external-utils.ffmpeg.path") + File.separator + "ffmpeg");
+		listCommandArgs.add (net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.external-utils.ffmpeg.path") + File.separator + "ffmpeg");
 		listCommandArgs.add ("-i");
 		listCommandArgs.add (sSourceVideo.toString ());
 		listCommandArgs.add ("-vn");

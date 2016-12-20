@@ -25,7 +25,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 	@Override
 	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
-		List<String> listCommands = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.simple-address-book.commands");
+		List<String> listCommands = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.simple-address-book.commands");
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
@@ -81,7 +81,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 
 	String Query (String sRoomName, String sQuery)
 	{
-		String sTablePrefix = StringUtils.trimToEmpty (net_maclife_wechat_http_BotApp.config.getString ("bot.simple-address-book.jdbc.database-table.prefix"));
+		String sTablePrefix = StringUtils.trimToEmpty (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.simple-address-book.jdbc.database-table.prefix"));
 		SetupDataSource ();
 		Connection conn = null;
 		PreparedStatement stmt = null;
@@ -146,10 +146,10 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 		if (botDS != null)
 			return;
 
-		String sDriverClassName = net_maclife_wechat_http_BotApp.config.getString ("app.jdbc.driver");	// , "com.mysql.jdbc.Driver"
-		String sURL = net_maclife_wechat_http_BotApp.config.getString ("app.jdbc.url");	// , "jdbc:mysql://localhost/WeChatBotEngine?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull"
-		String sUserName = net_maclife_wechat_http_BotApp.config.getString ("app.jdbc.username");	// , "root"
-		String sUserPassword = net_maclife_wechat_http_BotApp.config.getString ("app.jdbc.userpassword");
+		String sDriverClassName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.driver");	// , "com.mysql.jdbc.Driver"
+		String sURL = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.url");	// , "jdbc:mysql://localhost/WeChatBotEngine?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull"
+		String sUserName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.username");	// , "root"
+		String sUserPassword = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.userpassword");
 		if (StringUtils.isEmpty (sDriverClassName) || StringUtils.isEmpty (sURL) || StringUtils.isEmpty (sUserName))
 		{
 net_maclife_wechat_http_BotApp.logger.warning ("jdbc 需要将 driver、username、userpassword 信息配置完整");

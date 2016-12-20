@@ -22,12 +22,12 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 	@Override
 	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
-		List<String> listCommands = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.baidu-translate.commands");
+		List<String> listCommands = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.baidu-translate.commands");
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
-		String sFromLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.from-language");
-		String sToLanguage = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.to-language");
+		String sFromLanguage = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu-translate.from-language");
+		String sToLanguage = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu-translate.to-language");
 
 		try
 		{
@@ -148,8 +148,8 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 
 	public static JsonNode GetTranslation (String sSource, String sFromLanguage, String sToLanguage)
 	{
-		String sAppID = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.app.id");
-		String sAppKey = net_maclife_wechat_http_BotApp.config.getString ("bot.baidu-translate.app.key");
+		String sAppID = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu-translate.app.id");
+		String sAppKey = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu-translate.app.key");
 		int iSalt随机数佐料 = net_maclife_wechat_http_BotApp.random.nextInt ();
 		String sSign = DigestUtils.md5Hex (sAppID + sSource + iSalt随机数佐料 + sAppKey);
 		try

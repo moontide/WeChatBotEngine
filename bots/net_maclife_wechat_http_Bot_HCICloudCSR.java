@@ -14,16 +14,16 @@ import com.fasterxml.jackson.databind.*;
  */
 public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_http_Bot
 {
-	String HCICLOUD_SERVER_ADDRESS   = net_maclife_wechat_http_BotApp.config.getString ("bot.hcicloud.csr.server.address");
-	int HCICLOUD_SERVER_PORT         = net_maclife_wechat_http_BotApp.config.getInt ("bot.hcicloud.csr.server.port");
+	String HCICLOUD_SERVER_ADDRESS   = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hcicloud.csr.server.address");
+	int HCICLOUD_SERVER_PORT         = net_maclife_wechat_http_BotApp.GetConfig ().getInt ("bot.hcicloud.csr.server.port");
 	String HCICLOUD_CSR_URL__Query          = "http://" + HCICLOUD_SERVER_ADDRESS + (HCICLOUD_SERVER_PORT==80 ? "" : ":" + HCICLOUD_SERVER_PORT) + "/CSRBroker/queryAction";
 
-	String HCICLOUD_APP_KEY          = net_maclife_wechat_http_BotApp.config.getString ("bot.hcicloud.csr.app.key");
+	String HCICLOUD_APP_KEY          = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hcicloud.csr.app.key");
 
-	String HCICLOUD_CSR_ROBOT_ID     = net_maclife_wechat_http_BotApp.config.getString ("bot.hcicloud.csr.robot.id");
-	String HCICLOUD_CSR_ROBOT_CHANNEL_NUMBER = net_maclife_wechat_http_BotApp.config.getString ("bot.hcicloud.csr.robot.channel.number");
-	String HCICLOUD_CSR_TALKER_ID    = net_maclife_wechat_http_BotApp.config.getString ("bot.hcicloud.csr.robot.talker.id");
-	String HCICLOUD_CSR_RECEIVER_ID  = net_maclife_wechat_http_BotApp.config.getString ("bot.hcicloud.csr.robot.receiver.id");
+	String HCICLOUD_CSR_ROBOT_ID     = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hcicloud.csr.robot.id");
+	String HCICLOUD_CSR_ROBOT_CHANNEL_NUMBER = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hcicloud.csr.robot.channel.number");
+	String HCICLOUD_CSR_TALKER_ID    = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hcicloud.csr.robot.talker.id");
+	String HCICLOUD_CSR_RECEIVER_ID  = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hcicloud.csr.robot.receiver.id");
 	String HCICLOUD_CHARSET_ENCODING = net_maclife_wechat_http_BotApp.utf8;
 
 	@Override

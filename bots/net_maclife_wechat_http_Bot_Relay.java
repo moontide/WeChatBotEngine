@@ -43,8 +43,8 @@ public class net_maclife_wechat_http_Bot_Relay extends net_maclife_wechat_http_B
 	{
 		try
 		{
-			String sListenddress = net_maclife_wechat_http_BotApp.config.getString ("bot.relay.listen.address");
-			int nListenPort = net_maclife_wechat_http_BotApp.config.getInt ("bot.relay.listen.port");
+			String sListenddress = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.relay.listen.address");
+			int nListenPort = net_maclife_wechat_http_BotApp.GetConfig ().getInt ("bot.relay.listen.port");
 
 			ss = new ServerSocket ();
 			ss.bind (new InetSocketAddress (InetAddress.getByName (sListenddress), nListenPort));

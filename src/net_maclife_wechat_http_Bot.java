@@ -26,7 +26,7 @@ public abstract class net_maclife_wechat_http_Bot
 
 	public net_maclife_wechat_http_Bot ()
 	{
-		String sBotName = net_maclife_wechat_http_BotApp.config.getString ("bot." + this.getClass ().getName () + ".name");
+		String sBotName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot." + this.getClass ().getName () + ".name");
 		String sClassName = this.getClass ().getName ();
 		if (StringUtils.startsWithIgnoreCase (sClassName, OFFICIAL_BOT_CLASSNAME_PREFIX))
 			sClassName = StringUtils.substring (sClassName, OFFICIAL_BOT_CLASSNAME_PREFIX.length ());

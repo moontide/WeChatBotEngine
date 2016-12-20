@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.*;
 
 public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_Bot
 {
-	String sHiMessage = net_maclife_wechat_http_BotApp.config.getString ("bot.hi.message.started");
-	String sByeMessage = net_maclife_wechat_http_BotApp.config.getString ("bot.hi.message.stopped");
+	String sHiMessage = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hi.message.started");
+	String sByeMessage = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.hi.message.stopped");
 
 	List<String> listTargetAliases = null;
 	List<String> listTargetRemarkNames = null;
@@ -15,9 +15,9 @@ public class net_maclife_wechat_http_Bot_SayHi extends net_maclife_wechat_http_B
 
 	public net_maclife_wechat_http_Bot_SayHi ()
 	{
-		listTargetAliases     = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.aliases");
-		listTargetRemarkNames = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.remark-names");
-		listTargetNickNames   = net_maclife_wechat_http_BotApp.config.getList (String.class, "bot.hi.message.target.nick-names");
+		listTargetAliases     = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.hi.message.target.aliases");
+		listTargetRemarkNames = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.hi.message.target.remark-names");
+		listTargetNickNames   = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.hi.message.target.nick-names");
 	}
 
 	int ProcessMessage (String sMessage)
