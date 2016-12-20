@@ -45,34 +45,45 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 
 	private static final String configFileName = "src" + File.separator + "config.properties";
 	private static Parameters configParameters = null;
+	private static final ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> configBuilder;	// = null;
 	//static Configurations configs = new Configurations();
-	public static Configuration config = null;
+	private static Configuration config = null;
 
 	static
 	{
-		try
+		//try
 		{
 			configParameters = new Parameters ();
-			FileBasedConfigurationBuilder<PropertiesConfiguration> configBuilder =
-				new ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> (PropertiesConfiguration.class)
-					.configure
-					(
-						configParameters.fileBased ()
-							.setEncoding (utf8)
-							.setFileName (configFileName)
-					)
+			BuilderParameters builderParameters = configParameters
+				.fileBased ()
+				.setEncoding (utf8)
+				.setFileName (configFileName)
 				;
+			configBuilder = new ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> (PropertiesConfiguration.class).configure (builderParameters);
 			configBuilder.setAutoSave (true);
-			//config = configs.properties (new File(configFileName));
+		}
+		//catch (ConfigurationException e)
+		{
+		//	e.printStackTrace();
+		}
+	}
+
+	public static Configuration GetConfig ()
+	{
+		try
+		{
+			// http://commons.apache.org/proper/commons-configuration/userguide/howto_reloading.html#Reloading_File-based_Configurations
+			configBuilder.getReloadingController ().checkForReloading (null);
 			config = configBuilder.getConfiguration ();
 		}
 		catch (ConfigurationException e)
 		{
 			e.printStackTrace();
 		}
+		return config;
 	}
 
-	public static String cacheDirectory = config.getString ("app.running.cache-directory", "run");
+	public static String cacheDirectory = GetConfig ().getString ("app.running.cache-directory", "run");
 	public static String qrcodeFilesDirectory = cacheDirectory + "/qrcodes";
 	public static String mediaFilesDirectory = cacheDirectory + "/medias";
 	static
@@ -133,6 +144,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 	{
 		engine = new net_maclife_wechat_http_BotEngine ();
 	}
+
 	public net_maclife_wechat_http_BotEngine GetBotEngine ()
 	{
 		return engine;
@@ -185,10 +197,10 @@ logger.info ("根据登录 ID 获取二维码图片");
 logger.fine ("获取二维码图片的 http 响应消息体（保存到文件）:");
 logger.info ("	" + fOutputFile);
 
-		if (ParseBoolean(config.getString ("app.text-QR-Code.display-in-terminal"), true))
+		if (ParseBoolean(GetConfig ().getString ("app.text-QR-Code.display-in-terminal"), true))
 		{
-			boolean bBackgroundIsDarker = ParseBoolean(config.getString ("app.text-QR-Code.terminal.background-is-darker-than-foreground"), true);
-			boolean bUseANSIEscape = ParseBoolean(config.getString ("app.text-QR-Code.use-ANSI-Escape"), true);
+			boolean bBackgroundIsDarker = ParseBoolean(GetConfig ().getString ("app.text-QR-Code.terminal.background-is-darker-than-foreground"), true);
+			boolean bUseANSIEscape = ParseBoolean(GetConfig ().getString ("app.text-QR-Code.use-ANSI-Escape"), true);
 			ConvertQRCodeImage (sFileName, sFileName_PNG);
 			DisplayQRCodeInConsole (sFileName_PNG, bBackgroundIsDarker, bUseANSIEscape);
 		}
@@ -208,7 +220,7 @@ logger.info ("	" + fOutputFile);
 logger.info ("将二维码 jpg 文件【转换并缩小】适合文字输出大小的 png 文件: " + sPNGFileName);
 		List<String> listImageMagickConvertArgs = new ArrayList<String> ();
 		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
-		listImageMagickConvertArgs.add (net_maclife_wechat_http_BotApp.config.getString ("app.external-utils.imagemagick.path") + File.separator + "convert");
+		listImageMagickConvertArgs.add (GetConfig ().getString ("app.external-utils.imagemagick.path") + File.separator + "convert");
 		listImageMagickConvertArgs.add (sJPGFileName);
 		listImageMagickConvertArgs.add ("-resize");
 		listImageMagickConvertArgs.add ("10%");
@@ -1396,9 +1408,21 @@ logger.warning (sAPIName + " 失败，代码: " + nRet + " , 错误信息: " + s
 				String sParam = null;
 				if (arrayParams.length >=2)
 					sParam = arrayParams[1];
+
+				String sConsoleCommandPrefix = GetConfig ().getString ("app.console.command-prefix");
+				if (StringUtils.isNotEmpty (sConsoleCommandPrefix))
+				{
+					if (! StringUtils.startsWithIgnoreCase (sCommand, sConsoleCommandPrefix))
+					{
+logger.warning ("控制台命令必须以 " + sConsoleCommandPrefix + " 开头");
+						continue;
+					}
+
+					sCommand = StringUtils.substring (sCommand, StringUtils.length (sConsoleCommandPrefix));
+				}
 //System.err.println ("Command=[" + sCommand + "], Param=[" + sParam + "]");
-				//try
-				//{
+				try
+				{
 					if (StringUtils.equalsIgnoreCase (sCommand, "notifyAll"))
 					{
 						// 本微信号现在人机已合一，具体命令请用 @xxx help 获得帮助
@@ -1413,12 +1437,17 @@ logger.warning (sAPIName + " 失败，代码: " + nRet + " , 错误信息: " + s
 					}
 					else if (StringUtils.equalsIgnoreCase (sCommand, "EnableBotFor"))
 					{	// 针对某个群聊或某个联系人）启用某个 Bot
+						if (StringUtils.isEmpty (sParam))
+						{
+//logger.warning ();
+							continue;
+						}
 						String[] arrayTemp = sParam.split (" +", 2);
 						String sBotClassName = null;
 						String sTarget = null;
 						if (arrayTemp.length > 0)
 							sBotClassName = arrayTemp[0];
-						if (arrayTemp.length > 0)
+						if (arrayTemp.length > 1)
 							sTarget = arrayTemp[1];
 
 						//config.setProperty (key, value);
@@ -1447,34 +1476,34 @@ System.out.println ("非法日志级别: " + sParam + ", 请换有效的日志�
 							e.printStackTrace ();
 						}
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/LoadBot"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "LoadBot"))
 					{
 						engine.LoadBot (sParam);
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/UnLoadBot"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "UnLoadBot"))
 					{
 						engine.UnloadBot (sParam);
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/ListBots"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "ListBots"))
 					{
 						engine.ListBots ();
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/login"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
+					else if (StringUtils.equalsIgnoreCase (sCommand, "login"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
 					{
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/logout"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "logout"))
 					{
 						engine.Logout ();
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/start"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
+					else if (StringUtils.equalsIgnoreCase (sCommand, "start"))	// 二维码扫描自动登录，无需在这里处理。反正 Engine 线程会一直循环尝试登录
 					{
 						engine.Start ();
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/stop"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "stop"))
 					{
 						engine.Stop ();
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "/quit"))
+					else if (StringUtils.equalsIgnoreCase (sCommand, "quit"))
 					{	// 单纯退出程序，不注销登录（需要让 session 的缓存保持有效）
 System.err.println ("收到退出命令");
 						engine.Stop ();
@@ -1482,22 +1511,60 @@ System.err.println ("收到退出命令");
 						break;
 						//System.exit (0);
 					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "reply"))
+					{
+						if (StringUtils.isEmpty (sParam))
+						{
+logger.warning ("必须输入回复的消息内容");
+							continue;
+						}
+						String sMessage = StringEscapeUtils.unescapeJava (sParam);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
+						engine.ReplyTextMessage (sMessage);
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "msg") || StringUtils.equalsIgnoreCase (sCommand, "send"))	// msg 命令 - 仿 IRC 频道的 msg 命令
+					{
+						if (StringUtils.isEmpty (sParam))
+						{
+logger.warning (sCommand + " <接收人帐号> <消息内容>");
+							continue;
+						}
+						String[] arraySendMessage = sParam.split (" +", 2);
+						String sToAccount = null;
+						String sMessage = null;
+						if (arraySendMessage.length > 0)
+							sToAccount = arraySendMessage[0];
+						if (arraySendMessage.length > 1)
+							sMessage = arraySendMessage[1];
+
+						if (StringUtils.isEmpty (sToAccount))
+						{
+logger.warning ("必须输入接收人的帐号。接收人帐号可以是加密过的形式，如： @XXXX @@XXXX 或未加密过的形式，如：wxid_XXXX filehelper gh_XXXX");
+							continue;
+						}
+						if (StringUtils.isEmpty (sMessage))
+						{
+logger.warning ("必须输入消息内容");
+							continue;
+						}
+						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
+						engine.SendTextMessage (sToAccount, sMessage);
+					}
 					else
 					{
-System.err.println ("未知控制台命令: " + sCommand);
+logger.warning ("未知控制台命令: " + sCommand);
 					}
-				//}
-				//catch (Exception e)
-				//{
-				//	e.printStackTrace ();
-				//}
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace ();
+				}
 			}
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
-		catch (InterruptedException e)
+		//catch (InterruptedException e)
 		{
 			// done
 		}
@@ -1557,6 +1624,169 @@ logger.warning ("app 线程退出");
 	public static int GetJSONInt (JsonNode node, String sFieldName)
 	{
 		return GetJSONInt (node, sFieldName, -1);
+	}
+
+
+
+
+
+	public static boolean isQuoteChar (char ch)
+	{
+		return ch=='"' || ch=='\'';
+	}
+	public static boolean isQuoteSeparator (char ch, char previous)
+	{
+		return isQuoteChar(ch) && previous!='\\';
+	}
+	public static boolean isQuoteEnd (char ch, char previous, char quoteChar)
+	{
+		return ch==quoteChar && previous!='\\';
+	}
+	public static boolean isWhitespace(char ch)
+	{
+		return ch==' ' || ch=='	';
+	}
+	public static boolean isEscapeChar(char ch)
+	{
+		return ch=='\\';
+	}
+	public static List<String> SplitCommandLine (String cmdline)
+	{
+		return SplitCommandLine (cmdline, true, false);
+	}
+	/**
+	 *
+	 * @param cmdline
+	 * @param unquoted 分割项是否不包含引号 true - 不把引号包含进去; false - 把引号包含进去
+	 * @param unescape 是否处理转义字符 '\'， true - 处理转义字符; false - 不处理转义字符
+	 * @return
+	 */
+	public static List<String> SplitCommandLine (String cmdline, boolean unquoted, boolean unescape)
+	{
+		if (StringUtils.isEmpty (cmdline))
+			return null;
+
+		boolean token_state_in_token = false;
+		boolean quote_state_in_quote = false;
+
+		char quoteChar = 0;
+		char[] arrayCmdLine = cmdline.toCharArray ();
+		int iTokenStart = 0, iTokenEnd = 0;
+		int iQuoteStart = 0, iQuoteEnd = 0;
+		StringBuilder token = new StringBuilder ();
+		String subToken = null;
+		List<String> listTokens = new ArrayList<String> ();
+		for (int i=0; i<arrayCmdLine.length; i++)
+		{
+			char thisChar = arrayCmdLine[i];
+			char previousChar = (i==0 ? 0 : arrayCmdLine[i-1]);
+//System.out.print ("字符"+ (i+1)+ "[" + thisChar + "]:");
+			if (!token_state_in_token && !quote_state_in_quote)
+			{
+				if (!isWhitespace(thisChar))
+				{
+//System.out.print ("进入token,");
+					token_state_in_token = true;
+					iTokenStart = i;
+				}
+				if (isQuoteSeparator(thisChar, previousChar))
+				{
+//System.out.print ("进入quote,进入子token,");
+					quote_state_in_quote = true;
+					iQuoteStart = i;
+					quoteChar = thisChar;
+				}
+			}
+			else if (!token_state_in_token && quote_state_in_quote)
+			{
+				// 不可能发生：在引号内必定在 token 内
+//System.err.println ("不在 token 内，却在引号中，不可能");
+			}
+
+			else if (token_state_in_token && !quote_state_in_quote)
+			{
+				if (isWhitespace(thisChar))
+				{
+//System.out.print ("结束token,");
+					token_state_in_token = !token_state_in_token;
+					if (!isQuoteChar(previousChar))	// 如果前面不是引号结束的，就需要自己处理剩余的
+					{
+						iTokenEnd = i;
+						subToken = cmdline.substring (iTokenStart, iTokenEnd);
+						token.append (subToken);
+					}
+//System.out.print (token);
+					listTokens.add (token.toString());
+					token = new StringBuilder ();
+
+				}
+				if (isQuoteSeparator(thisChar, previousChar))	// aa"(此处)bb"cc
+				{
+//System.out.print ("结束子token,");
+					iTokenEnd = i;
+					subToken = cmdline.substring (iTokenStart, iTokenEnd);
+					token.append (subToken);
+					iTokenStart = i + 1;
+//System.out.print (subToken);
+//System.out.print (",开始quote,开始子token,");
+					quote_state_in_quote = !quote_state_in_quote;
+					iQuoteStart = i;
+					quoteChar = thisChar;
+				}
+			}
+			else if (token_state_in_token && quote_state_in_quote)
+			{
+				if (isQuoteEnd (thisChar, previousChar, quoteChar))
+				{
+//System.out.print ("结束子token 结束quote,");
+					quote_state_in_quote = !quote_state_in_quote;
+					iQuoteEnd = i;
+					if (unquoted)	// 不把引号包含进去
+						subToken = cmdline.substring (iQuoteStart+1, iQuoteEnd);
+					else	// 把引号也包含进去
+						subToken = cmdline.substring (iQuoteStart, iQuoteEnd+1);
+
+//System.out.print (subToken);
+					iTokenStart = i + 1;
+					token.append (subToken);
+				}
+			}
+//System.out.println ();
+		}
+
+		if (token_state_in_token)
+		{	// 结束
+			if (quote_state_in_quote)
+			{	// 给出警告，或错误
+//System.out.println ("警告：引号未关闭");
+				token_state_in_token = !token_state_in_token;
+				quote_state_in_quote = !quote_state_in_quote;
+				iQuoteEnd = arrayCmdLine.length;
+				if (unquoted)
+					token.append (cmdline.substring (iQuoteStart+1, iQuoteEnd));	// 不把引号包含进去
+				else
+				{
+					token.append (cmdline.substring (iQuoteStart, iQuoteEnd+1));	// 把引号也包含进去
+					token.append (quoteChar);	// 把缺失的引号补充进去
+				}
+			}
+			else
+			{
+				token_state_in_token = !token_state_in_token;
+				iTokenEnd = arrayCmdLine.length;
+
+				token.append (cmdline.substring (iTokenStart, iTokenEnd));
+			}
+//System.out.println ("全部结束");
+
+			listTokens.add (token.toString());
+		}
+//System.out.println (listTokens);
+
+		assert !token_state_in_token;
+		assert !quote_state_in_quote;
+
+		return listTokens;
 	}
 
 	public static void main (String[] args) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, ValidityException, ParsingException
