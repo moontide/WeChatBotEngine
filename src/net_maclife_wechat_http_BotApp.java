@@ -686,7 +686,7 @@ logger.fine ("	" + node);
 		ProcessBaseResponse (node, "WebWeChatGetRoomContacts");
 
 		StringBuilder sb = new StringBuilder ();
-		sb.append ("\n");
+		//sb.append ("\n");
 		int nCount = GetJSONInt (node, "Count");
 		sb.append ("共 " + nCount + " 个聊天室\n");
 		JsonNode jsonContactList = node.get ("ContactList");
@@ -938,10 +938,17 @@ logger.fine ("	" + sContent);
 		JsonNode jsonResult = null;
 		if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "0"))
 		{
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector " + sSyncCheckSelector);
 			switch (sSyncCheckSelector)
 			{
-				case "2":	// 有新消息
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 2 -- 有新消息");
+				case "0":	// nothing
+logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 0 -- 无消息");
+					break;
+				//case "2":	// 有新消息
+//logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 2 -- 有新消息");
+				//case "6":
+				//case "7":
+				default:
 					String sSyncURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=" + URLEncoder.encode (sSessionID, utf8) + "&skey" + URLEncoder.encode (sSessionKey, utf8) + "&lang=zh_CN&pass_ticket=" +  sPassTicket;
 logger.fine ("WebWeChatGetMessagePackage 中 webwxsync 的 URL:");
 logger.fine ("	" + sSyncURL);
@@ -964,23 +971,20 @@ logger.fine ("\n" + node);
 					ProcessBaseResponse (node, "WebWeChatGetMessagePackage 中 webwxsync");
 
 					break;
-				case "0":	// nothing
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 0 -- 无消息");
-					break;
-				case "6":	// 这个是啥？昨天晚上遇到过了，貌似是别人请求添加好友时遇到的，然后就一直返回 6，死循环出不来了
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 6 -- 别人请求添加好友？");
-					break;
-				case "7":	// 进入离开聊天页面？
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 7 -- 进入/离开聊天页面？");
-					break;
-				default:
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回未知的 selector: " + sSyncCheckSelector);
-					break;
+				//case "6":	// 这个是啥？昨天晚上遇到过了，貌似是别人请求添加好友时遇到的，然后就一直返回 6，死循环出不来了
+//logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 6 -- 别人请求添加好友？");
+				//	break;
+				//case "7":	// 进入离开聊天页面？
+//logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 7 -- 进入/离开聊天页面？");
+				//	break;
+				//default:
+//logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回未知的 selector: " + sSyncCheckSelector);
+					//break;
 			}
 		}
 		else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1100") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1101") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))
 		{
-logger.warning ("WebWeChatGetMessagePackage 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能微信网页版（含 Windows 版）在其他地方登录了、或者 SyncCheckKey 参数不正确");
+logger.warning ("WebWeChatGetMessagePackage 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能手机微信退出、或者在其他地方登录了微信网页版（含 Windows 版）、或者 SyncCheckKey 参数不正确");
 			throw new IllegalStateException ("微信被退出 / 被踢出了");
 		}
 		//else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))	// 当 skey=*** 不小心输错变成 skey*** 时返回了 1102 错误
