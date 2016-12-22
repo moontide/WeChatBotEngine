@@ -23,7 +23,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 {
 
 	@Override
-	public int OnTextMessageReceived (String sFrom_EncryptedRoomAccount, String sFrom_RoomNickName, String sFrom_EncryptedAccount, String sFrom_Name, String sTo_EncryptedAccount, String sTo_Name, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
+	public int OnTextMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
 	{
 		List<String> listCommands = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.simple-address-book.commands");
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理
@@ -46,24 +46,24 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 				String sCommand = listCommands.get (i);
 				if (StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 				{
-					if (StringUtils.isEmpty (sFrom_RoomNickName))
+					if (StringUtils.isEmpty (sFromAccount_RoomMember))
 					{
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, GetName() + " 需要在群聊中执行。如果你确实是在群聊中执行的，请务必设置好群名称，并告知管理员（我）。");
+						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 需要在群聊中执行。如果你确实是在群聊中执行的，请务必设置好群名称，并告知管理员（我）。");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, GetName() + " 在查询时需要指定要姓名。\n\n用法:\n" + sCommand + "  <通讯录中的姓名(通常是真实姓名)>");
+						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 在查询时需要指定要姓名。\n\n用法:\n" + sCommand + "  <通讯录中的姓名(通常是真实姓名)>");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
-					String sResult = Query (sFrom_RoomNickName, sCommandParametersInputed);
+					String sResult = Query (sFromName, sCommandParametersInputed);
 					if (StringUtils.isEmpty (sResult))
 					{
-						SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, "在通讯簿【" + sFrom_RoomNickName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
+						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "在通讯簿【" + sFromName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
-					SendTextMessage (sFrom_EncryptedRoomAccount, sFrom_EncryptedAccount, sFrom_Name, sResult);
+					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sResult);
 					break;
 				}
 			}
@@ -79,7 +79,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 	}
 
 
-	String Query (String sRoomName, String sQuery)
+	String Query (String sFromName, String sQuery)
 	{
 		String sTablePrefix = StringUtils.trimToEmpty (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.simple-address-book.jdbc.database-table.prefix"));
 		SetupDataSource ();
@@ -92,7 +92,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 			conn = botDS.getConnection ();
 			stmt = conn.prepareStatement ("SELECT * FROM " + sTablePrefix + "simple_wechat_address_book WHERE 微信群昵称=? AND 群联系人姓名=?");
 			int nCol = 1;
-			stmt.setString (nCol++, sRoomName);
+			stmt.setString (nCol++, sFromName);
 			stmt.setString (nCol++, sQuery);
 			rs = stmt.executeQuery ();
 			sb = new StringBuilder ();
