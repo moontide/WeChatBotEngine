@@ -35,13 +35,6 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 
 		try
 		{
-			boolean bOnlyMe = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.command-line.permission.only-me"), true);
-			if (bOnlyMe && ! engine.IsMe (sFromAccount_Person))
-			{
-				SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 配置为：只允许主人使用。");
-				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-			}
-
 			String[] arrayMessages = sMessage.split (" +", 2);
 			if (arrayMessages==null || arrayMessages.length<1)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -62,6 +55,13 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 				String sCommand = listCommands.get (i);
 				if (StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 				{
+					boolean bOnlyMe = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.command-line.permission.only-me"), true);
+					if (bOnlyMe && ! engine.IsMe (sFromAccount_Person))
+					{
+						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 配置为：只允许主人使用。");
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					}
+
 					// 只有命令时，打印帮助信息
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
