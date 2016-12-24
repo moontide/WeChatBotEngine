@@ -9,6 +9,8 @@
 WeChatBotEngine is a bot engine/framework based on HTTP protocol of WeChat Web Edition.
 WeChatBotEngine deals the communication with WeChat server itself, developers can develop bot applet based on that, so developers can build new bots to expand the power of WeChatBotEngine。
 
+![text QR code](https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/text-QR-code.png)
+
 ## Official bot applets shipped with the engine ##
 WeChatBotEngine project ships with several official bot applets, to demonstrate how to build a bot applet or you can just to run it.
 Those bot applets are:
@@ -32,6 +34,12 @@ Those bot applets are:
 		</ul>
 	</dd>
 
+	<dt><strong>ShellCommand</strong>: A bot execute shell command</dt>
+	<dd>Accept command line from text message, run it, return the result of command. Example: `ls -l /bin/`</dd>
+
+	<dt><strong>SimpleAddressBook</strong>: A simple address book bot for WeChat group chat</dt>
+	<dd>This is a simple address book bot for WeChat [group chat / chat room] relied on MySQL database. It will query the database according the group nickname and return the contact information of the specified contact name. Example: send `txl Alice` in chat room 'My Company 1' will return contact information of `Alice` of 'My Company 1' address book.</dd>
+
 	<dt><strong>HCICloudCSR</strong>: HCICloud customer service representative chat bot</dt>
 	<dd>Using the HTTP protocol from HCICloud CSR, fetch the answer from CSR bot, then reply to user.</dd>
 
@@ -50,6 +58,19 @@ Those bot applets are:
 	<dt><strong>MissileLaunched</strong>: Send a 'missile launched' message when someone shared a geographic position (just for fun)</dt>
 	<dd>When someone send a geographic position message, read the longtitude and latitude value, and append a random customable joke</dd>
 </dl>
+
+###load/unload bots dynamically###
+	/listbots
+	2016-12-16 17:43:27.714 [信息] net_maclife_wechat_http_BotEngine ListBots: 简易通讯录 (net_maclife_wechat_http_Bot_SimpleAddressBook)
+	2016-12-16 17:43:27.715 [信息] net_maclife_wechat_http_BotEngine ListBots: 百度翻译 (net_maclife_wechat_http_Bot_BaiduTranslate)
+	2016-12-16 17:43:27.716 [信息] net_maclife_wechat_http_BotEngine ListBots: Google 图片搜索 (net_maclife_wechat_http_Bot_GoogleImageSearch)
+	2016-12-16 17:43:27.717 [信息] net_maclife_wechat_http_BotEngine ListBots: 消息中继 (net_maclife_wechat_http_Bot_Relay)
+
+	/unloadbot  net_maclife_wechat_http_Bot_GoogleImageSearch
+	2016-12-16 17:43:41.517 [信息] net_maclife_wechat_http_BotEngine UnloadBot: Google 图片搜索 机器人已被卸载
+
+	/loadbot net_maclife_wechat_http_Bot_BaiduImageSearch
+	2016-12-16 17:44:03.795 [信息] net_maclife_wechat_http_BotEngine LoadBot: 百度识图 机器人已创建并加载
 
 #How to build a Bot Applet by myself#
 Very easy, just extends/inherit `net_maclife_wechat_http_Bot` class, implements any (or zero) interface you wantted.

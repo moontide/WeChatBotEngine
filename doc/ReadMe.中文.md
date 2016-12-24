@@ -9,9 +9,12 @@
 WeChatBotEngine 是一个基于微信 Web 版通信协议的机器人引擎/机器人框架。
 WeChatBotEngine 自身处理了与微信后台的通信，开发者只需要在此基础上开发自己的 Bot 小程序，即可打造、扩展 WeChatBotEngine 的机器人功能。
 
+![文字二维码截图](https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/text-QR-code.png)
+
 ##WeChatBotEngine 自带的几个机器人小程序##
 WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的，一些出于给开发者以参考的目的。这些机器人有：
 
+### 自带的机器人小程序列表
 <dl>
 	<dt><strong>SayHi</strong>: 问候/再见机器人</dt>
 	<dd>主要用于机器人上线、下线时发出通知。问候语、再见语可配置。</dd>
@@ -32,6 +35,12 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		</ul>
 	</dd>
 
+	<dt><strong>ShellCommand</strong>: 系统命令 / 命令行 机器人</dt>
+	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： `ls -l /bin/`</dd>
+
+	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
+	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 `我的公司1` 群中发送 `txl 张三` 将会查询 `我的公司1` 通讯录中 `张三` 的联系信息。</dd>
+
 	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
 	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。</dd>
 
@@ -50,6 +59,20 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	<dt><strong>MissileLaunched</strong>: 用来恶搞地理位置信息的机器人</dt>
 	<dd>当有人发了地理位置信息时，把经纬度报出来，然后加上一句随机可设置的“导弹准备就绪”的恶搞话语…… = =</dd>
 </dl>
+
+###Bot 的动态加载、卸载###
+	/listbots
+	2016-12-16 17:43:27.714 [信息] net_maclife_wechat_http_BotEngine ListBots: 简易通讯录 (net_maclife_wechat_http_Bot_SimpleAddressBook)
+	2016-12-16 17:43:27.715 [信息] net_maclife_wechat_http_BotEngine ListBots: 百度翻译 (net_maclife_wechat_http_Bot_BaiduTranslate)
+	2016-12-16 17:43:27.716 [信息] net_maclife_wechat_http_BotEngine ListBots: Google 图片搜索 (net_maclife_wechat_http_Bot_GoogleImageSearch)
+	2016-12-16 17:43:27.717 [信息] net_maclife_wechat_http_BotEngine ListBots: 消息中继 (net_maclife_wechat_http_Bot_Relay)
+
+	/unloadbot  net_maclife_wechat_http_Bot_GoogleImageSearch
+	2016-12-16 17:43:41.517 [信息] net_maclife_wechat_http_BotEngine UnloadBot: Google 图片搜索 机器人已被卸载
+
+	/loadbot net_maclife_wechat_http_Bot_BaiduImageSearch
+	2016-12-16 17:44:03.795 [信息] net_maclife_wechat_http_BotEngine LoadBot: 百度识图 机器人已创建并加载
+
 
 #怎样开发自己的 Bot#
 灰常简单：继承 `net_maclife_wechat_http_Bot`，实现该类的任意一个你想要实现的 (0 个也可以 -- 啥都不做的机器人) 接口。
