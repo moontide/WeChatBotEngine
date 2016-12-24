@@ -4,6 +4,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.regex.*;
 
 import javax.script.*;
 
@@ -32,6 +33,9 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	public static final int BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED = 1;	// 标志位： 消息是否已经处理过。如果此位为 0，则表示未处理过。
 	public static final int BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE  = 2;	// 标志位： 消息是否让后面的 Bot 继续处理。如果此位为 0，则表示不让后面的 Bot 继续处理。
 
+
+	public static final String REGEXP_GROUP_CHAT_ACTUAL_MEMBER = "^(@\\p{XDigit}+):\\n(.*)$";
+	public static final Pattern PATTERN_GROUP_CHAT_ACTUAL_MEMBER = Pattern.compile (REGEXP_GROUP_CHAT_ACTUAL_MEMBER, Pattern.DOTALL);	// 必须启用 DOTALL，因为是多行的
 	// 消息类型列表
 	// 参考自: https://github.com/Urinx/WeixinBot/blob/master/README.md ，但做了一些改动
 	//
@@ -42,7 +46,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	//public static final int WECHAT_MSG_TYPE__VERIFY_MSG            = 37;
 	//public static final int WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG   = 40;
 	public static final int WECHAT_MSG_TYPE__WECHAT_VCARD          = 42;
-	//public static final int WECHAT_MSG_TYPE__VIDEO_CALL            = 43;
+	public static final int WECHAT_MSG_TYPE__VIDEO_MSG             = 43;
 	public static final int WECHAT_MSG_TYPE__EMOTION               = 47;
 	//public static final int WECHAT_MSG_TYPE__GPS_POSITION          = 48;
 	public static final int WECHAT_MSG_TYPE__URL                   = 49;
@@ -921,14 +925,21 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 			{	// 如果是发自聊天室，则从聊天室的成员列表中获取真正的发送人（极有可能不在自己的联系人内，只能从聊天室成员列表中获取）
 				// <del>因为之前已经交换过收发人，所以，自己点开群聊窗口后，不再做【获取真实发件人】的处理（只有真正别人在群里发过来的信息才需要这样处理）</del>
 				// 自己发送到群聊的信息，也会出现 @xxxx:\n消息内容  的格式，则： 1.取出群聊成员发送人 2.取出去掉群聊成员后的消息内容
-				if (sContent.matches ("^@\\w+:\\n.*"))
+				Matcher matcher = PATTERN_GROUP_CHAT_ACTUAL_MEMBER.matcher (sContent);
+				if (matcher.matches ())
 				{
-					String[] arrayContents = sContent.split (":\n", 2);
-					sFromAccount_RoomMember = arrayContents[0];
-					if (arrayContents.length > 1)
-						sContent = arrayContents[1];
-					else
-						sContent = "";
+					//String[] arrayContents = sContent.split (":\n", 2);
+					//sFromAccount_RoomMember = arrayContents[0];
+					//if (arrayContents.length > 1)
+					//	sContent = arrayContents[1];
+					//else
+					//	sContent = "";
+					sFromAccount_RoomMember = matcher.group (1);
+					sContent = matcher.group (2);
+				}
+				else
+				{	// 像群里发红包的“系统消息”，就没有接收人
+					//
 				}
 
 				// 找出发送人的 UserID
@@ -966,7 +977,7 @@ net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发
 			}
 			else
 			{
-net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sFromName, "null") ? "" : "【" + sFromName + "】") + (jsonFrom_RoomMember == null ? "" : " 群成员【" + StringUtils.trimToEmpty (sFromName_RoomMember) + "】") + " 发给 " + (isToMe ? "自己" : "【" + sToName + "】") + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
+net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sFromName, "null") ? "" : "【" + sFromName + "】") + (jsonFrom_RoomMember == null ? "" : " 群成员 【" + StringUtils.trimToEmpty (sFromName_RoomMember) + "】") + " 发" + (isToMe ? "来" : "给 【" + sToName + "】") + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
 			}
 
 			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.ignore-my-own-message", "no"), false))
@@ -1024,8 +1035,6 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 				case WECHAT_MSG_TYPE__WECHAT_VCARD:
 					OnVCardMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent);
 					break;
-				//case WECHAT_MSG_TYPE__VIDEO_CALL:
-				//	break;
 				case WECHAT_MSG_TYPE__EMOTION:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
 					OnEmotionMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
@@ -1043,6 +1052,8 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 				//case WECHAT_MSG_TYPE__VOIP_NOTIFY:
 				//	break;
 				//case WECHAT_MSG_TYPE__VOIP_INVITE:
+				//	break;
+				case WECHAT_MSG_TYPE__VIDEO_MSG:
 				//	break;
 				case WECHAT_MSG_TYPE__SHORT_VIDEO:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVideo (sSessionKey, sMsgID);
@@ -1449,7 +1460,7 @@ net_maclife_wechat_http_BotApp.logger.info ("系统消息: " + sContent);
 			return;
 
 net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName (jsonOldContact));
-		DispatchEvent ("OnContactChanged", null, null, null, null, null, null, null, null, null, jsonContact, null, jsonOldContact);
+		DispatchEvent ("OnContactChanged", null, null, null, null, null, null, null, null, null, null, null, null, jsonContact, null, jsonOldContact);
 	}
 
 	void OnContactDeleted (final JsonNode jsonContact)
