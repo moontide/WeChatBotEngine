@@ -23,7 +23,15 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 {
 
 	@Override
-	public int OnTextMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
+	public int OnTextMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sMessage,
+			boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat
+		)
 	{
 		List<String> listCommands = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.simple-address-book.commands");
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理

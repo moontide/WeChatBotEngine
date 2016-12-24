@@ -109,7 +109,14 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	// “消息收到”事件总入口
 	////////////////////////////////
-	public int OnMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessages)
+	public int OnMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessages
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -134,7 +141,15 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param bMentionedMeFirstInRoomChat 该消息是否在消息开头提到了我，即：指名道姓对我发的消息（仅群聊时才会设置）
 	 * @return
 	 */
-	public int OnTextMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sMessage, boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat)
+	public int OnTextMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sMessage,
+			boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -156,7 +171,14 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sLatitude 纬度
 	 * @return
 	 */
-	public int OnGeoLocationMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sLocation, String sLongtitude, String sLatitude)
+	public int OnGeoLocationMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sLocation, String sLongtitude, String sLatitude
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -178,7 +200,14 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sLatitude 纬度
 	 * @return
 	 */
-	public int OnURLMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, Element xmlMsg)
+	public int OnURLMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, Element xmlMsg
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -200,7 +229,15 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sImageURL 图片消息自身并没有提供图片 URL 地址 (<code>null</code>)，但是表情图消息会提供，表情图的处理可能是简单的调用图片消息处理接口
 	 * @return
 	 */
-	public int OnImageMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
+	public int OnImageMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia, String sImageURL
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -221,7 +258,15 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param fMedia 已经下载下来的音频文件（目前发现个人版微信只有 mp3 格式，但微信公众号里收到的是 amr 格式），不会是 null
 	 * @return
 	 */
-	public int OnVoiceMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
+	public int OnVoiceMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -242,7 +287,15 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param fMedia 已经下载下来的视频文件，不会是 null
 	 * @return
 	 */
-	public int OnVideoMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
+	public int OnVideoMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -263,7 +316,15 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param fMedia 已经下载下来的表情图片文件，不会是 null
 	 * @return
 	 */
-	public int OnEmotionMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
+	public int OnEmotionMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia, String sImageURL
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -284,7 +345,14 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sTargetAccount 聊天窗口对方（个体或者群）的没加密的帐号
 	 * @return
 	 */
-	public int OnChatWindowOpenedMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, String sTargetAccount)
+	public int OnChatWindowOpenedMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent, String sTargetAccount
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -306,7 +374,15 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param xmlMsg sContent 解析为 xml 后的 <code>msg</code> Element
 	 * @return
 	 */
-	public int OnVCardMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, JsonNode jsonRecommenedInfo, Element xmlMsg)
+	public int OnVCardMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			JsonNode jsonRecommenedInfo, Element xmlMsg
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -326,7 +402,14 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sContent 文本内容（xml 格式的）
 	 * @return
 	 */
-	public int OnSystemMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent)
+	public int OnSystemMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -348,7 +431,15 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param sReplacedByMsg 替换成的消息
 	 * @return
 	 */
-	public int OnMessageIsRevokedMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, String sRevokedMsgID, String sReplacedByMsg)
+	public int OnMessageIsRevokedMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			String sRevokedMsgID, String sReplacedByMsg
+		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}

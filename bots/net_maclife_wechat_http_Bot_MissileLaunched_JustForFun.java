@@ -12,7 +12,14 @@ import com.fasterxml.jackson.databind.*;
 public class net_maclife_wechat_http_Bot_MissileLaunched_JustForFun extends net_maclife_wechat_http_Bot
 {
 	@Override
-	public int OnGeoLocationMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sLocation, String sLongtitude, String sLatitude)
+	public int OnGeoLocationMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sLocation, String sLongtitude, String sLatitude
+		)
 	{
 		try
 		{

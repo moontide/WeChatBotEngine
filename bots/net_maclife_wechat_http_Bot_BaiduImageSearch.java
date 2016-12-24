@@ -11,7 +11,15 @@ import com.fasterxml.jackson.databind.*;
 public class net_maclife_wechat_http_Bot_BaiduImageSearch extends net_maclife_wechat_http_Bot
 {
 	@Override
-	public int OnImageMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
+	public int OnImageMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia, String sImageURL
+		)
 	{
 		if (! fMedia.exists () && StringUtils.isEmpty (sImageURL))
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -118,8 +126,16 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 .guess-info-
 	}
 
 	@Override
-	public int OnEmotionMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia, String sImageURL)
+	public int OnEmotionMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia, String sImageURL
+		)
 	{
-		return OnImageMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, sImageURL);
+		return OnImageMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, sImageURL);
 	}
 }

@@ -689,6 +689,8 @@ net_maclife_wechat_http_BotApp.logger.warning ("尚未接收到任何消息，�
 	@Override
 	public void run ()
 	{
+		int nWaitLoginCount = 0;
+		int nWaitTimeToRetry = 0;
 		try
 		{
 			String sLoginID = null;
@@ -732,6 +734,11 @@ net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " +
 								int n = (Integer) o;
 								if (n == 400)	// Bad Request / 二维码已失效
 								{
+									nWaitLoginCount ++;
+									nWaitTimeToRetry = nWaitTimeToRetry + 5 * nWaitLoginCount;
+									if (nWaitTimeToRetry > 3600)
+										nWaitTimeToRetry = 3600;	// 重试间隔最长不超过 1 小时
+									TimeUnit.SECONDS.sleep (nWaitTimeToRetry);
 									continue _outer_loop;
 								}
 								else	// 大概只有 200 才能出来：当是 200 时，但访问登录页面失败时，可能会跑到此处
@@ -740,6 +747,9 @@ net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " +
 								}
 							}
 						} while (! (o instanceof Map<?, ?>) && !bStopFlag);
+						nWaitLoginCount = 0;
+						nWaitTimeToRetry = 0;
+
 						mapWaitLoginResult = (Map<String, Object>) o;
 						sUserID     = (String) mapWaitLoginResult.get ("UserID");
 						sSessionID  = (String) mapWaitLoginResult.get ("SessionID");
@@ -768,6 +778,8 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 					// 触发“已登录”事件
 					OnLoggedIn ();
 
+					sLastFromAccount = null;
+					sLastFromName = null;
 					JsonNode jsonMessagePackage = null;
 					try
 					{
@@ -833,17 +845,17 @@ net_maclife_wechat_http_BotApp.logger.warning ("bot 线程退出");
 	void OnLoggedIn ()
 	{
 		loggedIn = true;
-		DispatchEvent ("OnLoggedIn", null, null, null, null, null, null, null, null, null, null, null, null, null);
+		DispatchEvent ("OnLoggedIn");
 	}
 
 	void OnLoggedOut ()
 	{
-		DispatchEvent ("OnLoggedOut", null, null, null, null, null, null, null, null, null, null, null, null, null);
+		DispatchEvent ("OnLoggedOut");
 	}
 
 	void OnShutdown ()
 	{
-		DispatchEvent ("OnShutdown", null, null, null, null, null, null, null, null, null, null, null, null, null);
+		DispatchEvent ("OnShutdown");
 	}
 
 	/**
@@ -878,8 +890,8 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nAddMsgCount + " 个新�
 			boolean isFromMe = IsMe (sFromAccount);	// 要在交换 From 和 To 之前判断
 			boolean isFromPublicAccount = false;
 			String sFromAccount_RoomMember = null;
-			String sFromName_RoomMember = null;
 			JsonNode jsonFrom_RoomMember = null;
+			String sFromName_RoomMember = null;
 
 			String sToAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "ToUserName");	// 接收人帐号，有可能是其他人（自己在其他设备上发的）
 			JsonNode jsonTo = SearchForSingleContact (sToAccount);
@@ -938,6 +950,16 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 			}
 			sLastFromName = sFromName;
 
+			String sFromAccount_Person = sFromAccount;
+			JsonNode jsonFrom_Person = jsonFrom;
+			String sFromName_Person = sFromName;
+			if (jsonFrom_RoomMember != null)
+			{
+				sFromAccount_Person = sFromAccount_RoomMember;
+				jsonFrom_Person = jsonFrom_RoomMember;
+				sFromName_Person = sFromName_RoomMember;
+			}
+
 			if (isFromMe)
 			{
 net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发给 " + (isToMe ? "自己" : (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sFromName, "null") ? "" : "【" + sFromName + "】")) + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
@@ -983,40 +1005,40 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 							sContent = StringUtils.substring (sContent, (StringUtils.isNotEmpty (sMyDisplayNameInThisRoom) ? StringUtils.length (sMyDisplayNameInThisRoom) : StringUtils.length (sMyEncryptedAccountInThisSession)) + 1);
 					}
 
-					OnTextMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, false, false);
+					OnTextMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent, false, false);
 					break;
 				case WECHAT_MSG_TYPE__IMAGE:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-					OnImageMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
+					OnImageMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
 					break;
 				case WECHAT_MSG_TYPE__APP:
 					break;
 				case WECHAT_MSG_TYPE__VOICE:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVoice (sSessionKey, sMsgID);
-					OnVoiceMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
+					OnVoiceMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
 					break;
 				//case WECHAT_MSG_TYPE__VERIFY_MSG:
 				//	break;
 				//case WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG:
 				//	break;
 				case WECHAT_MSG_TYPE__WECHAT_VCARD:
-					OnVCardMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent);
+					OnVCardMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent);
 					break;
 				//case WECHAT_MSG_TYPE__VIDEO_CALL:
 				//	break;
 				case WECHAT_MSG_TYPE__EMOTION:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
-					OnEmotionMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
+					OnEmotionMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
 					break;
 				//case WECHAT_MSG_TYPE__GPS_POSITION:
 				//	break;
 				case WECHAT_MSG_TYPE__URL:
-					OnURLMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent);
+					OnURLMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent);
 					break;
 				//case WECHAT_MSG_TYPE__VOIP_MSG:
 				//	break;
 				case WECHAT_MSG_TYPE__OPERATION:
-					OnOperationMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent);
+					OnOperationMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent);
 					break;
 				//case WECHAT_MSG_TYPE__VOIP_NOTIFY:
 				//	break;
@@ -1024,15 +1046,15 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 				//	break;
 				case WECHAT_MSG_TYPE__SHORT_VIDEO:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVideo (sSessionKey, sMsgID);
-					OnVideoMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
+					OnVideoMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent, fMedia);
 					break;
 				//case WECHAT_MSG_TYPE__SYSTEM_NOTICE:
 				//	break;
 				case WECHAT_MSG_TYPE__SYSTEM:
-					OnSystemMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent);
+					OnSystemMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent);
 					break;
 				case WECHAT_MSG_TYPE__MSG_REVOKED:
-					OnMessageIsRevokedMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent);
+					OnMessageIsRevokedMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonNode, sContent);
 					break;
 				default:
 					break;
@@ -1076,7 +1098,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount +
 		}
 	}
 
-	void OnTextMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sMessage, final boolean bMentionedMe, final boolean bMentionedMeFirst)
+	void OnTextMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sMessage, boolean bMentionedMe, boolean bMentionedMeFirst)
 	{
 		String sURL = net_maclife_wechat_http_BotApp.GetJSONText (jsonMessage, "Url");	// http://apis.map.qq.com/uri/v1/geocoder?coord=纬度,经度
 		if (StringUtils.isNotEmpty (sURL))
@@ -1105,14 +1127,14 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount +
 				String[] arrayContent = sMessage.split (":\\n", 2);
 				String sLocation = arrayContent[0];
 				// arrayContent[1];	// 该信息忽略吧，暂时无用
-				DispatchEvent ("OnGeoLocationMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sLocation, sLongitude, sLatitude);
+				DispatchEvent ("OnGeoLocationMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sLocation, sLongitude, sLatitude);
 				return;
 			}
 		}
-		DispatchEvent ("OnTextMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sMessage, bMentionedMe, bMentionedMeFirst);
+		DispatchEvent ("OnTextMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sMessage, bMentionedMe, bMentionedMeFirst);
 	}
 
-	void OnEmotionMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent, final File fMedia)
+	void OnEmotionMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
 	{
 /*
 <msg>
@@ -1151,15 +1173,15 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount +
 		{
 			e.printStackTrace();
 		}
-		DispatchEvent ("OnEmotionMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, sImageURL);
+		DispatchEvent ("OnEmotionMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, sImageURL);
 	}
 
-	void OnImageMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent, final File fMedia)
+	void OnImageMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
 	{
-		DispatchEvent ("OnImageMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, null);
+		DispatchEvent ("OnImageMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia);
 	}
 
-	void OnVCardMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent)
+	void OnVCardMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent)
 	{
 		try
 		{
@@ -1229,7 +1251,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount +
 				sb.append ("\n");
 			}
 net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
-			DispatchEvent ("OnVCardMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, jsonRecommenedInfo, msg);
+			DispatchEvent ("OnVCardMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, jsonRecommenedInfo, msg);
 		}
 		catch (ParsingException | IOException e)
 		{
@@ -1237,7 +1259,7 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 		}
 	}
 
-	void OnURLMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent)
+	void OnURLMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent)
 	{
 		try
 		{
@@ -1295,7 +1317,7 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 				sb.append ("\n");
 			}
 net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
-			DispatchEvent ("OnURLMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, msg, jsonMessage);
+			DispatchEvent ("OnURLMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, msg, jsonMessage);
 		}
 		catch (ParsingException | IOException e)
 		{
@@ -1303,7 +1325,7 @@ net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
 		}
 	}
 
-	void OnOperationMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent)
+	void OnOperationMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent)
 	{
 		String sOperationType = null;
 		String sTargetAccount = null;
@@ -1323,7 +1345,7 @@ net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
 //</msg>
 					sTargetAccount = op.getFirstChildElement ("username").getValue ();
 net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗口，联系人/聊天室的未加密的帐号：" + sTargetAccount);
-					DispatchEvent ("OnChatWindowOpenedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, sTargetAccount, null);
+					DispatchEvent ("OnChatWindowOpenedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, sTargetAccount);
 					break;
 				case "5":	// 微信手机端关闭（后退）订阅号列表窗口时收到该类型的消息
 //<msg>
@@ -1333,7 +1355,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗�
 //</msg>
 					sTargetAccount = op.getFirstChildElement ("username").getValue ();
 net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表窗口，之前打开联系人/聊天室的未加密的帐号：" + sTargetAccount);
-					DispatchEvent ("OnChatWindowOpenedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, sTargetAccount, null);
+					DispatchEvent ("OnChatWindowOpenedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, sTargetAccount);
 					break;
 				case "4":
 //<msg>
@@ -1370,7 +1392,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 		//DispatchEvent ("OnOperationMessage", sFrom_EncryptedRoomAccount, sFrom_RoomNickName, sFrom_EncryptedAccount, sFrom_Name, sTo_EncryptedAccount, sTo_Name, sContent, null, null);
 	}
 
-	void OnMessageIsRevokedMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent)
+	void OnMessageIsRevokedMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent)
 	{
 		try
 		{
@@ -1395,7 +1417,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 				sb.append ("\n");
 			}
 net_maclife_wechat_http_BotApp.logger.info ("“消息已撤回”消息：\n" + sb);
-			DispatchEvent ("OnMessageIsRevokedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, sRevokedMsgID, sReplacedByMsg);
+			DispatchEvent ("OnMessageIsRevokedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, sRevokedMsgID, sReplacedByMsg);
 		}
 		catch (ParsingException | IOException e)
 		{
@@ -1404,20 +1426,20 @@ net_maclife_wechat_http_BotApp.logger.info ("“消息已撤回”消息：\n" +
 	}
 
 
-	void OnVoiceMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent, final File fMedia)
+	void OnVoiceMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
 	{
-		DispatchEvent ("OnVoiceMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, null);
+		DispatchEvent ("OnVoiceMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia);
 	}
 
-	void OnVideoMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent, final File fMedia)
+	void OnVideoMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
 	{
-		DispatchEvent ("OnVideoMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, null);
+		DispatchEvent ("OnVideoMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia);
 	}
 
-	void OnSystemMessageReceived (final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonMessage, final String sContent)
+	void OnSystemMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent)
 	{
 net_maclife_wechat_http_BotApp.logger.info ("系统消息: " + sContent);
-		DispatchEvent ("OnSystemMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonMessage, sContent, null, null);
+		DispatchEvent ("OnSystemMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent);
 	}
 
 	void OnContactChanged (final JsonNode jsonContact)
@@ -1427,18 +1449,18 @@ net_maclife_wechat_http_BotApp.logger.info ("系统消息: " + sContent);
 			return;
 
 net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName (jsonOldContact));
-		DispatchEvent ("OnContactChanged", null, null, null, null, null, null, null, null, null, jsonContact, null, jsonOldContact, null);
+		DispatchEvent ("OnContactChanged", null, null, null, null, null, null, null, null, null, jsonContact, null, jsonOldContact);
 	}
 
 	void OnContactDeleted (final JsonNode jsonContact)
 	{
 		JsonNode jsonOldContact = DeleteContact (jsonContact);
-		DispatchEvent ("OnContactDeleted", null, null, null, null, null, null, null, null, null, jsonContact, null, jsonOldContact, null);
+		DispatchEvent ("OnContactDeleted", null, null, null, null, null, null, null, null, null, null, null, null, jsonContact, null, jsonOldContact);
 	}
 
 	void OnRoomMemberChanged (final JsonNode jsonRoom)
 	{
-		DispatchEvent ("OnRoomMemberChanged", null, null, null, null, null, null, null, null, null, jsonRoom, null, null, null);
+		DispatchEvent ("OnRoomMemberChanged", null, null, null, null, null, null, null, null, null, null, null, null, jsonRoom);
 	}
 
 	public static boolean IsDispatchEnabledForThisMessage (final String sEvent, final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonNode, final String sContent, final Object data, final Object data2)
@@ -1494,8 +1516,25 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 		return bEnabled;
 	}
 
-	void DispatchEvent (final String sEvent, final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonNode, final String sContent, final Object data, final Object data2)
+	void DispatchEvent (final String sEvent, Object... args)
 	{
+		int i = 0;
+		final JsonNode jsonFrom                = args.length > i ? (JsonNode)args[i] : null;	i++;
+		final String sFromAccount              = args.length > i ? (String)args[i] : null;	i++;
+		final String sFromName                 = args.length > i ? (String)args[i] : null;	i++;
+		final JsonNode jsonFrom_RoomMember     = args.length > i ? (JsonNode)args[i] : null;	i++;
+		final String sFromAccount_RoomMember   = args.length > i ? (String)args[i] : null;	i++;
+		final String sFromName_RoomMember      = args.length > i ? (String)args[i] : null;	i++;
+		final JsonNode jsonFrom_Person         = args.length > i ? (JsonNode)args[i] : null;	i++;
+		final String sFromAccount_Person       = args.length > i ? (String)args[i] : null;	i++;
+		final String sFromName_Person          = args.length > i ? (String)args[i] : null;	i++;
+		final JsonNode jsonTo                  = args.length > i ? (JsonNode)args[i] : null;	i++;
+		final String sToAccount                = args.length > i ? (String)args[i] : null;	i++;
+		final String sToName                   = args.length > i ? (String)args[i] : null;	i++;
+		final JsonNode jsonNode                = args.length > i ? (JsonNode)args[i] : null;	i++;
+		final String sContent                  = args.length > i ? (String)args[i] : null;	i++;
+		final Object data                      = args.length > i ? args[i] : null;	i++;
+		final Object data2                     = args.length > i ? args[i] : null;	i++;
 		// 检查一下配置，看看是否该派送这个消息/事件
 		if (! true)
 		{
@@ -1508,7 +1547,15 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 		{
 			if (! bMultithread)
 			{	// 单线程或共享 Engine 线程时，才会有 Bot 链的处理机制。
-				rc = DoDispatch (bot, sEvent, jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, data, data2);
+				rc = DoDispatch
+					(
+						bot, sEvent,
+						jsonFrom, sFromAccount, sFromName,
+						jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+						jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+						jsonTo, sToAccount, sToName,
+						jsonNode, sContent, data, data2
+					);
 				if ((rc & BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE) != BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE)
 					break;
 			}
@@ -1521,7 +1568,15 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 						@Override
 						public void run ()
 						{
-							DoDispatch (bot, sEvent, jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, data, data2);
+							DoDispatch
+								(
+									bot, sEvent,
+									jsonFrom, sFromAccount, sFromName,
+									jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+									jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+									jsonTo, sToAccount, sToName,
+									jsonNode, sContent, data, data2
+								);
 						}
 					}
 				);
@@ -1529,7 +1584,16 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 		}
 	}
 
-	int DoDispatch (final net_maclife_wechat_http_Bot bot, final String sType, final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonNode, final String sContent, final Object data, final Object data2)
+	int DoDispatch
+		(
+			final net_maclife_wechat_http_Bot bot, final String sType,
+			final JsonNode jsonFrom, final String sFromAccount, final String sFromName,
+			final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember,
+			final JsonNode jsonFrom_Person, final String sFromAccount_Person, final String sFromName_Person,
+			final JsonNode jsonTo, final String sToAccount, final String sToName,
+			final JsonNode jsonNode, final String sContent,
+			final Object data, final Object data2
+		)
 	{
 		try
 		{
@@ -1542,29 +1606,113 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 				case "onshutdown":
 					return bot.OnShutdown ();
 				case "onmessage":
-					return bot.OnMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, (JsonNode)data);
+					return bot.OnMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							(JsonNode)data
+						);
 				case "ontextmessage":
-					return bot.OnTextMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (boolean)data, (boolean)data2);
+					return bot.OnTextMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (boolean)data, (boolean)data2
+						);
 				case "ongeolocationmessage":
-					return bot.OnGeoLocationMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (String)data, (String)data2);
+					return bot.OnGeoLocationMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (String)data, (String)data2
+						);
 				case "onurlmessage":
-					return bot.OnURLMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, (Element)data);
+					return bot.OnURLMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, (Element)data
+						);
 				case "onimagemessage":
-					return bot.OnImageMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (File)data, (String)data2);
+					return bot.OnImageMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (File)data, (String)data2
+						);
 				case "onvoicemessage":
-					return bot.OnVoiceMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (File)data);
+					return bot.OnVoiceMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (File)data
+						);
 				case "onvcardmessage":
-					return bot.OnVCardMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (JsonNode)data, (Element)data2);
+					return bot.OnVCardMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (JsonNode)data, (Element)data2
+						);
 				case "onvideomessage":
-					return bot.OnVideoMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (File)data);
+					return bot.OnVideoMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (File)data
+						);
 				case "onemotionmessage":
-					return bot.OnEmotionMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (File)data, (String)data2);
+					return bot.OnEmotionMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (File)data, (String)data2
+						);
 				case "onchatwindowopenedmessage":
-					return bot.OnChatWindowOpenedMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (String)data);
+					return bot.OnChatWindowOpenedMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (String)data
+						);
 				case "onmessageisrevokedmessage":
-					return bot.OnMessageIsRevokedMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent, (String)data, (String)data2);
+					return bot.OnMessageIsRevokedMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent, (String)data, (String)data2
+						);
 				case "onsystemmessage":
-					return bot.OnSystemMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, jsonNode, sContent);
+					return bot.OnSystemMessageReceived
+						(
+							jsonFrom, sFromAccount, sFromName,
+							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,
+							jsonFrom_Person, sFromAccount_Person, sFromName_Person,
+							jsonTo, sToAccount, sToName,
+							jsonNode, sContent
+						);
 				case "oncontactchanged":
 					return bot.OnContactChanged (jsonNode);
 				case "oncontactdeleted":

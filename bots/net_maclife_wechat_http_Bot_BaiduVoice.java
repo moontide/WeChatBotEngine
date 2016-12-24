@@ -90,7 +90,15 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 	}
 
 	@Override
-	public int OnVoiceMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
+	public int OnVoiceMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia
+		)
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -144,7 +152,7 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 			{
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 			}
-			ProcessSpeechRecognition (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, fMedia);
+			ProcessSpeechRecognition (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, fMedia);
 
 		}
 		catch (Exception e)
@@ -155,7 +163,15 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 	}
 
 	@Override
-	public int OnVideoMessageReceived (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, JsonNode jsonMessage, String sContent, File fMedia)
+	public int OnVideoMessageReceived
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			JsonNode jsonMessage, String sContent,
+			File fMedia
+		)
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -167,7 +183,7 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 			{
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 			}
-			ProcessSpeechRecognition (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonTo, sToAccount, sToName, fMedia);
+			ProcessSpeechRecognition (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, fMedia);
 
 		}
 		catch (Exception e)
@@ -179,7 +195,14 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
-	int ProcessSpeechRecognition (JsonNode jsonFrom, String sFromAccount, String sFromName, JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember, JsonNode jsonTo, String sToAccount, String sToName, File fMedia) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	int ProcessSpeechRecognition
+		(
+			JsonNode jsonFrom, String sFromAccount, String sFromName,
+			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
+			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
+			JsonNode jsonTo, String sToAccount, String sToName,
+			File fMedia
+		) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		String sAccessToken = GetBaiduAccessToken ();
 		if (StringUtils.isEmpty (sAccessToken))
