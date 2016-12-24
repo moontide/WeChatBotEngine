@@ -879,11 +879,11 @@ logger.info (sb.toString ());
 	}
 	public static JsonNode WebWeChatGetMessagePackage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException
 	{
-logger.fine ("等待并获取新消息 WebWeChatGetMessagePackage (synccheck & webwxsync) …");	// 这里的日志级别改为了 fine，因这个在死循环中，产生太多日志
+logger.finest ("等待并获取新消息 WebWeChatGetMessagePackage (synccheck & webwxsync) …");	// 这里的日志级别改为了 fine，因这个在死循环中，产生太多日志
 		String sSyncCheckKeys = MakeSyncCheckKeysQueryString (jsonSyncCheckKeys);
 		String sSyncCheckURL = "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck?r=" + System.currentTimeMillis () + "&skey=" + URLEncoder.encode (sSessionKey, utf8) + "&sid=" + URLEncoder.encode (sSessionID, utf8) + "&uin=" + sUserID + "&deviceid=" + MakeDeviceID () + "&synckey=" +  sSyncCheckKeys + "&_=" + System.currentTimeMillis ();
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 的 URL:");
-logger.fine ("	" + sSyncCheckURL);
+logger.finest ("WebWeChatGetMessagePackage 中 synccheck 的 URL:");
+logger.finest ("	" + sSyncCheckURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 		CookieStore cookieStore = cookieManager.getCookieStore ();
@@ -911,8 +911,8 @@ logger.fine ("	" + sSyncCheckURL);
 		*/
 		sCookieValue = MakeCookieValue (listCookies);
 		mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 1100 1102 代码？
-logger.finer ("发送 WebWeChatGetMessagePackage 中 synccheck 的 http 请求消息头 (Cookie):");
-logger.finer ("	" + mapRequestHeaders);
+logger.finest ("发送 WebWeChatGetMessagePackage 中 synccheck 的 http 请求消息头 (Cookie):");
+logger.finest ("	" + mapRequestHeaders);
 
 		String sContent = null;
 	_适应临时网络错误_TolerateTemporarilyNetworkIssue:
@@ -928,8 +928,8 @@ logger.finer ("	" + mapRequestHeaders);
 				continue _适应临时网络错误_TolerateTemporarilyNetworkIssue;
 			}
 		}
-logger.fine ("获取 WebWeChatGetMessagePackage 中 synccheck 的 http 响应消息体:");
-logger.fine ("	" + sContent);
+logger.finest ("获取 WebWeChatGetMessagePackage 中 synccheck 的 http 响应消息体:");
+logger.finest ("	" + sContent);
 
 		String sJSCode = StringUtils.replace (sContent, "window.", "var ");
 		String sSyncCheckReturnCode = public_jse.eval (sJSCode + "; synccheck.retcode;").toString ();
@@ -938,34 +938,34 @@ logger.fine ("	" + sContent);
 		JsonNode jsonResult = null;
 		if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "0"))
 		{
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector " + sSyncCheckSelector);
+//logger.finest ("WebWeChatGetMessagePackage 中 synccheck 返回 selector " + sSyncCheckSelector);
 			switch (sSyncCheckSelector)
 			{
 				case "0":	// nothing
-logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 0 -- 无消息");
+//logger.finest ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 0 -- 无消息");
 					break;
 				//case "2":	// 有新消息
-//logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 2 -- 有新消息");
+//logger.finest ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 2 -- 有新消息");
 				//case "6":
 				//case "7":
 				default:
 					String sSyncURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=" + URLEncoder.encode (sSessionID, utf8) + "&skey" + URLEncoder.encode (sSessionKey, utf8) + "&lang=zh_CN&pass_ticket=" +  sPassTicket;
-logger.fine ("WebWeChatGetMessagePackage 中 webwxsync 的 URL:");
-logger.fine ("	" + sSyncURL);
+logger.finest ("WebWeChatGetMessagePackage 中 webwxsync 的 URL:");
+logger.finest ("	" + sSyncURL);
 
 					//mapRequestHeaders = new HashMap<String, Object> ();
 					mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
 					//mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 "Ret": 1 代码
 					String sRequestBody_JSONString = MakeFullWeChatSyncJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys);
-logger.finer ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息头 (Cookie & Content-Type):");
-logger.finer ("	" + mapRequestHeaders);
-logger.finer ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息体:");
-logger.finer ("	\n" + sRequestBody_JSONString);
+logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息头 (Cookie & Content-Type):");
+logger.finest ("	" + mapRequestHeaders);
+logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息体:");
+logger.finest ("	\n" + sRequestBody_JSONString);
 					InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
 					JsonNode node = jacksonObjectMapper_Loose.readTree (is);
 					is.close ();
-logger.fine ("获取 WebWeChatGetMessagePackage 中 webwxsync 的 http 响应消息体:");
-logger.fine ("\n" + node);
+logger.finer ("获取 WebWeChatGetMessagePackage 中 webwxsync 的 http 响应消息体:");
+logger.finer ("\n" + node);
 					jsonResult = node;
 
 					ProcessBaseResponse (node, "WebWeChatGetMessagePackage 中 webwxsync");
