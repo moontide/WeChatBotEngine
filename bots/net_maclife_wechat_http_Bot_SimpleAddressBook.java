@@ -90,14 +90,14 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 	String Query (String sFromName, String sQuery)
 	{
 		String sTablePrefix = StringUtils.trimToEmpty (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.simple-address-book.jdbc.database-table.prefix"));
-		SetupDataSource ();
+		net_maclife_wechat_http_BotApp.SetupDataSource ();
 		Connection conn = null;
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
 		StringBuilder sb = null;
 		try
 		{
-			conn = botDS.getConnection ();
+			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
 			stmt = conn.prepareStatement ("SELECT * FROM " + sTablePrefix + "simple_wechat_address_book WHERE 微信群昵称=? AND 群联系人姓名=?");
 			int nCol = 1;
 			stmt.setString (nCol++, sFromName);
@@ -146,44 +146,4 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 		}
 		return sb==null ? null : sb.toString ();
 	}
-
-
-	BasicDataSource botDS = null;
-	void SetupDataSource ()
-	{
-		if (botDS != null)
-			return;
-
-		String sDriverClassName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.driver");	// , "com.mysql.jdbc.Driver"
-		String sURL = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.url");	// , "jdbc:mysql://localhost/WeChatBotEngine?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull"
-		String sUserName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.username");	// , "root"
-		String sUserPassword = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.userpassword");
-		if (StringUtils.isEmpty (sDriverClassName) || StringUtils.isEmpty (sURL) || StringUtils.isEmpty (sUserName))
-		{
-net_maclife_wechat_http_BotApp.logger.warning ("jdbc 需要将 driver、username、userpassword 信息配置完整");
-			return;
-		}
-
-		botDS = new BasicDataSource();
-		//botDS.setDriverClassName("org.mariadb.jdbc.Driver");
-		botDS.setDriverClassName (sDriverClassName);
-		// 要赋给 mysql 用户对 mysql.proc SELECT 的权限，否则执行存储过程报错
-		// GRANT SELECT ON mysql.proc TO bot@'192.168.2.%'
-		// 参见: http://stackoverflow.com/questions/986628/cant-execute-a-mysql-stored-procedure-from-java
-		botDS.setUrl (sURL);
-		// 在 prepareCall 时报错:
-		// User does not have access to metadata required to determine stored procedure parameter types. If rights can not be granted, configure connection with "noAccessToProcedureBodies=true" to have driver generate parameters that represent INOUT strings irregardless of actual parameter types.
-		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull&amp;noAccessToProcedureBodies=true&amp;useInformationSchema=true"); // 没有作用
-
-		// http://thenullhandler.blogspot.com/2012/06/user-does-not-have-access-error-with.html // 没有作用
-		// http://bugs.mysql.com/bug.php?id=61203
-		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull&amp;useInformationSchema=true");
-
-		botDS.setUsername (sUserName);
-		if (StringUtils.isNotEmpty (sUserPassword))
-			botDS.setPassword (sUserPassword);
-
-		//botDS.setMaxTotal (5);
-	}
-
 }
