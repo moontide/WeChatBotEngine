@@ -36,10 +36,10 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	</dd>
 
 	<dt><strong>ShellCommand</strong>: 系统命令 / 命令行 机器人</dt>
-	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： `ls -l /bin/`</dd>
+	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： <code>ls -l /bin/</code></dd>
 
 	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
-	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 `我的公司1` 群中发送 `txl 张三` 将会查询 `我的公司1` 通讯录中 `张三` 的联系信息。</dd>
+	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。</dd>
 
 	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
 	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。</dd>

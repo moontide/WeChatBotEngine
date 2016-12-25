@@ -35,10 +35,10 @@ Those bot applets are:
 	</dd>
 
 	<dt><strong>ShellCommand</strong>: A bot execute shell command</dt>
-	<dd>Accept command line from text message, run it, return the result of command. Example: `ls -l /bin/`</dd>
+	<dd>Accept command line from text message, run it, return the result of command. Example: <code>ls -l /bin/</code></dd>
 
 	<dt><strong>SimpleAddressBook</strong>: A simple address book bot for WeChat group chat</dt>
-	<dd>This is a simple address book bot for WeChat [group chat / chat room] relied on MySQL database. It will query the database according the group nickname and return the contact information of the specified contact name. Example: send `txl Alice` in chat room 'My Company 1' will return contact information of `Alice` of 'My Company 1' address book.</dd>
+	<dd>This is a simple address book bot for WeChat [group chat / chat room] relied on MySQL database. It will query the database according the group nickname and return the contact information of the specified contact name. Example: send <code>txl Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.</dd>
 
 	<dt><strong>HCICloudCSR</strong>: HCICloud customer service representative chat bot</dt>
 	<dd>Using the HTTP protocol from HCICloud CSR, fetch the answer from CSR bot, then reply to user.</dd>
