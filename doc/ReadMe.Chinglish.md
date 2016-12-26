@@ -1,4 +1,4 @@
-<div style='text-align:right;'><a href='ReadMe.中文.md'>中文</a> | <span>Chinglish</span></div>
+<div style='text-align:right;'><a href='/doc/ReadMe.中文.md'>中文</a> | <span>Chinglish</span></div>
 
 ----
 
@@ -35,10 +35,10 @@ Those bot applets are:
 	</dd>
 
 	<dt><strong>ShellCommand</strong>: A bot execute shell command</dt>
-	<dd>Accept command line from text message, run it, return the result of command. Example: <code>ls -l /bin/</code></dd>
+	<dd>Accept command line from text message, run it, return the result of command. Example: <code>cmd ls -l /bin/</code></dd>
 
 	<dt><strong>SimpleAddressBook</strong>: A simple address book bot for WeChat group chat</dt>
-	<dd>This is a simple address book bot for WeChat [group chat / chat room] relied on MySQL database. It will query the database according the group nickname and return the contact information of the specified contact name. Example: send <code>txl Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.</dd>
+	<dd>This is a simple address book bot for WeChat [group chat / chat room] relied on MySQL database. It will query the database according the group nickname and return the contact information of the specified contact name. Example: send <code>sab Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.</dd>
 
 	<dt><strong>HCICloudCSR</strong>: HCICloud customer service representative chat bot</dt>
 	<dd>Using the HTTP protocol from HCICloud CSR, fetch the answer from CSR bot, then reply to user.</dd>
@@ -72,19 +72,24 @@ Those bot applets are:
 	/loadbot net_maclife_wechat_http_Bot_BaiduImageSearch
 	2016-12-16 17:44:03.795 [信息] net_maclife_wechat_http_BotEngine LoadBot: 百度识图 机器人已创建并加载
 
-#How to build a Bot Applet by myself#
+#How to create your own bot applet#
 Very easy, just extends/inherit `net_maclife_wechat_http_Bot` class, implements any (or zero) interface you wantted.
-Currently, the following interfaces/event are planned:
+Currently, the following interfaces/events are planned:
 
 - `OnLoggedIn`
 - `OnLoggedOut`
 - `OnShutdown`
-- `OnMessageReceived` Triggered when a message received. This is the entrance of all the following *`Message` event. If you want to analyze or modify the message by yourself, you can do it here.
+- `OnMessagePackageReceived` Triggered when a message package received. This is the entrance of all the following `On***MessageReceived` event. If you want to analyze or modify the message by yourself, you can do it here.
 - `OnTextMessageReceived` Triggered when a Text message received.
 - `OnImageMessageReceived` Triggered when an Image message received.
 - `OnVoiceMessageReceived` Triggered when a Voice message received.
 - `OnVideoMessageReceived` Triggered when a Video message received.
-- `OnEmotionMessageReceived` Triggered when a Emotion message received.
+- `OnEmotionMessageReceived` Triggered when an Emotion message received.
+- `OnSystemMessageReceived` Triggered when a System message received.
+- `OnMessageIsRevokedMessageReceived` Triggered when a MessageIsRevoked message received.
+- `OnContactChanged` Triggered when a contact was changed.
+- `OnContactDeleted` Triggered when a contact was deleted.
+- `OnRoomMemberChanged` Triggered when a room member changed.
 
 #Why your class name like this: `net_maclife_wechat_http_Bot` #
 I don't like the layout of how Java organize the sources files and classes files -- directories in directories, so I replace all `.` (dot) in canonical/full class names to `_` (underline). This will avoid the Java style layout, it's simple & effective, you don't need to go deep in directories to get a file.

@@ -1,4 +1,4 @@
-<div style='text-align:right;'><span>中文</span> | <a href='ReadMe.Chinglish.md'>Chinglish</a></div>
+<div style='text-align:right;'><span>中文</span> | <a href='/doc/ReadMe.Chinglish.md'>Chinglish</a></div>
 
 ----
 
@@ -36,7 +36,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	</dd>
 
 	<dt><strong>ShellCommand</strong>: 系统命令 / 命令行 机器人</dt>
-	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： <code>ls -l /bin/</code></dd>
+	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： <code>cmd ls -l /bin/</code></dd>
 
 	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
 	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。</dd>
@@ -81,12 +81,17 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 - `OnLoggedIn`
 - `OnLoggedOut`
 - `OnShutdown`
-- `OnMessageReceived` 当有消息收到时触发。该接口是下面几个 Message 接口的总入口，如果你要自己解析收到的微信消息，可以在此接口入手。
-- `OnTextMessageReceived` 当有文本消息收到时触发。
-- `OnImageMessageReceived` 当有图片消息收到时触发。
-- `OnVoiceMessageReceived` 当有语音消息收到时触发。
-- `OnVideoMessageReceived` 当有视频消息收到时触发。
-- `OnEmotionMessageReceived` 当有表情图消息收到时触发。
+- `OnMessagePackageReceived` 当收到【消息包】时触发。该接口是下面几个 `On***MessageReceived` 接口的总入口，如果你要自己解析、甚至修改收到的微信消息包，可以在此接口入手。
+- `OnTextMessageReceived` 当收到【文本消息】时触发。
+- `OnImageMessageReceived` 当收到【图片消息】时触发。
+- `OnVoiceMessageReceived` 当收到【语音消息】时触发。
+- `OnVideoMessageReceived` 当收到【视频消息】时触发。
+- `OnEmotionMessageReceived` 当收到【表情图消息】时触发。
+- `OnSystemMessageReceived` 当收到【系统消息】（比如“收到红包，请到手机上查看”）时触发。
+- `OnMessageIsRevokedMessageReceived` 当收到【消息被撤回】消息时触发。
+- `OnContactChanged` 当【联系人变更】时触发。
+- `OnContactDeleted` 当【联系人被删除】时触发。
+- `OnRoomMemberChanged` 当【群成员变更】时触发。
 
 #为什么你的类名是 `net_maclife_wechat_http_Bot` 这样子#
 不喜欢 java 默认的一层套一层文件夹的组织方式，所以，把类的全名中的小数点 `.` 替换成 `_`，这样可以避免多层文件夹的组织方式 -- 简单、高效，找个文件不用来回切换文件夹。
