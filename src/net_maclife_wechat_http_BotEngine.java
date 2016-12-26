@@ -600,7 +600,8 @@ net_maclife_wechat_http_BotApp.logger.warning ("尚未接收到任何消息，�
 	}
 
 	/**
-	 * 从通信录中获取人名。获取的人名不建议用来 @ 回复（因为可能是你自己给出的备注名称 -- 别人可能不认识该名称）。
+	 * 从通信录中获取联系人（包括群）的名称。获取的联系人名称不建议用来 @ 回复（因为可能是你自己给出的备注名称 -- 别人可能不认识该名称）。
+	 * 注意： 对于群，有可能没被加在通讯录中，这时从通讯录中会取不到，因此，如果在通讯录中找不到，则需要针对群通讯录单独再取一次“群联系人”
 	 * @param sEncryptedContactAccount
 	 * @param jsonContact
 	 * @return 如果 RemarkName (备注名) 不为空，则取 RemarkName，否则取 NickName (昵称)
@@ -608,7 +609,18 @@ net_maclife_wechat_http_BotApp.logger.warning ("尚未接收到任何消息，�
 	String GetContactName (String sEncryptedContactAccount, JsonNode jsonContact)
 	{
 		if (jsonContact == null)
+		{
 			jsonContact = SearchForSingleContact (sEncryptedContactAccount, null, null, null);
+			if (jsonContact == null && net_maclife_wechat_http_BotApp.IsRoomAccount(sEncryptedContactAccount))
+			{	// 未加到通讯录的群
+				jsonContact = GetRoomByRoomAccount (sEncryptedContactAccount);
+				if (jsonContact != null)
+				{	// 缓存到内存中
+					//((ArrayNode)jsonContacts.get ("MemberList")).add (jsonContact);
+					ReplaceOrAddContact (jsonContact);
+				}
+			}
+		}
 		if (jsonContact == null)
 			return null;
 
@@ -1618,8 +1630,8 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 					return bot.OnLoggedOut ();
 				case "onshutdown":
 					return bot.OnShutdown ();
-				case "onmessage":
-					return bot.OnMessageReceived
+				case "onmessagepackage":
+					return bot.OnMessagePackageReceived
 						(
 							jsonFrom, sFromAccount, sFromName,
 							jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember,

@@ -107,9 +107,9 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	////////////////////////////////
-	// “消息收到”事件总入口
+	// “消息包收到”事件总入口
 	////////////////////////////////
-	public int OnMessageReceived
+	public int OnMessagePackageReceived
 		(
 			JsonNode jsonFrom, String sFromAccount, String sFromName,
 			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
