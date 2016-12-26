@@ -1178,7 +1178,8 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount +
 		{
 			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
 			Element msg = doc.getRootElement ();
-			sImageURL = msg.getFirstChildElement ("emoji").getAttributeValue ("cdnurl");
+			Element emoji = msg.getFirstChildElement ("emoji");
+			sImageURL = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (emoji, "cdnurl");
 		}
 		catch (ParsingException | IOException e)
 		{
@@ -1205,9 +1206,9 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount +
 
 			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
 			Element msg = doc.getRootElement ();
-			String 大头像图片网址 = msg.getAttributeValue ("bigheadimgurl");
-			String 小头像图片网址 = msg.getAttributeValue ("smallheadimgurl");
-			String 地区代码 = msg.getAttributeValue ("regionCode");
+			String 大头像图片网址 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "bigheadimgurl");
+			String 小头像图片网址 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "smallheadimgurl");
+			String 地区代码 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "regionCode");
 
 			StringBuilder sb = new StringBuilder ();
 			if (StringUtils.isNotEmpty (昵称))
@@ -1282,13 +1283,14 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 
 			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
 			Element msg = doc.getRootElement ();
-			String 应用程序名 = msg.getFirstChildElement ("appinfo").getFirstChildElement ("appname").getValue ();
+			Element appinfo = msg.getFirstChildElement ("appinfo");
+			String 应用程序名 = net_maclife_wechat_http_BotApp.GetXMLValue (appinfo, "appname");
 
 			Element appmsg = msg.getFirstChildElement ("appmsg");
-			String title = appmsg.getFirstChildElement ("title").getValue ();	// 据观察，其数值等于 等于 sFileName
-			String description = appmsg.getFirstChildElement ("des").getValue ();
-			String url_from_xml = appmsg.getFirstChildElement ("url").getValue ();	// 据观察，其数值等于 等于 sURL
-			String data_url = appmsg.getFirstChildElement ("dataurl").getValue ();	// 网易云音乐分享里，这个是个音乐文件
+			String title = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "title");	// 据观察，其数值等于 等于 sFileName
+			String description = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "des");
+			String url_from_xml = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "url");	// 据观察，其数值等于 等于 sURL
+			String data_url = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "dataurl");	// 网易云音乐分享里，这个是个音乐文件
 
 			StringBuilder sb = new StringBuilder ();
 			if (StringUtils.isNotEmpty (title))
@@ -1345,7 +1347,7 @@ net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
 			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
 			Element msg = doc.getRootElement ();
 			Element op = msg.getFirstChildElement ("op");
-			sOperationType = op.getAttributeValue ("id");
+			sOperationType = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (op, "id");
 			switch (sOperationType)
 			{
 				case "2":	// 微信手机端打开一个聊天窗口时收到该类型的消息
@@ -1354,7 +1356,7 @@ net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
 //		<username>未加密的帐号（打开的联系人的帐号）</username>
 //	</op>
 //</msg>
-					sTargetAccount = op.getFirstChildElement ("username").getValue ();
+					sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
 net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗口，联系人/聊天室的未加密的帐号：" + sTargetAccount);
 					DispatchEvent ("OnChatWindowOpenedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, sTargetAccount);
 					break;
@@ -1364,7 +1366,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗�
 //		<username>未加密的帐号（打开的联系人的帐号）</username>
 //	</op>
 //</msg>
-					sTargetAccount = op.getFirstChildElement ("username").getValue ();
+					sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
 net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表窗口，之前打开联系人/聊天室的未加密的帐号：" + sTargetAccount);
 					DispatchEvent ("OnChatWindowOpenedMessage", jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, sTargetAccount);
 					break;
@@ -1391,7 +1393,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 //		</unreadfunctionlist>
 //	</op>
 //</msg>
-					sTargetAccount = op.getFirstChildElement ("username").getValue ();
+					sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
 					break;
 			}
 		}
@@ -1410,9 +1412,9 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
 			Element sysmsg = doc.getRootElement ();
 			Element revokemsg = sysmsg.getFirstChildElement ("revokemsg");
-			String sMsgID_oldversion = revokemsg.getFirstChildElement ("oldmsgid").getValue ();
-			String sRevokedMsgID = revokemsg.getFirstChildElement ("msgid").getValue ();
-			String sReplacedByMsg = revokemsg.getFirstChildElement ("replacemsg").getValue ();
+			String sMsgID_oldversion = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "oldmsgid");
+			String sRevokedMsgID = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "msgid");
+			String sReplacedByMsg = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "replacemsg");
 
 			StringBuilder sb = new StringBuilder ();
 			if (StringUtils.isNotEmpty (sRevokedMsgID))

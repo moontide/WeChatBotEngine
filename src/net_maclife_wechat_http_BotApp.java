@@ -409,10 +409,10 @@ logger.fine ("登录页面响应的消息体:");
 //System.out.println ("	[" + sContent + "]");
 logger.fine ("	[" + eXML.toXML() + "]");
 			Map<String, Object> mapResult = new HashMap <String, Object> ();
-			mapResult.put ("UserID", eXML.getFirstChildElement ("wxuin").getValue ());
-			mapResult.put ("SessionID", eXML.getFirstChildElement ("wxsid").getValue ());
-			mapResult.put ("SessionKey", eXML.getFirstChildElement ("skey").getValue ());
-			mapResult.put ("PassTicket", eXML.getFirstChildElement ("pass_ticket").getValue ());
+			mapResult.put ("UserID", GetXMLValue (eXML, "wxuin"));
+			mapResult.put ("SessionID", GetXMLValue (eXML, "wxsid"));
+			mapResult.put ("SessionKey", GetXMLValue (eXML, "skey"));
+			mapResult.put ("PassTicket", GetXMLValue (eXML, "pass_ticket"));
 			mapResult.put ("LoginResultCode", nLoginResultCode);
 			return mapResult;
 
@@ -1669,6 +1669,30 @@ net_maclife_wechat_http_BotApp.logger.warning ("jdbc 需要将 driver、username
 	public static int GetJSONInt (JsonNode node, String sFieldName)
 	{
 		return GetJSONInt (node, sFieldName, -1);
+	}
+
+
+	public static String GetXMLValue (Element element, String sFirstChildElementName, String sDefault)
+	{
+		if (element==null || element.getFirstChildElement (sFirstChildElementName)==null)
+			return sDefault;
+		return element.getFirstChildElement (sFirstChildElementName).getValue ();
+	}
+	public static String GetXMLValue (Element element, String sFirstChildElementName)
+	{
+		return GetXMLValue (element, sFirstChildElementName, "");
+	}
+
+
+	public static String GetXMLAttributeValue (Element element, String sAttributeName, String sDefault)
+	{
+		if (element==null)
+			return sDefault;
+		return element.getAttributeValue (sAttributeName);
+	}
+	public static String GetXMLAttributeValue (Element element, String sAttributeName)
+	{
+		return GetXMLAttributeValue (element, sAttributeName, "");
 	}
 
 
