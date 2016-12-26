@@ -339,12 +339,14 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 net_maclife_wechat_http_BotApp.logger.info ("ConvertAudioToAMRFormat 将 " + sSourceAudio + " 【转换】为 amr 格式");
 		String sAMRFileName = sSourceAudio + ".amr";
 		List<String> listCommandArgs = new ArrayList<String> ();
-		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
+		// ffmpeg -i test.mp3 -ar 8000 -ac 1 test.mp3.amr
 		listCommandArgs.add (net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.external-utils.ffmpeg.path") + File.separator + "ffmpeg");
 		listCommandArgs.add ("-i");
 		listCommandArgs.add (sSourceAudio.toString ());
 		listCommandArgs.add ("-ar");
 		listCommandArgs.add ("8000");
+		listCommandArgs.add ("-ac");
+		listCommandArgs.add ("1");
 		listCommandArgs.add (sAMRFileName);
 		ProcessBuilder pb = new ProcessBuilder (listCommandArgs);
 		Process p = pb.start ();
@@ -367,13 +369,15 @@ net_maclife_wechat_http_BotApp.logger.severe ("语音格式转换失败");
 net_maclife_wechat_http_BotApp.logger.info ("StripAudioFromVideo 将视频 " + sSourceVideo + " 中的音频提取出来 (amr 格式)");
 		String sAMRFileName = sSourceVideo + ".amr";
 		List<String> listCommandArgs = new ArrayList<String> ();
-		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
+		// ffmpeg -i test.mp4 -vn -ar 8000 -ac 1 test.mp4.amr
 		listCommandArgs.add (net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.external-utils.ffmpeg.path") + File.separator + "ffmpeg");
 		listCommandArgs.add ("-i");
 		listCommandArgs.add (sSourceVideo.toString ());
 		listCommandArgs.add ("-vn");
 		listCommandArgs.add ("-ar");
 		listCommandArgs.add ("8000");
+		listCommandArgs.add ("-ac");
+		listCommandArgs.add ("1");
 		listCommandArgs.add (sAMRFileName);
 		ProcessBuilder pb = new ProcessBuilder (listCommandArgs);
 		Process p = pb.start ();
