@@ -56,7 +56,10 @@ net_maclife_wechat_http_BotApp.logger.severe (GetName () + " 启动失败: " + e
 			return;
 		}
 
-		botTask = net_maclife_wechat_http_BotApp.executor.submit (this);
+		if (botTask == null)
+		{
+			botTask = net_maclife_wechat_http_BotApp.executor.submit (this);
+		}
 	}
 
 	@Override
@@ -64,10 +67,7 @@ net_maclife_wechat_http_BotApp.logger.severe (GetName () + " 启动失败: " + e
 	{
 		try
 		{
-			if (botTask != null && !botTask.isCancelled ())
-			{
-				botTask.cancel (true);
-			}
+			super.Stop ();
 			if (ss != null && !ss.isClosed ())
 			{
 				ss.close ();

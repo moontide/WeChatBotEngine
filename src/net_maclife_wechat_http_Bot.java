@@ -56,15 +56,18 @@ public abstract class net_maclife_wechat_http_Bot
 	*/
 	public void SendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		engine.BotSendTextMessage (this, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage);
+		if (engine != null)
+			engine.BotSendTextMessage (this, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage);
 	}
 	public void SendTextMessage (String sToAccount, String sToName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		engine.BotSendTextMessage (this, sToAccount, sToName, sMessage);
+		if (engine != null)
+			engine.BotSendTextMessage (this, sToAccount, sToName, sMessage);
 	}
 	public void SendTextMessage (String sToAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		engine.BotSendTextMessage (this, sToAccount, sMessage);
+		if (engine != null)
+			engine.BotSendTextMessage (this, sToAccount, sMessage);
 	}
 
 	/**
@@ -80,7 +83,10 @@ public abstract class net_maclife_wechat_http_Bot
 	 */
 	public void Stop ()
 	{
-
+		if (botTask != null && !botTask.isCancelled ())
+		{
+			botTask.cancel (true);
+		}
 	}
 	////////////////////////////////
 	// 登录事件
