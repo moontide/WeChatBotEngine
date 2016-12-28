@@ -39,7 +39,7 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 
 		try
 		{
-			String[] arrayMessages = sMessage.split (" +", 2);
+			String[] arrayMessages = sMessage.split ("\\s+", 2);
 			if (arrayMessages==null || arrayMessages.length<1)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
