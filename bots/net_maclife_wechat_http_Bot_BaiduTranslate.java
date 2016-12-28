@@ -124,7 +124,6 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 					{
 						JsonNode jsonTransResult = jsonTransResults.get (0);
 						sTranslation = net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst");
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sTranslation);
 					}
 					else
 					{
@@ -138,8 +137,9 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 							sb.append (net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst"));
 							sb.append ("\n");
 						}
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sTranslation);
+						sTranslation = sb.toString ();
 					}
+					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sTranslation);
 					break;
 				}
 			}
@@ -184,7 +184,7 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 			net_maclife_wechat_http_BotApp.logger.severe ("参数 1 需要指定翻译的内容，参数 2 指定源语言代码（默认为 auto），参数 3 指定目的语言代码（默认为 zh）");
 			return;
 		}
-		String sQuery = args[0];
+		String sQuery = StringEscapeUtils.unescapeJava (args[0]);
 		String sFrom = "auto";
 		String sTo = "zh";
 		if (args.length >= 2 && StringUtils.isNotEmpty (args[1]))
@@ -194,7 +194,8 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 		//net_maclife_wechat_http_Bot bot = new net_maclife_wechat_http_Bot_BaiduTranslate ();
 
 		JsonNode jsonResult = GetTranslation (sQuery, sFrom, sTo);
-		if (! jsonResult.get ("error_code").isNull ())
+System.err.println (jsonResult);
+		if (jsonResult.get ("error_code") != null && ! jsonResult.get ("error_code").isNull ())
 		{
 System.err.println (net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_code") + ": " + net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "error_msg"));
 			return;
@@ -203,8 +204,9 @@ System.err.println (net_maclife_wechat_http_BotApp.GetJSONText (jsonResult, "err
 		for (int i=0; i<jsonTransResults.size (); i++)
 		{
 			JsonNode jsonTransResult = jsonTransResults.get (i);
-System.out.println (net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "src"));
+System.out.println ((i+1) + ". " + net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "src"));
 System.out.println (net_maclife_wechat_http_BotApp.GetJSONText (jsonTransResult, "dst"));
+System.out.println ();
 		}
 	}
 }
