@@ -40,6 +40,8 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 
 	public static final Random random = new SecureRandom ();
 
+	public static final int DEFAULT_NET_TRY_TIMES = 3;
+
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Public = 0x08;	// 公众号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Subscriber = 0x10;	// 订阅号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__WeChatTeam = 0x20;	// 微信团队自己的公众号
@@ -174,9 +176,25 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 logger.info ("获取新的登录 ID");
 		String sURL = "https://login.weixin.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=en_US&_=" + System.currentTimeMillis ();
 
-		String sContent = net_maclife_util_HTTPUtils.CURL (sURL);	// window.QRLogin.code = 200; window.QRLogin.uuid = "QegF7Tukgw==";
+		String sContent = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				sContent = net_maclife_util_HTTPUtils.CURL (sURL);	// window.QRLogin.code = 200; window.QRLogin.uuid = "QegF7Tukgw==";
 logger.fine ("获取 LoginID 的 http 响应消息体:");
 logger.fine ("	" + sContent);
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 
 		String sLoginID = public_jse.eval (StringUtils.replace (sContent, "window.QRLogin.", "var ") + " uuid;").toString ();
 logger.info ("获取到的登录 ID:	" + sLoginID);
@@ -192,13 +210,31 @@ logger.info ("根据登录 ID 获取二维码图片");
 		String sFileName = qrcodeFilesDirectory + "/wechat-login-qrcode-image-" + sLoginID + ".jpg";
 		String sFileName_PNG = qrcodeFilesDirectory + "/wechat-login-qrcode-image-" + sLoginID + "-10%.png";
 		File fOutputFile = new File (sFileName);
-		InputStream is = net_maclife_util_HTTPUtils.CURL_Stream (sURL);
-		OutputStream os = new FileOutputStream (fOutputFile);
-		IOUtils.copy (is, os);
-		is.close ();
-		os.close ();
+		InputStream is = null;
+		OutputStream os = null;
+
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				is = net_maclife_util_HTTPUtils.CURL_Stream (sURL);
+				os = new FileOutputStream (fOutputFile);
+				IOUtils.copy (is, os);
+				is.close ();
+				os.close ();
 logger.fine ("获取二维码图片的 http 响应消息体（保存到文件）:");
 logger.info ("	" + fOutputFile);
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 
 		if (ParseBoolean(GetConfig ().getString ("app.text-QR-Code.display-in-terminal"), true))
 		{
@@ -327,6 +363,8 @@ logger.info (sbTextQRCode.toString ());
 
 		String sURL = null;
 		String sContent = null;
+		int nStage = 1;	// 1: 等待扫描. 2:已扫描，等待登录确认
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
 	while_loop:
 		do
 		{
@@ -337,13 +375,27 @@ logger.info (sbTextQRCode.toString ());
 			boolean bLoginIcon = false;	// true;
 			sURL = "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?loginicon=" + bLoginIcon + "&uuid=" + sLoginID + "&tip=0&r=" + r + "&_=" + nTimestamp;
 
-logger.info (String.format ("%3d", nLoopCount) + " 循环等待二维码被扫描以便登录 的 http 响应消息体:");
+logger.info (String.format ("%3d", nLoopCount) + " 等待" + (nStage==1 ? "二维码被扫描" : nStage==2 ? "登录确认" : "") + " 的 http 响应消息体:");
 			// window.code=408;	未扫描/超时。只要未扫描就不断循环，但 web 端好像重复 12 次（每次 25054 毫秒）左右后，就重新刷新 LoginID
 			// window.code=201;	已扫描
 			// window.code=200;	已确认登录
 			// window.redirect_uri="https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxnewloginpage?ticket=A8qwapRV_lQ44viWM0mZmnpm@qrticket_0&uuid=gYiEFqEQdw==&lang=en_US&scan=1479893365";
-			sContent = net_maclife_util_HTTPUtils.CURL (sURL);
+			for (int i=0; i<nTryTimes; i++)
+			{
+				try
+				{
+					sContent = net_maclife_util_HTTPUtils.CURL (sURL);
 logger.fine ("	" + sContent);
+					break;
+				}
+				//catch (UnknownHostException | SocketTimeoutException e)
+				catch (IOException e)
+				{
+					e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+					continue;
+				}
+			}
 			if (StringUtils.isEmpty (sContent))
 			{
 				nLoginResultCode = 400;
@@ -362,6 +414,7 @@ logger.fine ("	获取到的 LoginResultCode:	" + nLoginResultCode);
 logger.info ("	" + nLoginResultCode + " 请求超时");
 					break;
 				case 201:	// 假设等同于 http 响应码 201: Created
+					nStage = 2;
 logger.info ("	" + nLoginResultCode + " 已扫描");
 					break;
 				case 200:	// 假设等同于 http 响应码 200: OK
@@ -502,11 +555,28 @@ logger.finer ("	" + mapRequestHeaders);
 logger.finer ("发送 WebWeChatInit 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 
-		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
-		is.close ();
+		InputStream is = null;
+		JsonNode node = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+				node = jacksonObjectMapper_Loose.readTree (is);
+				is.close ();
 logger.fine ("获取 WebWeChatInit 的 http 响应消息体:");
 logger.fine ("	" + node);
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 
 		ProcessBaseResponse (node, "WebWeChatInit");
 
@@ -571,11 +641,28 @@ logger.finer ("	" + mapRequestHeaders);
 		String sRequestBody_JSONString = MakeFullStatusNotifyRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount);
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
-		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
-		is.close ();
+		InputStream is = null;
+		JsonNode node = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+				node = jacksonObjectMapper_Loose.readTree (is);
+				is.close ();
 logger.fine ("获取 WebWeChatStatusNotify 的 http 响应消息体:");
 logger.fine ("	" + node);
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 
 		ProcessBaseResponse (node, "WebWeChatStatusNotify");
 
@@ -598,11 +685,28 @@ String sRequestBody_JSONString = MakeFullBaseRequestJSONString (sUserID, sSessio
 logger.finer  ("发送 WebWeChatGetContacts 的 http 请求消息体:");
 logger.finer  ("	" + sRequestBody_JSONString);
 
-		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
-		is.close ();
+		InputStream is = null;
+		JsonNode node = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+				node = jacksonObjectMapper_Loose.readTree (is);
+				is.close ();
 logger.fine  ("获取 WebWeChatGetContacts 的 http 响应消息体:");
 logger.fine  ("	" + node);
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 
 		ProcessBaseResponse (node, "WebWeChatGetContacts");
 
@@ -681,11 +785,28 @@ logger.fine ("	" + sURL);
 		String sRequestBody_JSONString = MakeFullGetRoomContactRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), listRoomIDs);
 logger.finer ("发送 WebWeChatGetRoomContacts 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
-		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
-		is.close ();
+		InputStream is = null;
+		JsonNode node = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+				node = jacksonObjectMapper_Loose.readTree (is);
+				is.close ();
 logger.fine ("获取 WebWeChatGetRoomContacts 的 http 响应消息体:");
 logger.fine ("	" + node);
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 
 		ProcessBaseResponse (node, "WebWeChatGetRoomContacts");
 
@@ -919,17 +1040,20 @@ logger.finest ("发送 WebWeChatGetMessagePackage 中 synccheck 的 http 请求�
 logger.finest ("	" + mapRequestHeaders);
 
 		String sContent = null;
-	_适应临时网络错误_TolerateTemporarilyNetworkIssue:
-		while (true)
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
 		{
 			try
 			{
 				sContent = net_maclife_util_HTTPUtils.CURL (sSyncCheckURL, mapRequestHeaders);	// window.synccheck={retcode:"0",selector:"2"}
 				break;
 			}
-			catch (UnknownHostException | SocketTimeoutException e)
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
 			{
-				continue _适应临时网络错误_TolerateTemporarilyNetworkIssue;
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
 			}
 		}
 logger.finest ("获取 WebWeChatGetMessagePackage 中 synccheck 的 http 响应消息体:");
@@ -965,13 +1089,29 @@ logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求�
 logger.finest ("	" + mapRequestHeaders);
 logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息体:");
 logger.finest ("	\n" + sRequestBody_JSONString);
-					InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-					JsonNode node = jacksonObjectMapper_Loose.readTree (is);
-					is.close ();
+					InputStream is = null;
+					JsonNode node = null;
+					for (int i=0; i<nTryTimes; i++)
+					{
+						try
+						{
+							is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+							node = jacksonObjectMapper_Loose.readTree (is);
+							jsonResult = node;
 logger.info ("\n--------------------------------------------------");
 logger.finer ("获取 WebWeChatGetMessagePackage 中 webwxsync 的 http 响应消息体:");
 logger.finer ("\n" + node);
-					jsonResult = node;
+							is.close ();
+							break;
+						}
+						//catch (UnknownHostException | SocketTimeoutException e)
+						catch (IOException e)
+						{
+							e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+							continue;
+						}
+					}
 
 					ProcessBaseResponse (node, "WebWeChatGetMessagePackage 中 webwxsync");
 
@@ -1026,10 +1166,25 @@ logger.finer ("	" + mapRequestHeaders);
 logger.finer ("发送 WebWeChatLogout 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody);
 
-		String sContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, sRequestBody.getBytes ());
+		String sContent = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				sContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, sRequestBody.getBytes ());
 logger.fine ("获取 WebWeChatLogout 的 http 响应消息体:");
 logger.fine ("\n" + sContent);
-		//
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 	}
 
 	/**
@@ -1073,9 +1228,27 @@ logger.finer ("发送 WebWeChatSendMessage 的 http 请求消息头:");
 logger.finer ("	" + mapRequestHeaders);
 logger.finer ("发送 WebWeChatSendMessage 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
-		InputStream is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-		JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+		InputStream is = null;
+		JsonNode node = null;
 		is.close ();
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+				node = jacksonObjectMapper_Loose.readTree (is);
+				is.close ();
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
 logger.fine ("获取 WebWeChatSendMessage 的 http 响应消息体:");
 logger.fine ("\n" + node);
 
@@ -1217,25 +1390,40 @@ logger.fine ("	" + sURL);
 logger.fine ("发送 WebWeChatGetMedia 的 http 请求消息头 (Cookie、Range):");
 logger.fine ("	" + mapRequestHeaders);
 
-		URLConnection http = net_maclife_util_HTTPUtils.CURL_Connection (sURL, mapRequestHeaders);
-		int iResponseCode = ((HttpURLConnection)http).getResponseCode();
-		int iMainResponseCode = iResponseCode/100;
-		if (iMainResponseCode==2)
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
 		{
-			String sExtensionName = net_maclife_util_HTTPUtils.ContentTypeToFileExtensionName (http.getHeaderField ("Content-Type"));
-			if (StringUtils.isNotEmpty (sExtensionName))
-				sMediaFileName = sMediaFileName + "." + sExtensionName;
+			try
+			{
+				URLConnection http = net_maclife_util_HTTPUtils.CURL_Connection (sURL, mapRequestHeaders);
+				int iResponseCode = ((HttpURLConnection)http).getResponseCode();
+				int iMainResponseCode = iResponseCode/100;
+				if (iMainResponseCode==2)
+				{
+					String sExtensionName = net_maclife_util_HTTPUtils.ContentTypeToFileExtensionName (http.getHeaderField ("Content-Type"));
+					if (StringUtils.isNotEmpty (sExtensionName))
+						sMediaFileName = sMediaFileName + "." + sExtensionName;
 
-			fMediaFile = new File (sMediaFileName);
+					fMediaFile = new File (sMediaFileName);
 logger.fine ("获取 WebWeChatGetMedia 的 http 响应消息体 (保存到文件)");
 logger.fine ("	" + fMediaFile);
 
-			InputStream is = http.getInputStream ();
-			OutputStream os = new FileOutputStream (fMediaFile);
-			int nBytes = IOUtils.copy (is, os);
+					InputStream is = http.getInputStream ();
+					OutputStream os = new FileOutputStream (fMediaFile);
+					int nBytes = IOUtils.copy (is, os);
 logger.info ("获取了 " + nBytes + " 字节的数据");
-			is.close ();
-			os.close ();
+					is.close ();
+					os.close ();
+				}
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
 		}
 		return fMediaFile;
 	}
