@@ -221,19 +221,20 @@ logger.info ("	" + fOutputFile);
 	public static void ConvertQRCodeImage (String sJPGFileName, String sPNGFileName) throws IOException
 	{
 logger.info ("将二维码 jpg 文件【转换并缩小】适合文字输出大小的 png 文件: " + sPNGFileName);
-		List<String> listImageMagickConvertArgs = new ArrayList<String> ();
 		// convert wechat-login-qrcode-image-wb6kQwuV6A==.jpg -resize 10% -dither none -colors 2 -monochrome wechat-login-qrcode-image-wb6kQwuV6A==-10%.png
-		listImageMagickConvertArgs.add (GetConfig ().getString ("app.external-utils.imagemagick.path") + File.separator + "convert");
-		listImageMagickConvertArgs.add (sJPGFileName);
-		listImageMagickConvertArgs.add ("-resize");
-		listImageMagickConvertArgs.add ("10%");
-		listImageMagickConvertArgs.add ("-dither");
-		listImageMagickConvertArgs.add ("none");
-		listImageMagickConvertArgs.add ("-colors");
-		listImageMagickConvertArgs.add ("2");
-		listImageMagickConvertArgs.add ("-monochrome");
-		listImageMagickConvertArgs.add (sPNGFileName);
-		ProcessBuilder pb = new ProcessBuilder (listImageMagickConvertArgs);
+		ProcessBuilder pb = new ProcessBuilder
+			(
+				GetConfig ().getString ("app.external-utils.imagemagick.path") + File.separator + "convert"
+				, sJPGFileName
+				, "-resize"
+				, "10%"
+				, "-dither"
+				, "none"
+				, "-colors"
+				, "2"
+				, "-monochrome"
+				, sPNGFileName
+			);
 		try
 		{
 			Process p = pb.start ();
