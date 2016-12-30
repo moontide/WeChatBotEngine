@@ -735,34 +735,34 @@ logger.info (sb.toString ());
 		return node;
 	}
 
-	public static List<String> GetRoomIDsFromContacts (JsonNode jsonContacts)
+	public static List<String> GetRoomAccountsFromContacts (JsonNode jsonContacts)
 	{
-		List<String> listRoomIDs = new ArrayList<String> ();
+		List<String> listRoomAccounts = new ArrayList<String> ();
 		JsonNode jsonMemberList = jsonContacts.get ("MemberList");
 		for (int i=0; i<jsonMemberList.size (); i++)
 		{
 			JsonNode jsonContact = jsonMemberList.get (i);
 			String sUserEncryptedAccount = GetJSONText (jsonContact, "UserName");
 			if (IsRoomAccount (sUserEncryptedAccount))
-				listRoomIDs.add (sUserEncryptedAccount);
+				listRoomAccounts.add (sUserEncryptedAccount);
 		}
-		return listRoomIDs;
+		return listRoomAccounts;
 	}
-	public static String MakeFullGetRoomContactRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomIDs)
+	public static String MakeFullGetRoomContactRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomAccounts)
 	{
 		StringBuilder sbBody = new StringBuilder ();
 		sbBody.append ("{\n");
 		sbBody.append ("	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n");
-		sbBody.append ("	\"Count\": " + listRoomIDs.size () + ",\n");
+		sbBody.append ("	\"Count\": " + listRoomAccounts.size () + ",\n");
 		sbBody.append ("	\"List\":\n");
 		sbBody.append ("	[\n");
-		for (int i=0; i<listRoomIDs.size (); i++)
+		for (int i=0; i<listRoomAccounts.size (); i++)
 		{
 			sbBody.append ("		{\n");
-			sbBody.append ("			\"UserName\": \"" + listRoomIDs.get (i) + "\",\n");
-			sbBody.append ("			\"EncryChatRoomId\": \"\"\n");
+			sbBody.append ("			\"UserName\": \"" + listRoomAccounts.get (i) + "\",\n");
+			sbBody.append ("			\"EncryChatRoomAccount\": \"\"\n");
 			sbBody.append ("		}");
-			if (i != listRoomIDs.size ()-1)
+			if (i != listRoomAccounts.size ()-1)
 			{
 				sbBody.append (",");
 			}
@@ -773,16 +773,16 @@ logger.info (sb.toString ());
 		return sbBody.toString ();
 	}
 
-	public static JsonNode WebWeChatGetRoomContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomIDs) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatGetRoomContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomAccounts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("获取 " + listRoomIDs.size () + " 个聊天室的联系人 …");
+logger.info ("获取 " + listRoomAccounts.size () + " 个聊天室的联系人 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
 logger.fine ("WebWeChatGetRoomContacts 的 URL:");
 logger.fine ("	" + sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
-		String sRequestBody_JSONString = MakeFullGetRoomContactRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), listRoomIDs);
+		String sRequestBody_JSONString = MakeFullGetRoomContactRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), listRoomAccounts);
 logger.finer ("发送 WebWeChatGetRoomContacts 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = null;
@@ -1230,7 +1230,6 @@ logger.finer ("发送 WebWeChatSendMessage 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = null;
 		JsonNode node = null;
-		is.close ();
 		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
 		for (int i=0; i<nTryTimes; i++)
 		{
