@@ -14,11 +14,13 @@ public class net_maclife_wechat_http_Bot_MissileLaunched_JustForFun extends net_
 	@Override
 	public int OnGeoLocationMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sLocation, String sLongtitude, String sLatitude
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sLocation, String sLongtitude, String sLatitude
 		)
 	{
 		try
@@ -31,7 +33,7 @@ public class net_maclife_wechat_http_Bot_MissileLaunched_JustForFun extends net_
 				sReply = listReplies.get (iRandom);
 			}
 
-			SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "经度: " + sLongtitude + "\n纬度: " + sLatitude + "\n位置: " + sLocation + (StringUtils.isEmpty (sReply) ? "" : "\n" + sReply));
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "经度: " + sLongtitude + "\n纬度: " + sLatitude + "\n位置: " + sLocation + (StringUtils.isEmpty (sReply) ? "" : "\n" + sReply));
 			return
 				net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 				| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;

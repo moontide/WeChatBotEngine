@@ -25,12 +25,13 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 	@Override
 	public int OnTextMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sMessage,
-			boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, boolean isContentMentionedMe, boolean isContentMentionedMeFirst
 		)
 	{
 		List<String> listCommands = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.simple-address-book.commands");
@@ -39,7 +40,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 
 		try
 		{
-			String[] arrayMessages = sMessage.split ("\\s+", 2);
+			String[] arrayMessages = sContent.split ("\\s+", 2);
 			if (arrayMessages==null || arrayMessages.length<1)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
@@ -54,24 +55,24 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 				String sCommand = listCommands.get (i);
 				if (StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 				{
-					if (StringUtils.isEmpty (sFromAccount_RoomMember))
+					if (! isReplyToRoom)
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 需要在群聊中执行。如果你确实是在群聊中执行的，请务必设置好群名称，并告知管理员（我）。");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 需要在群聊中执行。如果你确实是在群聊中执行的，请务必设置好群名称，并告知管理员（我）。");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 在查询时需要指定要姓名。\n\n用法:\n" + sCommand + "  <通讯录中的姓名(通常是真实姓名)>");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 在查询时需要指定要姓名。\n\n用法:\n" + sCommand + "  <通讯录中的姓名(通常是真实姓名)>");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
 					String sResult = Query (sFromName, sCommandParametersInputed);
 					if (StringUtils.isEmpty (sResult))
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "在通讯簿【" + sFromName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在通讯簿【" + sFromName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sResult);
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sResult);
 					break;
 				}
 			}

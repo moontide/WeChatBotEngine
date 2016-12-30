@@ -3,17 +3,8 @@ import java.net.*;
 import java.nio.file.*;
 import java.util.*;
 
-import org.apache.commons.codec.binary.*;
 import org.apache.commons.io.*;
-import org.apache.commons.lang3.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.*;
-import org.apache.http.client.*;
-import org.apache.http.client.config.*;
-import org.apache.http.client.methods.*;
-import org.apache.http.entity.mime.*;
-import org.apache.http.impl.client.*;
-import org.apache.http.util.*;
 import org.jsoup.*;
 import org.jsoup.nodes.*;
 import org.jsoup.select.*;
@@ -44,12 +35,13 @@ public class net_maclife_wechat_http_Bot_GoogleImageSearch extends net_maclife_w
 	@Override
 	public int OnImageMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sContent,
-			File fMedia, String sImageURL
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, File fMedia, String sImageURL
 		)
 	{
 		if (! fMedia.exists () && StringUtils.isEmpty (sImageURL))
@@ -292,7 +284,7 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 ._gUb，也�
 				}
 			}
 //System.out.println (sbInfo);
-			SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sbInfo.toString ());
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sbInfo.toString ());
 
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED | net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 		}
@@ -346,15 +338,16 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 ._gUb，也�
 	@Override
 	public int OnEmotionMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sContent,
-			File fMedia, String sImageURL
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, File fMedia, String sImageURL
 		)
 	{
-		return OnImageMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, sImageURL);
+		return OnImageMessageReceived (jsonMessage, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, fMedia, sImageURL);
 	}
 
 	public static void main (String[] args)
@@ -369,12 +362,12 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 ._gUb，也�
 		if (StringUtils.startsWithIgnoreCase (sMediaFileNameOrURL, "http"))
 		{
 			File fMedia = new File (sMediaFileNameOrURL);
-			bot.OnImageMessageReceived (null, "", "", null, "", "", null, "", "", null, "", "", null, "", fMedia, sMediaFileNameOrURL);
+			bot.OnImageMessageReceived (null, null, "", "", false, null, "", "", false, null, "", "", false, null, "", "", null, "", "", "", fMedia, sMediaFileNameOrURL);
 		}
 		else
 		{
 			File fMedia = new File (sMediaFileNameOrURL);
-			bot.OnImageMessageReceived (null, "", "", null, "", "", null, "", "", null, "", "", null, "", fMedia, null);
+			bot.OnImageMessageReceived (null, null, "", "", false, null, "", "", false, null, "", "", false, null, "", "", null, "", "", "", fMedia, null);
 		}
 	}
 }

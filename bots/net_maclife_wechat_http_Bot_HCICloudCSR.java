@@ -29,24 +29,25 @@ public class net_maclife_wechat_http_Bot_HCICloudCSR extends net_maclife_wechat_
 	@Override
 	public int OnTextMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sMessage,
-			boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, boolean isContentMentionedMe, boolean isContentMentionedMeFirst
 		)
 	{
 		try
 		{
-			JsonNode jsonCSRResponse = GetCSRReponse (sFromAccount, sMessage);
+			JsonNode jsonCSRResponse = GetCSRReponse (sFromAccount, sContent);
 			if (jsonCSRResponse == null)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 			String sResponse = ParseCSRResponse (jsonCSRResponse);
 			if (StringUtils.isNotEmpty (sResponse))
 			{
-				SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sResponse);
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sResponse);
 			}
 		}
 		catch (Exception e)

@@ -7,17 +7,23 @@ import org.apache.commons.lang3.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
+/**
+ * 复读机机器人
+ * @author liuyan
+ *
+ */
 public class net_maclife_wechat_http_Bot_Repeater extends net_maclife_wechat_http_Bot
 {
 	@Override
 	public int OnTextMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sMessage,
-			boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, boolean isContentMentionedMe, boolean isContentMentionedMeFirst
 		)
 	{
 		boolean bRepeatMyOwnMessage = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.repeater.repeat-my-own-message", "no"), false);
@@ -26,7 +32,7 @@ public class net_maclife_wechat_http_Bot_Repeater extends net_maclife_wechat_htt
 
 		try
 		{
-			SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sMessage);
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sContent);
 		}
 		catch (Exception e)
 		{

@@ -13,12 +13,13 @@ public class net_maclife_wechat_http_Bot_BaiduImageSearch extends net_maclife_we
 	@Override
 	public int OnImageMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sContent,
-			File fMedia, String sImageURL
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, File fMedia, String sImageURL
 		)
 	{
 		if (! fMedia.exists () && StringUtils.isEmpty (sImageURL))
@@ -115,7 +116,7 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 .guess-info-
 					sbInfo.append (e查看更多图片来源.absUrl ("href"));
 				}
 			}
-			SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sbInfo.toString ());
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sbInfo.toString ());
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED | net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 		}
 		catch (Exception e)
@@ -128,14 +129,15 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 .guess-info-
 	@Override
 	public int OnEmotionMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sContent,
-			File fMedia, String sImageURL
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, File fMedia, String sImageURL
 		)
 	{
-		return OnImageMessageReceived (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, jsonMessage, sContent, fMedia, sImageURL);
+		return OnImageMessageReceived (jsonMessage, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, fMedia, sImageURL);
 	}
 }

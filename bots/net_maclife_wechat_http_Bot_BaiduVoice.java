@@ -92,12 +92,13 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 	@Override
 	public int OnVoiceMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sContent,
-			File fMedia
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, File fMedia
 		)
 	{
 		if (! fMedia.exists ())
@@ -152,7 +153,7 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 			{
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 			}
-			ProcessSpeechRecognition (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, fMedia);
+			ProcessSpeechRecognition (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, fMedia);
 
 		}
 		catch (Exception e)
@@ -165,12 +166,13 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 	@Override
 	public int OnVideoMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sContent,
-			File fMedia
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, File fMedia
 		)
 	{
 		if (! fMedia.exists ())
@@ -183,7 +185,7 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 			{
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 			}
-			ProcessSpeechRecognition (jsonFrom, sFromAccount, sFromName, jsonFrom_RoomMember, sFromAccount_RoomMember, sFromName_RoomMember, jsonFrom_Person, sFromAccount_Person, sFromName_Person, jsonTo, sToAccount, sToName, fMedia);
+			ProcessSpeechRecognition (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, fMedia);
 
 		}
 		catch (Exception e)
@@ -197,10 +199,8 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 
 	int ProcessSpeechRecognition
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
+			String sReplyToAccount, String sReplyToName,
+			String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
 			File fMedia
 		) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
@@ -239,7 +239,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 					JsonNode jsonResults = jsonNode.get ("result");
 					if (jsonResults.size () == 1)
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, (StringUtils.isEmpty (sFromAccount_RoomMember) ? "你" : sFromName_RoomMember) + " 说道:\n" + jsonResults.get (0).asText ());
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? "你" : sReplyToName_RoomMember) + " 说道:\n" + jsonResults.get (0).asText ());
 						return
 							net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 							| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -253,31 +253,31 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 						sb.append (jsonResults.get (i).asText ());
 						sb.append ("\n");
 					}
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, (StringUtils.isEmpty (sFromAccount_RoomMember) ? "你" : sFromName_RoomMember) + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? "你" : sReplyToName_RoomMember) + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
 					return
 						net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 						| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					//break;
 				case 3300:
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "输入参数不正确");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "输入参数不正确");
 					break;
 				case 3301:
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "识别错误");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "识别错误");
 					break;
 				case 3302:
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "验证失败");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "验证失败");
 					break;
 				case 3303:
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "语音服务器后端问题");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "语音服务器后端问题");
 					break;
 				case 3304:
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "请求 GPS 过大，超过限额");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "请求 GPS 过大，超过限额");
 					break;
 				case 3305:
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "产品线当前日请求数超过限额");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "产品线当前日请求数超过限额");
 					break;
 				default:
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, "听不清 " + (StringUtils.isEmpty (sFromAccount_RoomMember) ? "你" : sFromName_RoomMember) + " 说了些啥: " + err_msg);
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "听不清 " + (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? "你" : sReplyToName_RoomMember) + " 说了些啥: " + err_msg);
 					break;
 			}
 		}
