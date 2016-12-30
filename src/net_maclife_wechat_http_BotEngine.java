@@ -1028,7 +1028,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nAddMsgCount + " 个新�
 			JsonNode jsonTo = SearchForSingleContact (sToAccount);
 			String sToName = GetContactName (sToAccount);;
 net_maclife_wechat_http_BotApp.logger.severe (sFromAccount + " → " + sToAccount);	// 用最高级别的日志级别记录 来往 的帐号，用以从命令行发送消息时使用
-			boolean isToMe = IsMe (sToAccount);	// 要在交换 From 和 To 之前判断
+			boolean isToMe = IsMe (sToAccount);
 
 			if (isFromMe)
 			{	// 收到自己的帐号从其他设备发的消息：发件人是自己、收件人是其他人（含自己，私聊）、聊天室（群聊）
@@ -1065,15 +1065,15 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 				// 找出发送人的 UserID
 				if (isFromMe && StringUtils.isEmpty (sReplyToAccount_RoomMember))
 				{
-					sReplyToAccount_RoomMember = sToAccount;
+					sReplyToAccount_RoomMember = sFromAccount;
 				}
 
 				if (StringUtils.isNotEmpty (sReplyToAccount_RoomMember))
 				{
-					jsonReplyTo_RoomMember = SearchForSingleMemberContactInRoom (sFromAccount, sReplyToAccount_RoomMember);
-					sReplyToName_RoomMember = GetMemberContactNameInRoom (sFromAccount, sReplyToAccount_RoomMember);
+					jsonReplyTo_RoomMember = SearchForSingleMemberContactInRoom (sReplyToAccount, sReplyToAccount_RoomMember);
+					sReplyToName_RoomMember = GetMemberContactNameInRoom (sReplyToAccount, sReplyToAccount_RoomMember);
 				}
-				sReplyToName = GetMemberContactNameInRoom (sFromAccount, sToAccount);	// 尽可能的取群昵称
+				//sReplyToName = GetMemberContactNameInRoom (sReplyToAccount, sReplyToAccount_RoomMember);	// 尽可能的取群昵称
 			}
 			else
 			{	//
@@ -1093,11 +1093,11 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 
 			if (isFromMe)
 			{
-net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发给 " + (isToMe ? "自己" : (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sFromName, "null") ? "" : "【" + sFromName + "】")) + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
+net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发给 " + (isToMe ? "自己" : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + sReplyToName + "】")) + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
 			}
 			else
 			{
-net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sFromName, "null") ? "" : "【" + sFromName + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + StringUtils.trimToEmpty (sReplyToName_RoomMember) + "】") + " 发" + (isToMe ? "来" : "给 【" + sToName + "】") + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
+net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + sReplyToName + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + StringUtils.trimToEmpty (sReplyToName_RoomMember) + "】") + " 发" + (isToMe ? "来" : "给 【" + sToName + "】") + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
 			}
 
 			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.ignore-my-own-message", "no"), false))
