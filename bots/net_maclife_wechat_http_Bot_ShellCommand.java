@@ -43,12 +43,13 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 	@Override
 	public int OnTextMessageReceived
 		(
-			JsonNode jsonFrom, String sFromAccount, String sFromName,
-			JsonNode jsonFrom_RoomMember, String sFromAccount_RoomMember, String sFromName_RoomMember,
-			JsonNode jsonFrom_Person, String sFromAccount_Person, String sFromName_Person,
-			JsonNode jsonTo, String sToAccount, String sToName,
-			JsonNode jsonMessage, String sMessage,
-			boolean bMentionedMeInRoomChat, boolean bMentionedMeFirstInRoomChat
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, boolean isContentMentionedMe, boolean isContentMentionedMeFirst
 		)
 	{
 		List<String> listCommands = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.command-line.commands");
@@ -57,7 +58,7 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 
 		try
 		{
-			String[] arrayMessages = sMessage.split ("\\s+", 2);
+			String[] arrayMessages = sContent.split ("\\s+", 2);
 			if (arrayMessages==null || arrayMessages.length<1)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
@@ -78,16 +79,16 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 				if (StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 				{
 					boolean bOnlyMe = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.command-line.permission.only-me"), true);
-					if (bOnlyMe && ! engine.IsMe (sFromAccount_Person))
+					if (bOnlyMe && ! isFromMe)
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 配置为：只允许主人使用。");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 配置为：只允许主人使用。");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
 					// 只有命令时，打印帮助信息
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 需要指定要执行的命令。\n\n用法:\n" + sCommand + "[.行数][.stderr][.t=超时秒数]  <系统命令> [及其参数]...\n\n.行数：用来指定最多返回该命令的输出内容的行数。如 .3 最多返回前 3 行。\n.stderr: stderr 与 stdout 合并。\n.t=超时秒数: 设置进程的超时时长");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 需要指定要执行的命令。\n\n用法:\n" + sCommand + "[.行数][.stderr][.t=超时秒数]  <系统命令> [及其参数]...\n\n.行数：用来指定最多返回该命令的输出内容的行数。如 .3 最多返回前 3 行。\n.stderr: stderr 与 stdout 合并。\n.t=超时秒数: 设置进程的超时时长");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
@@ -152,21 +153,21 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 					String sShell = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.command-line.shell");
 					if (StringUtils.isEmpty (sShell))
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 尚未配置 Shell，无法执行。");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 尚未配置 Shell，无法执行。");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 					try
 					{
-						String sCommandOutput = ProcessShellCommand (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sShell, sCommandParametersInputed, bRedirectStdErr, bResponseLineByLine, nMaxLinesReturns, nTimeout);
+						String sCommandOutput = ProcessShellCommand (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sShell, sCommandParametersInputed, bRedirectStdErr, bResponseLineByLine, nMaxLinesReturns, nTimeout);
 						if (StringUtils.isNotEmpty (sCommandOutput))
 						{
-							SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sCommandOutput);
+							SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandOutput);
 						}
 					}
 					catch (Throwable e)
 					{
 						e.printStackTrace ();
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, e.toString ());
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, e.toString ());
 					}
 				}
 			}
@@ -191,7 +192,7 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 	 * @param nMaxLinesReturns 最多返回多少行
 	 * @param nTimeout 进程运行超时时长。如果超过这个时长进程还未结束，则杀死该进程。
 	 */
-	String ProcessShellCommand (String sFromAccount, String sFromName, String sFromAccount_RoomMember, String sFromName_RoomMember, String sShell, String sCommandLineString, boolean bRedirectStdErr, boolean bResponseLineByLine, int nMaxLinesReturns, int nTimeout) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, InterruptedException
+	String ProcessShellCommand (String sReplyToAccount, String sReplyToName, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember, String sShell, String sCommandLineString, boolean bRedirectStdErr, boolean bResponseLineByLine, int nMaxLinesReturns, int nTimeout) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, InterruptedException
 	{
 		//List<String> listCommandLineParameters = new ArrayList<>
 		ProcessBuilder pb = new ProcessBuilder (sShell, "-c", sCommandLineString);
@@ -204,7 +205,7 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 		int nTotalLines = 0;
 		String sLine = null;
 		StringBuilder sb = bResponseLineByLine ? null : new StringBuilder ();
-		//try
+		try
 		{
 			p = pb.start ();
 			mapProcessesRunning.put (p, System.currentTimeMillis () + nTimeout * 1000);
@@ -222,7 +223,7 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 				//if (nMaxLinesReturns == 0 || (nMaxLinesReturns != 0  && nLines < nMaxLinesReturns))
 				if (bResponseLineByLine)
 				{
-					SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sLine);
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sLine);
 				}
 				else
 				{
@@ -244,7 +245,7 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 					//if (nMaxLinesReturns == 0 || (nMaxLinesReturns != 0  && nLines < nMaxLinesReturns))
 					if (bResponseLineByLine)
 					{
-						SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, sLine);
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sLine);
 					}
 					else
 					{
@@ -274,10 +275,9 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 net_maclife_wechat_http_BotApp.logger.severe ("'" + sCommandLineString + "' 执行失败（返回代码不是 0，而是 " + rc + "）。");
 			}
 		}
-		//catch (IOException e)
-		{
-		//	SendTextMessage (sFromAccount, sFromName, sFromAccount_RoomMember, sFromName_RoomMember, GetName() + " 尚未配置 Shell，无法执行。");
-		//	e.printStackTrace();
+		catch (IOException e)
+		{	// 进程有可能超时被杀死，也应该返回被杀死前的内容
+			e.printStackTrace();
 		}
 
 		return sb==null ? null : sb.toString ();
