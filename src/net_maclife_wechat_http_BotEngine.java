@@ -1156,7 +1156,14 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 					OnVCardMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent);
 					break;
 				case WECHAT_MSG_TYPE__EMOTION:
-					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
+					if (StringUtils.isNotEmpty (sContent))
+					{	// 测试过程中发现： 别人发的表情图，如果自己这里没有，则 Content 是空的 -- 然后获取文件只会取到 0 字节数据
+						fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
+					}
+					else
+					{
+net_maclife_wechat_http_BotApp.logger.fine ("消息内容没有图片信息。可能是这种情况：别人发的表情图，自己这里没有");
+					}
 					OnEmotionMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, fMedia);
 					break;
 				//case WECHAT_MSG_TYPE__GPS_POSITION:
@@ -1314,10 +1321,13 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount +
 		String sImageURL = null;
 		try
 		{
-			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
-			Element msg = doc.getRootElement ();
-			Element emoji = msg.getFirstChildElement ("emoji");
-			sImageURL = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (emoji, "cdnurl");
+			if (StringUtils.isNotEmpty (sContent))
+			{
+				nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+				Element msg = doc.getRootElement ();
+				Element emoji = msg.getFirstChildElement ("emoji");
+				sImageURL = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (emoji, "cdnurl");
+			}
 		}
 		catch (ParsingException | IOException e)
 		{

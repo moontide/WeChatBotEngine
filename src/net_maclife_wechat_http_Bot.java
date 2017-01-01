@@ -205,7 +205,7 @@ public abstract class net_maclife_wechat_http_Bot
 	/**
 	 * 当收到了图片消息时……
 	 * @param sContent 文本内容
-	 * @param fMedia 已经下载下来的图片文件，不会是 null
+	 * @param fMedia 已经下载下来的图片文件，有可能是 null
 	 * @param sImageURL 图片消息自身并没有提供图片 URL 地址 (<code>null</code>)，但是表情图消息会提供，表情图的处理可能是简单的调用图片消息处理接口
 	 * @return
 	 */
@@ -266,7 +266,7 @@ public abstract class net_maclife_wechat_http_Bot
 	/**
 	 * 当收到了表情图消息时……
 	 * @param sContent 文本内容
-	 * @param fMedia 已经下载下来的表情图片文件，不会是 null
+	 * @param fMedia 已经下载下来的表情图片文件，有可能是 null （别人发的表情图，在自己这里没有，就会是 null）
 	 * @param sImageURL 图片网址
 	 * @return
 	 */

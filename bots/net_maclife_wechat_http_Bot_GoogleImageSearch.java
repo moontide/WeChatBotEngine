@@ -44,7 +44,7 @@ public class net_maclife_wechat_http_Bot_GoogleImageSearch extends net_maclife_w
 			String sContent, File fMedia, String sImageURL
 		)
 	{
-		if (! fMedia.exists () && StringUtils.isEmpty (sImageURL))
+		if ((fMedia == null || ! fMedia.exists ()) && StringUtils.isEmpty (sImageURL))
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 		String sURL = GOOGLE_IMAGE_SEARCH_URL;
