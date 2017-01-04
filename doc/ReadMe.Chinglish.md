@@ -46,11 +46,11 @@ Those bot applets are:
 	<dt><strong>BaiduImageSearch</strong>: Baidu image search</dt>
 	<dd>When an image message posted, send the image to baidu image search, return the guess information and possible image sources.</dd>
 
-	<dt><strong>BaiduVoice</strong>: Baidi Automatic Speech Recognition (ASR) and Text To Speech (TTS)</dt>
+	<dt><strong>BaiduVoice</strong>: Baidu Automatic Speech Recognition (ASR) and Text To Speech (TTS)</dt>
 	<dd>When an audio or short video message is posted, send the audio to baidu ASR api, and return the text result. -- Because you can only use text when searching chat history, so it's very useful.</dd>
 
-	<dt><strong>BaiduTranslate</strong>: Baid translate</dt>
-	<dd>Provide translation service via baidu translate API.</dd>
+	<dt><strong>BaiduTranslate</strong>: Baidu translate</dt>
+	<dd>Provide translation service via Baidu translate API.</dd>
 
 	<dt><strong>GoogleImageSearch</strong>: Google Image Search</dt>
 	<dd>When an image message posted, send the image to Google image search, return the guess information and possible image sources.</dd>
