@@ -165,7 +165,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 						if (botClass.isInstance (bot))
 						{
 							bAlreadyLoaded = true;
-net_maclife_wechat_http_BotApp.logger.warning ("已经加载过 " + bot.GetName() + " 机器人，不重复加载");
+net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("已经加载过 " + bot.GetName() + " 机器人，不重复加载"));
 							break;
 						}
 					}
@@ -175,7 +175,7 @@ net_maclife_wechat_http_BotApp.logger.warning ("已经加载过 " + bot.GetName(
 						newBot.SetEngine (this);
 						newBot.Start ();
 						listBots.add (newBot);
-net_maclife_wechat_http_BotApp.logger.info (newBot.GetName () + " 机器人已创建并加载");
+net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Green (newBot.GetName () + " 机器人已创建并加载"));
 				}
 			}
 			//
@@ -205,7 +205,7 @@ net_maclife_wechat_http_BotApp.logger.info (newBot.GetName () + " 机器人已�
 		{
 			listBots.remove (bot);
 			bot.Stop ();
-net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被卸载");
+net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Blue (bot.GetName () + " 机器人已被卸载"));
 		}
 		catch (Exception e)
 		{
@@ -230,7 +230,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " 机器人已被�
 			}
 			if (! bFound)
 			{
-net_maclife_wechat_http_BotApp.logger.warning ("在已加载的机器人列表中找不到 " + sBotFullClassName + " 机器人");
+net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("在已加载的机器人列表中找不到 " + sBotFullClassName + " 机器人"));
 			}
 		}
 		catch (Exception e)
@@ -260,7 +260,7 @@ net_maclife_wechat_http_BotApp.logger.warning ("在已加载的机器人列表�
 		{
 			net_maclife_wechat_http_Bot bot = listBots.get (i);
 			//UnloadBot (bot);
-net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass ().getCanonicalName () + ")");
+net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_util_ANSIEscapeTool.White (bot.getClass ().getCanonicalName ()) + ")");
 		}
 	}
 
@@ -403,6 +403,22 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 	}
 
 	/**
+	 * 最简化的发图片消息。
+	 * @param sToAccount 接收人帐号
+	 * @param sMediaID 消息内容
+	 * @param bInsertExtraNewLineBeforeTimestamp
+	 */
+	public void SendImageMessage (String sToAccount, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		File f = null;
+		// 先上传文件
+		net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (f);
+
+		// 再用上传返回的 MediaID 把图片消息（已不是图片本身）发出
+		net_maclife_wechat_http_BotApp.WebWeChatSendImageMessage (sUserID, sSessionID, sSessionKey, sPassTicket, this.sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
+	}
+
+	/**
 	 * Bot 发送文本消息。Bot 发送文本消息时，会把消息前后的空白剔除，然后根据配置，可能附加上 Bot 名称。
 	 * @param bot
 	 * @param sToAccount
@@ -446,7 +462,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + bot.getClass
 	{
 		if (StringUtils.isEmpty (sLastFromAccount))
 		{
-net_maclife_wechat_http_BotApp.logger.warning ("尚未接收到任何消息，不知道该回复给谁");
+net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("尚未接收到任何消息，不知道该回复给谁"));
 			return;
 		}
 
@@ -811,6 +827,7 @@ net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " +
 									nWaitTimeToRetry = nWaitTimeToRetry + 5 * nWaitLoginCount;
 									if (nWaitTimeToRetry > 3600)
 										nWaitTimeToRetry = 3600;	// 重试间隔最长不超过 1 小时
+net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Gray ("等 " + nWaitTimeToRetry + " 秒后 (" + (new java.sql.Timestamp (System.currentTimeMillis () + nWaitTimeToRetry*1000)) + ") 重试"));
 									TimeUnit.SECONDS.sleep (nWaitTimeToRetry);
 									continue _outer_loop;
 								}
@@ -911,7 +928,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 			e.printStackTrace ();
 		}
 
-net_maclife_wechat_http_BotApp.logger.warning ("bot 线程退出");
+net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("bot 线程退出"));
 		OnShutdown ();
 	}
 
@@ -996,7 +1013,7 @@ net_maclife_wechat_http_BotApp.logger.warning ("bot 线程退出");
 		int nAddMsgCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessagePackage, "AddMsgCount", 0);
 		if (nAddMsgCount != 0)
 		{
-net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nAddMsgCount + " 个新消息");
+net_maclife_wechat_http_BotApp.logger.finest ("收到 " + nAddMsgCount + " 条新消息");
 		}
 		JsonNode jsonAddMsgList = jsonMessagePackage.get ("AddMsgList");
 		for (i=0; i<nAddMsgCount; i++)
@@ -1027,7 +1044,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nAddMsgCount + " 个新�
 			String sToAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "ToUserName");	// 接收人帐号，有可能是其他人（自己在其他设备上发的）
 			JsonNode jsonTo = SearchForSingleContact (sToAccount);
 			String sToName = GetContactName (sToAccount);;
-net_maclife_wechat_http_BotApp.logger.severe (sFromAccount + " → " + sToAccount);	// 用最高级别的日志级别记录 来往 的帐号，用以从命令行发送消息时使用
+net_maclife_wechat_http_BotApp.logger.severe (net_maclife_util_ANSIEscapeTool.Green (sFromAccount) + " → " + net_maclife_util_ANSIEscapeTool.DarkCyan (sToAccount));	// 用最高级别的日志级别记录 来往 的帐号，用以从命令行发送消息时使用
 			boolean isToMe = IsMe (sToAccount);
 
 			if (isFromMe)
@@ -1093,18 +1110,28 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 
 			if (isFromMe)
 			{
-net_maclife_wechat_http_BotApp.logger.info ("收到 自己 在其他设备上发给 " + (isToMe ? "自己" : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + sReplyToName + "】")) + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
+net_maclife_wechat_http_BotApp.logger.info
+				(
+					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n"
+					+ net_maclife_util_ANSIEscapeTool.Green ("自己") + " 在其他设备上发给 " + (isToMe ? net_maclife_util_ANSIEscapeTool.Green ("自己") : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.DarkCyan (sReplyToName) + "】")) + " 的消息:\n"
+					+ net_maclife_util_ANSIEscapeTool.LightGreen (sContent)
+				);
 			}
 			else
 			{
-net_maclife_wechat_http_BotApp.logger.info ("收到来自 " + (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + sReplyToName + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + StringUtils.trimToEmpty (sReplyToName_RoomMember) + "】") + " 发" + (isToMe ? "来" : "给 【" + sToName + "】") + " 的消息 (类型=" + nMsgType + ", ID=" + sMsgID + ")：\n" + sContent);
+net_maclife_wechat_http_BotApp.logger.info
+				(
+					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n"
+					+ "来自 " + (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.Green (sReplyToName) + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】") + " 发" + (isToMe ? "来" : "给 【" + sToName + "】") + " 的消息:\n"
+					+ net_maclife_util_ANSIEscapeTool.LightGreen (sContent)
+				);
 			}
 
 			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.ignore-my-own-message", "no"), false))
 			{
 				if (isFromMe)	// 自己发送的消息，不再处理
 				{
-net_maclife_wechat_http_BotApp.logger.fine ("是自己发的消息，且配置文件里已配置为“忽略自己发的消息”，所以，忽略本消息…");
+net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.DarkGray ("是自己发的消息，且配置文件里已配置为“忽略自己发的消息”，所以，忽略本消息…"));
 					continue;
 				}
 			}
@@ -1113,7 +1140,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("是自己发的消息，且配置�
 			{
 				if (isFromPublicAccount)	// 公众号发送的消息，不再处理
 				{
-net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配置文件里已配置为“忽略公众号发的消息”，所以，忽略本消息…");
+net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.DarkGray ("是公众号发的消息，且配置文件里已配置为“忽略公众号发的消息”，所以，忽略本消息…"));
 					continue;
 				}
 			}
@@ -1157,12 +1184,12 @@ net_maclife_wechat_http_BotApp.logger.fine ("是公众号发的消息，且配�
 					break;
 				case WECHAT_MSG_TYPE__EMOTION:
 					if (StringUtils.isNotEmpty (sContent))
-					{	// 测试过程中发现： 别人发的表情图，如果自己这里没有，则 Content 是空的 -- 然后获取文件只会取到 0 字节数据
+					{	// 测试过程中发现： 表情图消息的 Content 是空的 -- 然后获取文件只会取到 0 字节数据
 						fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
 					}
 					else
 					{
-net_maclife_wechat_http_BotApp.logger.fine ("消息内容没有图片信息。可能是这种情况：别人发的表情图，自己这里没有");
+net_maclife_wechat_http_BotApp.logger.fine ("消息内容没有图片信息。可能需要在手机上查看。");
 					}
 					OnEmotionMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, fMedia);
 					break;
@@ -1202,7 +1229,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("消息内容没有图片信息。�
 		int nModContactCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessagePackage, "ModContactCount", 0);
 		if (nModContactCount != 0)
 		{
-net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModContactCount + " 个【修改了联系人】信息");
+net_maclife_wechat_http_BotApp.logger.finest ("收到 " + nModContactCount + " 条【修改了联系人】信息");
 		}
 		JsonNode jsonModContactList = jsonMessagePackage.get ("ModContactList");
 		for (i=0; i<nModContactCount; i++)
@@ -1214,7 +1241,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModContactCount + " 个
 		int nDelContactCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessagePackage, "DelContactCount", 0);
 		if (nDelContactCount != 0)
 		{
-net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nDelContactCount + " 个【删除了联系人】信息");
+net_maclife_wechat_http_BotApp.logger.finest ("收到 " + nDelContactCount + " 条【删除了联系人】信息");
 		}
 		JsonNode jsonDelContactList = jsonMessagePackage.get ("DelContactList");
 		for (i=0; i<nDelContactCount; i++)
@@ -1226,13 +1253,18 @@ net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nDelContactCount + " 个
 		int nModChatRoomMemerCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonMessagePackage, "ModChatRoomMemberCount", 0);
 		if (nModChatRoomMemerCount != 0)
 		{
-net_maclife_wechat_http_BotApp.logger.fine ("收到 " + nModChatRoomMemerCount + " 个【聊天室成员列表变更】信息");
+net_maclife_wechat_http_BotApp.logger.finest ("收到 " + nModChatRoomMemerCount + " 条【聊天室成员列表变更】信息");
 		}
 		JsonNode jsonModChatRoomMemerList = jsonMessagePackage.get ("ModChatRoomMemberList");
 		for (i=0; i<nModChatRoomMemerCount; i++)
 		{
 			JsonNode jsonNode = jsonModChatRoomMemerList.get (i);
 			OnRoomMemberChanged (jsonNode);
+		}
+		JsonNode jsonSyncCheckKeys = jsonMessagePackage.get ("SyncCheckKey");	// 新的 SyncCheckKeys
+		if (jsonSyncCheckKeys != null && !jsonSyncCheckKeys.isNull ())
+		{
+net_maclife_wechat_http_BotApp.logger.finest ("收到新的同步检测 Key");
 		}
 	}
 

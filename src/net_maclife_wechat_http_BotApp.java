@@ -1211,6 +1211,10 @@ logger.fine ("发消息 WebWeChatSendMessage …");
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
 				sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
 				break;
+			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG:
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
+				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
 				sRequestBody_JSONString = MakeFullApplicationMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
@@ -1328,7 +1332,7 @@ logger.info ("发表情图消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
 	}
 
-	public static String MakeFullApplicationMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMessage)
+	public static String MakeFullVideoMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		return
@@ -1336,8 +1340,32 @@ logger.info ("发表情图消息: " + sMediaID);
 		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Msg\":\n" +
 		"	{\n" +
-		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT + ",\n" +
-		"		\"Content\": \"" + sMessage + "\",\n" +
+		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG + ",\n" +
+		"		\"MediaId\": \"" + sMediaID + "\",\n" +
+		"		\"FromUserName\": \"" + sFrom + "\",\n" +
+		"		\"ToUserName\": \"" + sTo + "\",\n" +
+		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
+		"		\"ClientMsgId\": \"" + nLocalMessageID + "\"\n" +
+		"	},\n" +
+		"	\"Scene\": 0\n" +
+		"}\n";
+	}
+	public static JsonNode WebWeChatSendVideoMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+logger.info ("发视频消息: " + sMediaID);
+		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG, sMediaID);
+	}
+
+	public static String MakeFullApplicationMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sXMLMessage)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		return
+		"{\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"Msg\":\n" +
+		"	{\n" +
+		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP + ",\n" +
+		"		\"Content\": \"" + sXMLMessage + "\",\n" +
 		"		\"FromUserName\": \"" + sFrom + "\",\n" +
 		"		\"ToUserName\": \"" + sTo + "\",\n" +
 		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
@@ -1442,7 +1470,7 @@ logger.info ("获取视频, msgid: " + sMsgID);
 		return WebWeChatGetMedia (sSessionKey, "webwxgetvideo", sMsgID);
 	}
 
-	public static File WebWeChatGetMedia2 (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sAccount, String sAPI, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static File WebWeChatGetMedia2 (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sAccount, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("获取媒体/获取文件，媒体 ID: " + sMediaID);
 		//             https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=********************&mediaid=*********&filename=*******&fromuser=2100343515&pass_ticket=********&webwx_data_ticket=*****
