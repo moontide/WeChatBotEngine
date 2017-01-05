@@ -299,7 +299,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 				JsonNode jsonAccessToken = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (f);
 				int nExpireDuration_Seconds = net_maclife_wechat_http_BotApp.GetJSONInt (jsonAccessToken, "expires_in");
 				long now = System.currentTimeMillis ();
-				if ((nFileModifiedTime_Millisecond + nExpireDuration_Seconds*1000) < now)
+				if (now <= (nFileModifiedTime_Millisecond + nExpireDuration_Seconds*1000))
 					return net_maclife_wechat_http_BotApp.GetJSONText (jsonAccessToken, "access_token");
 			}
 			catch (IOException e)
@@ -395,5 +395,25 @@ net_maclife_wechat_http_BotApp.logger.severe ("视频提取音频失败");
 			return null;
 		}
 		return new File (sAMRFileName);
+	}
+
+	public static void main (String[] args)
+	{
+		if (args.length < 1)
+		{
+			net_maclife_wechat_http_BotApp.logger.severe ("参数 1 需要指定 amr 音频文件");
+			return;
+		}
+
+		File fMedia = new File (args[0]);
+		net_maclife_wechat_http_Bot_BaiduVoice bot = new net_maclife_wechat_http_Bot_BaiduVoice ();
+		try
+		{
+			bot.ProcessSpeechRecognition (null, null, null, null, fMedia);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 }
