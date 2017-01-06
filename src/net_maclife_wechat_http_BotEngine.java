@@ -1113,7 +1113,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 net_maclife_wechat_http_BotApp.logger.info
 				(
 					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n"
-					+ net_maclife_util_ANSIEscapeTool.Green ("自己") + " 在其他设备上发给 " + (isToMe ? net_maclife_util_ANSIEscapeTool.Green ("自己") : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.DarkCyan (sReplyToName) + "】")) + " 的消息:\n"
+					+ net_maclife_util_ANSIEscapeTool.Green ("自己") + " 在其他设备上发给 " + (isToMe ? net_maclife_util_ANSIEscapeTool.DarkCyan ("自己") : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.DarkCyan (sReplyToName) + "】")) + " 的消息:\n"
 					+ net_maclife_util_ANSIEscapeTool.LightGreen (sContent)
 				);
 			}
@@ -1154,7 +1154,7 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Dark
 
 					if (isReplyToRoom)
 					{
-						JsonNode jsonMeInThisRoom = SearchForSingleMemberContactInRoom (sFromAccount, sMyEncryptedAccountInThisSession);
+						JsonNode jsonMeInThisRoom = SearchForSingleMemberContactInRoom (sReplyToAccount, sMyEncryptedAccountInThisSession);
 						String sMyDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.GetJSONText (jsonMeInThisRoom, "DisplayName");
 						bRoomMessageContentMentionedMe = IsRoomTextMessageMentionedMe (sContent, sMyDisplayNameInThisRoom);
 						bRoomMessageContentMentionedMeFirst = IsRoomTextMessageMentionedMeFirst (sContent, sMyDisplayNameInThisRoom);
