@@ -137,6 +137,7 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param jsonReplyTo 回复到 JSON 对象。如果是自己发出的，则回复到接收者；不是自己发出的，则回复到发送者。
 	 * @param sReplyToAccount
 	 * @param sReplyToName
+	 * @param isReplyToRoom 是否回复到聊天室/对方是否是聊天室
 	 * @param jsonReplyTo_RoomMember 回复到群成员。仅仅对方是群时，才有可能会有群成员。但即使对方是群，也有可能没有群成员，比如收到群里红包【系统消息】时。
 	 * @param sReplyToAccount_RoomMember
 	 * @param sReplyToName_RoomMember

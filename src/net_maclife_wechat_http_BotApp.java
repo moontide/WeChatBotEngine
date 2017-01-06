@@ -474,7 +474,16 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		return nLoginResultCode;
 	}
 
-	public static String MakeBaseRequestValueJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
+	public static JsonNode MakeBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.put ("Uin", sUserID);
+		on.put ("Sid", sSessionID);
+		on.put ("Skey", sSessionKey);
+		on.put ("DeviceID", sDeviceID);
+		return on;
+	}
+	public static String MakeBaseRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
 		return
 			"	{\n" +
@@ -486,11 +495,18 @@ logger.fine ("	[" + eXML.toXML() + "]");
 			"";
 	}
 
+	public static JsonNode MakeFullBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		return on;
+	}
+
 	public static String MakeFullBaseRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + "\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + "\n" +
 		"}\n";
 	}
 
@@ -551,7 +567,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatInit 的 http 请求消息头 (Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
 
-		String sRequestBody_JSONString = MakeFullBaseRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID ());
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID ()));
 logger.finer ("发送 WebWeChatInit 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 
@@ -615,11 +631,21 @@ logger.info (sb.toString ());
 		return System.currentTimeMillis () * 10000 + (nRecycledMessageID ++);
 	}
 
+	public static JsonNode MakeFullStatusNotifyRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.put ("Code", 3);
+		on.put ("FromUserName", sMyAccount);
+		on.put ("ToUserName", sMyAccount);
+		on.put ("ClientMsgId", GenerateLocalMessageID ());
+		return on;
+	}
 	public static String MakeFullStatusNotifyRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount)
 	{
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Code\": 3,\n" +
 		"	\"FromUserName\": \"" + sMyAccount + "\",\n" +
 		"	\"ToUserName\": \"" + sMyAccount + "\",\n" +
@@ -638,7 +664,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息头 (Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
 
-		String sRequestBody_JSONString = MakeFullStatusNotifyRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount);
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullStatusNotifyRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount));
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 		InputStream is = null;
@@ -681,7 +707,7 @@ logger.fine ("	" + sURL);
 logger.finer  ("发送 WebWeChatGetContacts 的 http 请求消息头 (Content-Type):");
 logger.finer  ("	" + mapRequestHeaders);
 
-String sRequestBody_JSONString = MakeFullBaseRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID ());
+String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID ()));
 logger.finer  ("发送 WebWeChatGetContacts 的 http 请求消息体:");
 logger.finer  ("	" + sRequestBody_JSONString);
 
@@ -748,11 +774,27 @@ logger.info (sb.toString ());
 		}
 		return listRoomAccounts;
 	}
+	public static JsonNode MakeFullGetRoomContactRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomAccounts)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.put ("Count", listRoomAccounts.size ());
+		ArrayNode an = jacksonObjectMapper_Strict.createArrayNode ();
+		for (int i=0; i<listRoomAccounts.size (); i++)
+		{
+			ObjectNode temp = jacksonObjectMapper_Strict.createObjectNode ();
+			temp.put ("UserName", listRoomAccounts.get (i));
+			temp.put ("EncryChatRoomAccount", "");
+			an.add (temp);
+		}
+		on.set ("List", an);
+		return on;
+	}
 	public static String MakeFullGetRoomContactRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomAccounts)
 	{
 		StringBuilder sbBody = new StringBuilder ();
 		sbBody.append ("{\n");
-		sbBody.append ("	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n");
+		sbBody.append ("	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n");
 		sbBody.append ("	\"Count\": " + listRoomAccounts.size () + ",\n");
 		sbBody.append ("	\"List\":\n");
 		sbBody.append ("	[\n");
@@ -782,7 +824,7 @@ logger.fine ("	" + sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
-		String sRequestBody_JSONString = MakeFullGetRoomContactRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), listRoomAccounts);
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullGetRoomContactRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), listRoomAccounts));
 logger.finer ("发送 WebWeChatGetRoomContacts 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = null;
@@ -859,7 +901,7 @@ logger.info (sb.toString ());
 	public static List<JsonNode> SearchForContacts (JsonNode jsonMemberList, String sEncryptedAccountInASession, String sAliasAccount, String sRemarkName, String sDisplayName, String sNickName)
 	{
 		List<JsonNode> listUsersMatched = new ArrayList <JsonNode> ();
-		JsonNode jsonUser = null;
+		//JsonNode jsonUser = null;
 		for (int i=0; i<jsonMemberList.size (); i++)
 		{
 			JsonNode node = jsonMemberList.get (i);
@@ -965,11 +1007,19 @@ logger.info (sb.toString ());
 		}
 		return sbSyncCheckKeys.toString ();
 	}
-	public static String MakeFullWeChatSyncJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonSyncKey)
+	public static JsonNode MakeFullWeChatSyncRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonSyncKey)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("SyncKey", jsonSyncKey);
+		on.put ("rr", System.currentTimeMillis ()/1000);
+		return on;
+	}
+	public static String MakeFullWeChatSyncRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonSyncKey)
 	{
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"SyncKey\": " + jsonSyncKey + ",\n" +
 		"	\"rr\": " + System.currentTimeMillis ()/1000 + "\n" +
 		"}\n";
@@ -1084,7 +1134,7 @@ logger.finest ("	" + sSyncURL);
 					//mapRequestHeaders = new HashMap<String, Object> ();
 					mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
 					//mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 "Ret": 1 代码
-					String sRequestBody_JSONString = MakeFullWeChatSyncJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys);
+					String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullWeChatSyncRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys));
 logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息头 (Cookie & Content-Type):");
 logger.finest ("	" + mapRequestHeaders);
 logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息体:");
@@ -1205,23 +1255,23 @@ logger.fine ("发消息 WebWeChatSendMessage …");
 		{
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullTextMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendTextMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendImageMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullImageMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendImageMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullApplicationMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendApplicationMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (Element)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = MakeFullEmotionMessageJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage);
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendEmotionMessageRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			default:
 				break;
@@ -1260,16 +1310,31 @@ logger.fine ("\n" + node);
 		return node;
 	}
 
-	public static String MakeFullTextMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMessage)
+	public static JsonNode MakeFullSendTextMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sContent)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
+			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT);
+			msg.put ("Content", sContent);
+			msg.put ("FromUserName", sFrom);
+			msg.put ("ToUserName", sTo);
+			msg.put ("LocalID", nLocalMessageID);
+			msg.put ("ClientMsgId", nLocalMessageID);
+		on.set ("Msg", msg);
+		return on;
+	}
+	public static String MakeFullSendTextMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMessage)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Msg\":\n" +
 		"	{\n" +
 		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT + ",\n" +
-		"		\"Content\": \"" + sMessage + "\",\n" +
+		"		\"Content\": \"" + StringUtils.replace (sMessage, "\"", "\\\"") + "\",\n" +
 		"		\"FromUserName\": \"" + sFrom + "\",\n" +
 		"		\"ToUserName\": \"" + sTo + "\",\n" +
 		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
@@ -1283,12 +1348,28 @@ logger.info ("发文本消息: " + sMessage);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
 	}
 
-	public static String MakeFullImageMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	public static JsonNode MakeFullSendImageMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
+			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE);
+			msg.put ("MediaId", sMediaID);
+			msg.put ("FromUserName", sFrom);
+			msg.put ("ToUserName", sTo);
+			msg.put ("LocalID", nLocalMessageID);
+			msg.put ("ClientMsgId", nLocalMessageID);
+		on.set ("Msg", msg);
+		on.put ("Scene", 0);
+		return on;
+	}
+	public static String MakeFullSendImageMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Msg\":\n" +
 		"	{\n" +
 		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE + ",\n" +
@@ -1307,12 +1388,29 @@ logger.info ("发图片消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID);
 	}
 
-	public static String MakeFullEmotionMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	public static JsonNode MakeFullSendEmotionMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
+			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION);
+			msg.put ("EmojiFlag", 2);
+			msg.put ("EMotionMd5", sMediaID);
+			msg.put ("FromUserName", sFrom);
+			msg.put ("ToUserName", sTo);
+			msg.put ("LocalID", nLocalMessageID);
+			msg.put ("ClientMsgId", nLocalMessageID);
+		on.set ("Msg", msg);
+		on.put ("Scene", 0);
+		return on;
+	}
+	public static String MakeFullSendEmotionMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Msg\":\n" +
 		"	{\n" +
 		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION + ",\n" +
@@ -1332,12 +1430,28 @@ logger.info ("发表情图消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
 	}
 
-	public static String MakeFullVideoMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	public static JsonNode MakeFullSendVideoMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
+			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG);
+			msg.put ("MediaId", sMediaID);
+			msg.put ("FromUserName", sFrom);
+			msg.put ("ToUserName", sTo);
+			msg.put ("LocalID", nLocalMessageID);
+			msg.put ("ClientMsgId", nLocalMessageID);
+		on.set ("Msg", msg);
+		on.put ("Scene", 0);
+		return on;
+	}
+	public static String MakeFullSendVideoMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Msg\":\n" +
 		"	{\n" +
 		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG + ",\n" +
@@ -1356,12 +1470,27 @@ logger.info ("发视频消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG, sMediaID);
 	}
 
-	public static String MakeFullApplicationMessageJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sXMLMessage)
+	public static JsonNode MakeFullSendApplicationMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, Element eXML)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
+			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP);
+			msg.put ("Content", eXML.toXML ());
+			msg.put ("FromUserName", sFrom);
+			msg.put ("ToUserName", sTo);
+			msg.put ("LocalID", nLocalMessageID);
+			msg.put ("ClientMsgId", nLocalMessageID);
+		on.set ("Msg", msg);
+		return on;
+	}
+	public static String MakeFullSendApplicationMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sXMLMessage)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		return
 		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestValueJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
+		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
 		"	\"Msg\":\n" +
 		"	{\n" +
 		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP + ",\n" +
@@ -1527,7 +1656,7 @@ logger.fine ("	" + fMediaFile);
 			return;
 
 		String sErrorMsg = GetJSONText (jsonBaseResponse, "ErrMsg");
-logger.warning (sAPIName + " 失败，代码: " + nRet + " , 错误信息: " + sErrorMsg);
+logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代码: " + nRet + " , 错误信息: " + sErrorMsg));
 	}
 
 	/**
@@ -1804,7 +1933,7 @@ logger.warning ("app 线程退出");
 		String sDriverClassName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.driver");	// , "com.mysql.jdbc.Driver"
 		String sURL = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.url");	// , "jdbc:mysql://localhost/WeChatBotEngine?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull"
 		String sUserName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.username");	// , "root"
-		String sUserPassword = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.userpassword");
+		String sPassword = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.password");
 		if (StringUtils.isEmpty (sDriverClassName) || StringUtils.isEmpty (sURL) || StringUtils.isEmpty (sUserName))
 		{
 net_maclife_wechat_http_BotApp.logger.warning ("jdbc 需要将 driver、username、userpassword 信息配置完整");
@@ -1827,8 +1956,8 @@ net_maclife_wechat_http_BotApp.logger.warning ("jdbc 需要将 driver、username
 		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull&amp;useInformationSchema=true");
 
 		botDS.setUsername (sUserName);
-		if (StringUtils.isNotEmpty (sUserPassword))
-			botDS.setPassword (sUserPassword);
+		if (StringUtils.isNotEmpty (sPassword))
+			botDS.setPassword (sPassword);
 
 		//botDS.setMaxTotal (5);
 	}
