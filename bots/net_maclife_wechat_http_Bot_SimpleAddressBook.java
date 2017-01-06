@@ -66,14 +66,21 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
-					String sResult = Query (sFromName, sCommandParametersInputed);
-					if (StringUtils.isEmpty (sResult))
+					try
 					{
-						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在通讯簿【" + sFromName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
-						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+						String sResult = Query (sReplyToName, sCommandParametersInputed);
+						if (StringUtils.isEmpty (sResult))
+						{
+							SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在通讯簿【" + sReplyToName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
+							return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+						}
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sResult);
+						break;
 					}
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sResult);
-					break;
+					catch (Exception e)
+					{
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "查询出错: " + e);
+					}
 				}
 			}
 		}
@@ -88,7 +95,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 	}
 
 
-	String Query (String sFromName, String sQuery)
+	String Query (String sFromName, String sQuery) throws SQLException
 	{
 		String sTablePrefix = StringUtils.trimToEmpty (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.simple-address-book.jdbc.database-table.prefix"));
 		net_maclife_wechat_http_BotApp.SetupDataSource ();
@@ -99,7 +106,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 		try
 		{
 			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
-			stmt = conn.prepareStatement ("SELECT * FROM " + sTablePrefix + "simple_wechat_address_book WHERE 微信群昵称=? AND 群联系人姓名=?");
+			stmt = conn.prepareStatement ("SELECT * FROM " + sTablePrefix + "wechat_simple_address_book WHERE 微信群昵称=? AND 群联系人姓名=?");
 			int nCol = 1;
 			stmt.setString (nCol++, sFromName);
 			stmt.setString (nCol++, sQuery);
@@ -128,6 +135,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 		catch (SQLException e)
 		{
 			e.printStackTrace();
+			throw e;
 		}
 		finally
 		{
