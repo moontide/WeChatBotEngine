@@ -64,6 +64,13 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 				;
 			configBuilder = new ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> (PropertiesConfiguration.class).configure (builderParameters);
 			configBuilder.setAutoSave (true);
+
+			// 从配置文件读取并设置默认日志级别，省的每次启动后自己手工调节日志级别。
+			String sDefaultLogLevel = GetConfig().getString ("app.log.default-level");
+			if (StringUtils.isNotEmpty (sDefaultLogLevel))
+			{
+				logger.setLevel (Level.parse (sDefaultLogLevel));
+			}
 		}
 		//catch (ConfigurationException e)
 		{
@@ -1179,7 +1186,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		}
 		else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1100") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1101") || StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))
 		{
-logger.warning ("WebWeChatGetMessagePackage 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能手机微信退出、或者在其他地方登录了微信网页版（含 Windows 版）、或者 SyncCheckKey 参数不正确");
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("WebWeChatGetMessagePackage 中 synccheck 返回 " + sSyncCheckReturnCode + " -- 可能手机微信退出、或者在其他地方登录了微信网页版（含 Windows 版）、或者 SyncCheckKey 参数不正确"));
 			throw new IllegalStateException ("微信被退出 / 被踢出了");
 		}
 		//else if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "1102"))	// 当 skey=*** 不小心输错变成 skey*** 时返回了 1102 错误
@@ -1344,7 +1351,7 @@ logger.fine ("\n" + node);
 	}
 	public static JsonNode WebWeChatSendTextMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("发文本消息: " + sMessage);
+logger.info ("发文本消息:\n" + net_maclife_util_ANSIEscapeTool.Cyan (sMessage));
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
 	}
 
