@@ -327,6 +327,27 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	/**
+	 * 当收到了请求加好友消息时……
+	 * @param sContent 文本内容（xml 格式的）
+	 * @param jsonRecommenedInfo jsonMessage 里面的 RecommenedInfo 节点
+	 * @param xmlMsg sContent 解析为 xml 后的 <code>msg</code> Element
+	 * @return
+	 */
+	public int OnRequestToAddFriendMessageReceived
+		(
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, JsonNode jsonRecommenedInfo, Element xmlMsg
+		)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	/**
 	 * 当收到系统消息时……
 	 * @param sContent 文本内容
 	 * @return

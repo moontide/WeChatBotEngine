@@ -43,7 +43,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	public static final int WECHAT_MSG_TYPE__IMAGE                 = 3;
 	public static final int WECHAT_MSG_TYPE__APP                   = 6;	// 上面的参考中没有的
 	public static final int WECHAT_MSG_TYPE__VOICE                 = 34;
-	//public static final int WECHAT_MSG_TYPE__VERIFY_MSG            = 37;
+	public static final int WECHAT_MSG_TYPE__REQUEST_TO_ADD_FRIEND = 37;
 	//public static final int WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG   = 40;
 	public static final int WECHAT_MSG_TYPE__WECHAT_VCARD          = 42;
 	public static final int WECHAT_MSG_TYPE__VIDEO_MSG             = 43;
@@ -67,7 +67,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		图片 (WECHAT_MSG_TYPE__IMAGE),
 		应用 (WECHAT_MSG_TYPE__APP),
 		语音 (WECHAT_MSG_TYPE__VOICE),
-		VerifyMsg (WECHAT_MSG_TYPE__VERIFY_MSG),
+		RequestToAddFriend (WECHAT_MSG_TYPE__REQUEST_TO_ADD_FRIEND),
 		PossibleFriendMessage (WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG),
 		名片WeChatVCard (WECHAT_MSG_TYPE__WECHAT_VCARD),
 		视频通话 (WECHAT_MSG_TYPE__VIDEO_CALL),
@@ -1112,9 +1112,9 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 			{
 net_maclife_wechat_http_BotApp.logger.info
 				(
-					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n"
-					+ net_maclife_util_ANSIEscapeTool.Green ("自己") + " 在其他设备上发给 " + (isToMe ? net_maclife_util_ANSIEscapeTool.DarkCyan ("自己") : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.DarkCyan (sReplyToName) + "】")) + " 的消息:\n"
-					+ net_maclife_util_ANSIEscapeTool.LightGreen (sContent)
+					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息（自己在其他设备上发出的）\n"
+					+ " → " + (isToMe ? net_maclife_util_ANSIEscapeTool.DarkCyan ("自己") : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.DarkCyan (sReplyToName) + "】")) + ":\n"
+					+ (nMsgType == WECHAT_MSG_TYPE__TEXT ? net_maclife_util_ANSIEscapeTool.LightGreen (sContent) : sContent)
 				);
 			}
 			else
@@ -1122,8 +1122,9 @@ net_maclife_wechat_http_BotApp.logger.info
 net_maclife_wechat_http_BotApp.logger.info
 				(
 					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n"
-					+ "来自 " + (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.Green (sReplyToName) + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】") + " 发" + (isToMe ? "来" : "给 【" + sToName + "】") + " 的消息:\n"
-					+ net_maclife_util_ANSIEscapeTool.LightGreen (sContent)
+					+ (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.Green (sReplyToName) + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】")
+					+ " → " + (isToMe ? "" : " 【" + sToName + "】") + ":\n"
+					+ (nMsgType == WECHAT_MSG_TYPE__TEXT ? net_maclife_util_ANSIEscapeTool.LightGreen (sContent) : sContent)
 				);
 			}
 
@@ -1131,7 +1132,7 @@ net_maclife_wechat_http_BotApp.logger.info
 			{
 				if (isFromMe)	// 自己发送的消息，不再处理
 				{
-net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.DarkGray ("是自己发的消息，且配置文件里已配置为“忽略自己发的消息”，所以，忽略本消息…"));
+net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Gray ("是自己发的消息，且配置文件里已配置为“忽略自己发的消息”，所以，忽略本消息…"));
 					continue;
 				}
 			}
@@ -1140,7 +1141,7 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Dark
 			{
 				if (isFromPublicAccount)	// 公众号发送的消息，不再处理
 				{
-net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.DarkGray ("是公众号发的消息，且配置文件里已配置为“忽略公众号发的消息”，所以，忽略本消息…"));
+net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Gray ("是公众号发的消息，且配置文件里已配置为“忽略公众号发的消息”，所以，忽略本消息…"));
 					continue;
 				}
 			}
@@ -1175,8 +1176,9 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Dark
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVoice (sSessionKey, sMsgID);
 					OnVoiceMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, fMedia);
 					break;
-				//case WECHAT_MSG_TYPE__VERIFY_MSG:
-				//	break;
+				case WECHAT_MSG_TYPE__REQUEST_TO_ADD_FRIEND:
+					OnRequestToAddFriendMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent);
+					break;
 				//case WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG:
 				//	break;
 				case WECHAT_MSG_TYPE__WECHAT_VCARD:
@@ -1538,6 +1540,122 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 			}
 net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
 			DispatchEvent ("OnURLMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, msg, jsonNode);
+		}
+		catch (ParsingException | IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	void OnRequestToAddFriendMessageReceived
+		(
+			JsonNode jsonNode,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent
+		)
+	{
+		try
+		{
+			// 别人请求加好友时的消息，也携带了名片信息
+			JsonNode jsonRecommenedInfo = jsonNode.get ("RecommendInfo");
+			String 昵称 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "NickName");
+			String 微信号 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Alias");
+			int n性别 = net_maclife_wechat_http_BotApp.GetJSONInt (jsonRecommenedInfo, "Sex");
+			String 个性签名 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Signature");
+			String 省 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Province");
+			String 市 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "City");
+			String 附加内容 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Content");
+			String sTicket = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Ticket");
+
+			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+			Element msg = doc.getRootElement ();
+			String 对方明文ID = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "fromusername");
+			String 对方加密ID = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "encryptusername");
+			assert (StringUtils.endsWithIgnoreCase (对方加密ID, "@stranger"));
+			String sFromNickName = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "fromnickname");
+			String 附加内容FromXMLContent = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Content");
+			assert (StringUtils.equalsIgnoreCase (附加内容, 附加内容FromXMLContent));
+			String sSign = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "sign");
+			assert (StringUtils.equalsIgnoreCase (个性签名, sSign));
+			String sAlias = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "alias");
+			assert (StringUtils.equalsIgnoreCase (微信号, sAlias));
+
+			String 大头像图片网址 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "bigheadimgurl");
+			String 小头像图片网址 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "smallheadimgurl");
+			String 地区代码 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (msg, "regionCode");
+			String sTicketFromXMLContent = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "ticket");
+			assert (StringUtils.equalsIgnoreCase (sTicket, sTicketFromXMLContent));
+
+			StringBuilder sb = new StringBuilder ();
+			if (StringUtils.isNotEmpty (附加内容))
+			{
+				sb.append ("附加内容: ");
+				sb.append (附加内容);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (昵称))
+			{
+				sb.append ("昵称:   ");
+				sb.append (昵称);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (微信号))
+			{
+				sb.append ("微信号: ");
+				sb.append (微信号);
+				sb.append ("\n");
+			}
+			if (n性别 != 0)
+			{
+				sb.append ("性别:   ");
+				if (n性别 == 1)
+					sb.append ("男");
+				else if (n性别 == 2)
+					sb.append ("女");
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (个性签名))
+			{
+				sb.append ("个性签名: ");
+				sb.append (个性签名);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (省))
+			{
+				sb.append ("省份:   ");
+				sb.append (省);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (市))
+			{
+				sb.append ("城市:   ");
+				sb.append (市);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (地区代码))
+			{
+				sb.append ("地区代码: ");
+				sb.append (地区代码);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (大头像图片网址))
+			{
+				sb.append ("大头像: ");
+				sb.append (大头像图片网址);
+				sb.append ("\n");
+			}
+			if (StringUtils.isNotEmpty (小头像图片网址))
+			{
+				sb.append ("小头像: ");
+				sb.append (小头像图片网址);
+				sb.append ("\n");
+			}
+net_maclife_wechat_http_BotApp.logger.info ("请求加好友消息: \n" + sb);
+			DispatchEvent ("OnRequestToAddFriendMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, jsonRecommenedInfo, msg);
 		}
 		catch (ParsingException | IOException e)
 		{
@@ -1995,6 +2113,17 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 						);
 				case "onvcardmessage":
 					return bot.OnVCardMessageReceived
+						(
+							jsonNode,
+							jsonFrom, sFromAccount, sFromName, isFromMe,
+							jsonTo, sToAccount, sToName, isToMe,
+							jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom,
+							jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember,
+							jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person,
+							sContent, (JsonNode)datas[0], (Element)datas[1]
+						);
+				case "onrequesttoaddfriendmessage":
+					return bot.OnRequestToAddFriendMessageReceived
 						(
 							jsonNode,
 							jsonFrom, sFromAccount, sFromName, isFromMe,
