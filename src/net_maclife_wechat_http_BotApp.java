@@ -14,9 +14,9 @@ import org.apache.commons.configuration2.*;
 import org.apache.commons.configuration2.builder.*;
 import org.apache.commons.configuration2.builder.fluent.*;
 import org.apache.commons.configuration2.ex.*;
-import org.apache.commons.dbcp2.*;
 import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
+import org.apache.tomcat.jdbc.pool.*;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
@@ -146,7 +146,8 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 		cookieManager.setCookiePolicy (CookiePolicy.ACCEPT_ALL);
 	}
 
-	static BasicDataSource botDS = null;
+	//static BasicDataSource botDS = null;
+	static DataSource botDS = null;
 
 	Future<?> appTask = null;
 
@@ -1059,7 +1060,7 @@ logger.info (sb.toString ());
 		}
 		return sbResult.toString ();
 	}
-	public static JsonNode WebWeChatGetMessagePackage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException
+	public static JsonNode WebWeChatGetMessagePackage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException, InterruptedException
 	{
 logger.finest ("等待并获取新消息 WebWeChatGetMessagePackage (synccheck & webwxsync) …");	// 这里的日志级别改为了 fine，因这个在死循环中，产生太多日志
 		String sSyncCheckKeys = MakeSyncCheckKeysQueryString (jsonSyncCheckKeys);
@@ -1166,6 +1167,7 @@ logger.finer ("\n" + node);
 						{
 							e.printStackTrace ();
 logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+							TimeUnit.SECONDS.sleep (5);
 							continue;
 						}
 					}
@@ -1941,13 +1943,22 @@ logger.warning ("app 线程退出");
 		String sURL = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.url");	// , "jdbc:mysql://localhost/WeChatBotEngine?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull"
 		String sUserName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.username");	// , "root"
 		String sPassword = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.password");
+		String sValidationQuery = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.keep-alive-sql");
+		int nValidationInterval = net_maclife_wechat_http_BotApp.GetConfig ().getInt ("app.jdbc.keep-alive-interval", 0);
+		int nValidationTimeout = net_maclife_wechat_http_BotApp.GetConfig ().getInt ("app.jdbc.keep-alive-timeout", 0);
 		if (StringUtils.isEmpty (sDriverClassName) || StringUtils.isEmpty (sURL) || StringUtils.isEmpty (sUserName))
 		{
 net_maclife_wechat_http_BotApp.logger.warning ("jdbc 需要将 driver、username、userpassword 信息配置完整");
 			return;
 		}
+net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.driver = " + sDriverClassName);
+net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sURL);
+net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.username = " + sUserName);
+net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 
-		botDS = new BasicDataSource();
+		//botDS = new BasicDataSource();
+		botDS = new DataSource ();
+
 		//botDS.setDriverClassName("org.mariadb.jdbc.Driver");
 		botDS.setDriverClassName (sDriverClassName);
 		// 要赋给 mysql 用户对 mysql.proc SELECT 的权限，否则执行存储过程报错
@@ -1956,16 +1967,24 @@ net_maclife_wechat_http_BotApp.logger.warning ("jdbc 需要将 driver、username
 		botDS.setUrl (sURL);
 		// 在 prepareCall 时报错:
 		// User does not have access to metadata required to determine stored procedure parameter types. If rights can not be granted, configure connection with "noAccessToProcedureBodies=true" to have driver generate parameters that represent INOUT strings irregardless of actual parameter types.
-		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull&amp;noAccessToProcedureBodies=true&amp;useInformationSchema=true"); // 没有作用
+		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=utf8mb4&amp;zeroDateTimeBehavior=convertToNull&amp;noAccessToProcedureBodies=true&amp;useInformationSchema=true"); // 没有作用
 
 		// http://thenullhandler.blogspot.com/2012/06/user-does-not-have-access-error-with.html // 没有作用
 		// http://bugs.mysql.com/bug.php?id=61203
-		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull&amp;useInformationSchema=true");
+		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=utf8mb4&amp;zeroDateTimeBehavior=convertToNull&amp;useInformationSchema=true");
 
 		botDS.setUsername (sUserName);
 		if (StringUtils.isNotEmpty (sPassword))
 			botDS.setPassword (sPassword);
 
+		if (StringUtils.isNotEmpty (sValidationQuery))
+			botDS.setValidationQuery (sValidationQuery);
+		if (nValidationInterval > 0)
+			botDS.setValidationInterval (nValidationInterval);
+		if (nValidationTimeout > 0)
+			botDS.setValidationQueryTimeout (nValidationTimeout);
+
+		botDS.setRemoveAbandoned (true);
 		//botDS.setMaxTotal (5);
 	}
 
