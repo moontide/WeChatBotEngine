@@ -1,7 +1,6 @@
 import java.sql.*;
 import java.util.*;
 
-import org.apache.commons.dbcp2.*;
 import org.apache.commons.lang3.*;
 
 import com.fasterxml.jackson.databind.*;
@@ -62,7 +61,7 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 					}
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 在查询时需要指定要姓名。\n\n用法:\n" + sCommand + "  <通讯录中的姓名(通常是真实姓名)>");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 在查询时需要指定姓名。\n\n用法:\n" + sCommand + "  <通讯录中的姓名(通常是真实姓名)>");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
@@ -93,7 +92,6 @@ public class net_maclife_wechat_http_Bot_SimpleAddressBook extends net_maclife_w
 			  net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
-
 
 	String Query (String sFromName, String sQuery) throws SQLException
 	{
