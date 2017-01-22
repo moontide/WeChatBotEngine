@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
 
 import com.fasterxml.jackson.core.*;
@@ -101,8 +102,9 @@ net_maclife_wechat_http_BotApp.logger.severe (GetName () + " 启动失败: " + e
 				s = ss.accept ();
 				InputStream is = s.getInputStream ();
 				PrintWriter out = new PrintWriter (s.getOutputStream (), true);
-				//IOUtils.toString (is, net_maclife_wechat_http_BotApp.utf8);
-				JsonNode jsonNode = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (is);
+				String sInput = IOUtils.toString (is, net_maclife_wechat_http_BotApp.utf8);
+net_maclife_wechat_http_BotApp.logger.fine (GetName() + " 收到数据:\n" + sInput);
+				JsonNode jsonNode = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (sInput);
 				ProcessMessage (jsonNode, out);
 				s.close ();
 			}
