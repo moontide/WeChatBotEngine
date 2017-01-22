@@ -296,7 +296,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 		return GetRoomContacts (listRoomAccounts);
 	}
 
-	JsonNode GetMessagePackage (JsonNode jsonSyncCheckKeys) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, URISyntaxException
+	JsonNode GetMessagePackage (JsonNode jsonSyncCheckKeys) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, URISyntaxException, InterruptedException
 	{
 		return net_maclife_wechat_http_BotApp.WebWeChatGetMessagePackage (sUserID, sSessionID, sSessionKey, sPassTicket, jsonSyncCheckKeys);
 	}
@@ -1486,6 +1486,22 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 		{
 			JsonNode jsonAppInfo = jsonNode.get ("AppInfo");
 			int 应用程序消息类型 = net_maclife_wechat_http_BotApp.GetJSONInt (jsonNode, "AppMsgType");
+			String s应用程序消息类型名称 = String.valueOf (应用程序消息类型);
+			switch (应用程序消息类型)
+			{
+				case 3:
+					s应用程序消息类型名称 = "音乐";
+					break;
+				case 5:
+					s应用程序消息类型名称 = "网址";
+					break;
+				case 7:
+					s应用程序消息类型名称 = "微博";
+					break;
+				default:
+					//s应用程序消息类型名称 = String.valueOf (应用程序消息类型);
+					break;
+			}
 			String 应用程序ID = net_maclife_wechat_http_BotApp.GetJSONText (jsonAppInfo, "AppID");
 			String sURL = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "Url");
 			String sFileName = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "FileName");
@@ -1502,6 +1518,12 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 			String data_url = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "dataurl");	// 网易云音乐分享里，这个是个音乐文件
 
 			StringBuilder sb = new StringBuilder ();
+			if (StringUtils.isNotEmpty (s应用程序消息类型名称))
+			{
+				sb.append ("类型:   ");
+				sb.append (s应用程序消息类型名称);
+				sb.append ("\n");
+			}
 			if (StringUtils.isNotEmpty (title))
 			{
 				sb.append ("标题:   ");
