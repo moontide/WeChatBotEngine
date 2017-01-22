@@ -23,16 +23,6 @@ import com.fasterxml.jackson.databind.*;
  */
 public class net_maclife_wechat_http_Bot_Emoji extends net_maclife_wechat_http_Bot
 {
-	String s笑脸与人物;
-	String s自然与动物;
-	String s餐饮;
-	String s运动;
-	String s旅行与著名景点;
-	String s物体;
-	String s符号;
-	String s旗帜;
-	String s不同肤色;
-
 	@Override
 	public int OnTextMessageReceived
 		(
@@ -74,7 +64,7 @@ public class net_maclife_wechat_http_Bot_Emoji extends net_maclife_wechat_http_B
 				{
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 在查询时需要指定关键字（关键字可指定多个，若为多个，则只匹配包含所有关键字的）。\n\n用法:\n" + sCommand + "  <emoji 关键字>...\n\n比如：\n" + sCommand + "  cat face");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 在查询时需要指定关键字（关键字可指定多个，若为多个，则只匹配包含所有关键字的）。\n\n用法:\n" + sCommand + "[.detail]  <emoji 关键字>...\n\n比如：\n" + sCommand + "  cat face");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
@@ -136,8 +126,8 @@ public class net_maclife_wechat_http_Bot_Emoji extends net_maclife_wechat_http_B
 			{
 				String[] arrayKeywords = sQuery.split (" +");
 				for (String sKeyword : arrayKeywords)
-				{
-					sbSQL.append (" AND (tag_name LIKE ? OR 英文名称 LIKE ?)");
+				{	// 这里先用这种方式查询，以后考虑将 tag_name 挪到单独的表中，1对多的关系，查询时只按照 “=”的匹配方式进行匹配，不会造成现在这种模糊匹配的方式带来的不想要的结果：比如，查 eat 会匹配到 meat repeat 等
+					sbSQL.append (" AND (tag_name=? OR tag_name LIKE ? OR tag_name LIKE ? OR 英文名称=? OR 英文名称 LIKE ? OR 英文名称 LIKE ?)");
 				}
 			}
 			stmt = conn.prepareStatement (sbSQL.toString ());
@@ -147,8 +137,12 @@ public class net_maclife_wechat_http_Bot_Emoji extends net_maclife_wechat_http_B
 				String[] arrayKeywords = sQuery.split (" +");
 				for (String sKeyword : arrayKeywords)
 				{
-					stmt.setString (nCol++, "%" + sKeyword + "%");
-					stmt.setString (nCol++, "%" + sKeyword + "%");
+					stmt.setString (nCol++, sKeyword);
+					stmt.setString (nCol++, "%" + sKeyword + " %");
+					stmt.setString (nCol++, "% " + sKeyword + "%");
+					stmt.setString (nCol++, sKeyword);
+					stmt.setString (nCol++, "%" + sKeyword + " %");
+					stmt.setString (nCol++, "% " + sKeyword + "%");
 				}
 			}
 			rs = stmt.executeQuery ();
@@ -255,7 +249,7 @@ public class net_maclife_wechat_http_Bot_Emoji extends net_maclife_wechat_http_B
 				{
 					if (nEmojiRow != 0)
 						fwSQL.write (";");
-					fwSQL.write ("\nINSERT INTO emoji (sn, code, emoji_char, 浏览器显示图, Apple显示图, Google显示图, Twitter显示图, One显示图, Facebook显示图, FBM显示图, 三星显示图, Windows显示图, GMail显示图, SB显示图, DCM显示图, KDDI显示图, 英文名称, 日期, tag_name) VALUES\n");
+					fwSQL.write ("\nINSERT INTO emoji (sn, code, emoji_char, 浏览器显示图, Apple显示图, Google显示图, Twitter显示图, EmojiOne显示图, Facebook显示图, FacebookMessenger显示图, Samsung显示图, Windows显示图, GMail显示图, SoftBank显示图, DoCoMo显示图, KDDI显示图, 英文名称, 日期, tag_name) VALUES\n");
 				}
 
 				if ((nEmojiRow % 100) == 0)	// 每个 INSERT 的第一条数据
@@ -269,17 +263,17 @@ public class net_maclife_wechat_http_Bot_Emoji extends net_maclife_wechat_http_B
 				String sCode = eCols.get (i++).text ();
 				String sChars = eCols.get (i++).text ();
 				String s浏览器显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
-				String s苹果显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
+				String sApple显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
 				String sGoogle显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
 				String sTwitter显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
-				String sOne显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
+				String sEmojiOne显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
 				String sFacebook显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
-				String sFBM显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
-				String s三星显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
+				String sFacebookMessenger显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
+				String sSamsung显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
 				String sWindows显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
 				String sGMail显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
-				String sSB显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
-				String sDCM显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
+				String sSoftBank显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
+				String sDoCoMo显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
 				String sKDDI显示图 = ExtractImageData (eCols.get (i++).select ("img").attr ("src"));
 				String s英文名称 = eCols.get (i++).text ();
 				String s日期时间 = eCols.get (i++).text ();
@@ -289,17 +283,17 @@ public class net_maclife_wechat_http_Bot_Emoji extends net_maclife_wechat_http_B
 				fwSQL.write (", '" + sCode + "'");
 				fwSQL.write (", '" + sChars + "'");
 				fwSQL.write (", '" + s浏览器显示图 + "'");
-				fwSQL.write (", '" + s苹果显示图 + "'");
+				fwSQL.write (", '" + sApple显示图 + "'");
 				fwSQL.write (", '" + sGoogle显示图 + "'");
 				fwSQL.write (", '" + sTwitter显示图 + "'");
-				fwSQL.write (", '" + sOne显示图 + "'");
+				fwSQL.write (", '" + sEmojiOne显示图 + "'");
 				fwSQL.write (", '" + sFacebook显示图 + "'");
-				fwSQL.write (", '" + sFBM显示图 + "'");
-				fwSQL.write (", '" + s三星显示图 + "'");
+				fwSQL.write (", '" + sFacebookMessenger显示图 + "'");
+				fwSQL.write (", '" + sSamsung显示图 + "'");
 				fwSQL.write (", '" + sWindows显示图 + "'");
 				fwSQL.write (", '" + sGMail显示图 + "'");
-				fwSQL.write (", '" + sSB显示图 + "'");
-				fwSQL.write (", '" + sDCM显示图 + "'");
+				fwSQL.write (", '" + sSoftBank显示图 + "'");
+				fwSQL.write (", '" + sDoCoMo显示图 + "'");
 				fwSQL.write (", '" + sKDDI显示图 + "'");
 				fwSQL.write (", '" + s英文名称 + "'");
 				fwSQL.write (", '" + s日期时间 + "'");
