@@ -113,7 +113,10 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 								{
 									nTimeout = Integer.parseInt (sCommandOption);
 									if (nTimeout < 1)
+									{
 										nTimeout = 1;	// 至少 1 秒…
+										SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 机器人的命令超时时长最少为 1 秒（不允许设置不超时），已自动调整为 1 秒，命令将继续执行。");
+									}
 								}
 								catch (NumberFormatException e)
 								{
