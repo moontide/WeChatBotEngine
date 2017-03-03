@@ -103,14 +103,27 @@ net_maclife_wechat_http_BotApp.logger.severe (GetName () + " 启动失败: " + e
 				InputStream is = s.getInputStream ();
 				PrintWriter out = new PrintWriter (s.getOutputStream (), true);
 				String sInput = IOUtils.toString (is, net_maclife_wechat_http_BotApp.utf8);
-net_maclife_wechat_http_BotApp.logger.fine (GetName() + " 收到数据:\n" + sInput);
+net_maclife_wechat_http_BotApp.logger.fine (GetName() + " 收到数据:\n" + net_maclife_util_ANSIEscapeTool.Green (sInput));
 				JsonNode jsonNode = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (sInput);
 				ProcessMessage (jsonNode, out);
-				s.close ();
 			}
 			catch (IOException e)
 			{
 				e.printStackTrace();
+			}
+			finally
+			{
+				if (s != null)
+				{
+					try
+					{
+						s.close ();
+					}
+					catch (IOException e)
+					{
+						e.printStackTrace();
+					}
+				}
 			}
 		}
 	}
