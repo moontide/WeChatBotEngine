@@ -23,7 +23,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	<dd>重复消息发送者的消息。该机器人仅用于演示、测试用途，正式环境不建议使用。</dd>
 
 	<dt><strong>Relay</strong>: 消息中继机器人 (仅转入，不转出)</dt>
-	<dd>从 Socket 接收消息，根据消息中指定的接收人转发到微信群/微信号中。其他程序通过这种方式来把消息转发到微信。
+	<dd>从 Socket 接收 JSON 格式的消息，根据消息中指定的接收人转发到微信群/微信号中。其他程序通过这种方式来把消息转发到微信。
 		利用这一点，可以把强大的外部应用程序的部分功能通过消息中继机器人将功能扩展，比如
 		<br/>
 		<ul>
@@ -73,7 +73,8 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 
 	<dt><strong>BaiduTranslate</strong>: 百度翻译机器人</dt>
 	<dd>利用百度翻译接口，提供翻译功能。
-	<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-translate.png'/>
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-translate.png'/>
 	</dd>
 
 	<dt><strong>GoogleImageSearch</strong>: Google 图片搜索机器人</dt>
@@ -84,7 +85,8 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 
 	<dt><strong>Emoji</strong>: Emoji 表情字符机器人</dt>
 	<dd>根据关键字，从数据库中查询对应的 emoji 字符。<em>因为不同系统对 Unicode 支持的不同，个别 emoji 字符可能无法正常显示。</em>
-	<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-emoji.png'/>
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-emoji.png'/>
 	</dd>
 
 	<dt><strong>MissileLaunched</strong>: 用来恶搞地理位置信息的机器人</dt>

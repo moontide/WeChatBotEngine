@@ -23,7 +23,7 @@ Those bot applets are:
 	<dd>Repeat the message sent by sender. This bot is only for demonstration or test purpose, running for long term is not recommended.</dd>
 
 	<dt><strong>Relay</strong>: A bot which relay messages from outside to a WeChat friend in your contacts (Incomig only, no outgoing)</dt>
-	<dd>Receive message from outside via Socket (TCP/IP), and send it to a friend (person or room) in your WeChat contacts according the target given in the message. Other applications can send message to WeChat via this relay bot, hence expanded the power of WeChatBotEngine, such as:
+	<dd>Receive message in JSON format from outside via Socket (TCP/IP), and send it to a friend (person or room) in your WeChat contacts according the target given in the message. Other applications can send message to WeChat via this relay bot, hence expanded the power of WeChatBotEngine, such as:
 		<br/>
 		<ul>
 			<li>When download task of Transmission completed, a script will run (configurable in Transmission)，the script send message to WeChat via this relay bot, hence Download-Completed-Notification function is implemented</li>
@@ -54,6 +54,9 @@ Those bot applets are:
 
 	<dt><strong>GoogleImageSearch</strong>: Google Image Search</dt>
 	<dd>When an image message posted, send the image to Google image search, return the guess information and possible image sources.</dd>
+
+	<dt><strong>Emoji</strong>: Emoji bot</dt>
+	<dd>根据关键字，从数据库中查询对应的 emoji 字符。<em>因为不同系统对 Unicode 支持的不同，个别 emoji 字符可能无法正常显示。</em></dd>
 
 	<dt><strong>MissileLaunched</strong>: Send a 'missile launched' message when someone shared a geographic position (just for fun)</dt>
 	<dd>When someone send a geographic position message, read the longtitude and latitude value, and append a random customable joke</dd>
