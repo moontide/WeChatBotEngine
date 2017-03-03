@@ -102,7 +102,30 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	}
 	*/
 
+	class KeepConnectionAliveTask extends TimerTask
+	{
+
+		@Override
+		public void run ()
+		{
+			if (loggedIn)
+			{
+				try
+				{
+					StatusNotify ();	// 在微信网页版中观察到【可能是】因为调用了这个，微信网页版在登录 12 小时后不用重新登录。尝试一下… （或许是 pingd 接口？）
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+
+		}
+
+	}
 	Future<?> engineTask = null;
+	TimerTask timertaskKeepConnectionAlive = new KeepConnectionAliveTask ();
+	Timer timerKeepConnectionAlive = new Timer ();
 	List<net_maclife_wechat_http_Bot> listBots = new ArrayList<net_maclife_wechat_http_Bot> ();
 
 	boolean loggedIn  = false;
@@ -134,6 +157,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		bStopFlag = false;
 		LoadBots ();
 		engineTask = net_maclife_wechat_http_BotApp.executor.submit (this);
+		timerKeepConnectionAlive.schedule (timertaskKeepConnectionAlive, 8*3600*1000, 8*3600*1000);
 	}
 
 	public void Stop ()
@@ -145,6 +169,8 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		{
 			engineTask.cancel (true);
 		}
+		timertaskKeepConnectionAlive.cancel ();
+		timerKeepConnectionAlive.cancel ();
 	}
 
 	public void LoadBot (String sBotClassName)
@@ -1122,7 +1148,7 @@ net_maclife_wechat_http_BotApp.logger.info
 net_maclife_wechat_http_BotApp.logger.info
 				(
 					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n"
-					+ (StringUtils.isEmpty (sFromName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.Green (sReplyToName) + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】")
+					+ (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.Green (sReplyToName) + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】")
 					+ " → " + (isToMe ? "" : " 【" + sToName + "】") + ":\n"
 					+ (nMsgType == WECHAT_MSG_TYPE__TEXT ? net_maclife_util_ANSIEscapeTool.LightGreen (sContent) : sContent)
 				);
@@ -1868,54 +1894,73 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 		DispatchEvent ("OnRoomMemberChanged", jsonRoom, null, null, null, false, null, null, null, false, null, null, null, false, null, null, null, null, null, null, null, false, false);
 	}
 
-	public static boolean IsDispatchEnabledForThisMessage (final String sEvent, final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final JsonNode jsonFrom_RoomMember, final String sFromAccount_RoomMember, final String sFromName_RoomMember, final JsonNode jsonTo, final String sToAccount, final String sToName, final JsonNode jsonNode, final String sContent, final Object data, final Object data2)
+	public static boolean IsDispatchEnabledForThisMessage (final String sEvent,
+		final JsonNode jsonNode,
+		final JsonNode jsonFrom, final String sFromAccount, final String sFromName, final boolean isFromMe,
+		final JsonNode jsonTo, final String sToAccount, final String sToName, final boolean isToMe,
+		final JsonNode jsonReplyTo, final String sReplyToAccount, final String sReplyToName, final boolean isReplyToRoom,
+		final JsonNode jsonReplyTo_RoomMember, final String sReplyToAccount_RoomMember, final String sReplyToName_RoomMember,
+		final JsonNode jsonReplyTo_Person, final String sReplyToAccount_Person, final String sReplyToName_Person,
+		final String sContent, final boolean isContentMentionedMe, final boolean isContentMentionedMeFirst, final Object... datas
+	)
 	{
 		boolean bEnabled = false;
 		String sTriggerMode = null;
-		if (StringUtils.isNotEmpty (sFromAccount_RoomMember))
+		String sAliasAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo, "Alias");
+		String sRemarkName = net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo, "RemarkName");
+		String sNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo, "NickName");
+		if (isReplyToRoom)
 		{
-			sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.group-chat.nick-name." + sFromName);
+			sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.group-chat.nick-name." + sNickName);
 			if (StringUtils.isEmpty (sTriggerMode))
 			{	// 如果没有针对该聊天室单独设置，则寻找群聊的默认设置
 				sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.group-chat");
 				if (StringUtils.isEmpty (sTriggerMode))
 				{	// 如果也没有针对群聊的默认设置，则寻找全局的默认设置。如果全局默认设置也没有，则默认为 false
-					sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.default");
+					sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode");
 				}
 			}
 		}
 		else
 		{
-			// TODO
-			sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.private-chat.alias." + sToName);
-			if (StringUtils.isEmpty (sTriggerMode))
-				sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.private-chat.remark-name." + sToName);
-			if (StringUtils.isEmpty (sTriggerMode))
-				sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.private-chat.nick-name." + sToName);
+			if (StringUtils.isNotEmpty (sAliasAccount))
+			{
+				sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.private-chat.alias." + sAliasAccount);
+			}
+			if (StringUtils.isEmpty (sTriggerMode) && StringUtils.isNotEmpty (sRemarkName))
+			{
+				sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.private-chat.remark-name." + sRemarkName);
+			}
+			if (StringUtils.isEmpty (sTriggerMode) && StringUtils.isNotEmpty (sNickName))
+			{
+				sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.private-chat.nick-name." + sNickName);
+			}
 
 			if (StringUtils.isEmpty (sTriggerMode))
 			{	// 如果没有针对该聊天室单独设置，则寻找群聊的默认设置
 				sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.private-chat");
 				if (StringUtils.isEmpty (sTriggerMode))
 				{	// 如果也没有针对群聊的默认设置，则寻找全局的默认设置。如果全局默认设置也没有，则默认为 false
-					sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.default");
+					sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode");
 				}
 			}
 		}
 
 		if (StringUtils.isEmpty (sTriggerMode) || StringUtils.equalsIgnoreCase (sTriggerMode, "disabled") || StringUtils.equalsIgnoreCase (sTriggerMode, "none"))
+		{
 			return false;
+		}
 		else if (StringUtils.equalsIgnoreCase (sTriggerMode, "*") || StringUtils.equalsIgnoreCase (sTriggerMode, "any") || StringUtils.equalsIgnoreCase (sTriggerMode, "all"))
+		{
 			return true;
+		}
 		else if (StringUtils.equalsIgnoreCase (sTriggerMode, "@me"))
 		{
-			boolean bMentionedMe = StringUtils.containsIgnoreCase (sContent, "@" + sToName);
-			bEnabled = bMentionedMe;
+			bEnabled = isContentMentionedMe;
 		}
-		else if (StringUtils.equalsIgnoreCase (sTriggerMode, "@me") || StringUtils.equalsIgnoreCase (sTriggerMode, "@meFromStart"))
+		else if (StringUtils.equalsIgnoreCase (sTriggerMode, "@meFromStart"))
 		{
-			boolean bMentionedMeFromStart = StringUtils.startsWithIgnoreCase (sContent, "@" + sToName);
-			bEnabled = bMentionedMeFromStart;
+			bEnabled = isContentMentionedMeFirst;
 		}
 
 		return bEnabled;
@@ -1973,9 +2018,21 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 		final Object data2                        = datas.length > i ? datas[i] : null;	i++;
 		//*/
 		// 检查一下配置，看看是否该派送这个消息/事件
-		if (! true)
+		if (! IsDispatchEnabledForThisMessage
+			(
+				sEvent,
+				jsonNode,
+				jsonFrom, sFromAccount, sFromName, isFromMe,
+				jsonTo, sToAccount, sToName, isToMe,
+				jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom,
+				jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember,
+				jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person,
+				sContent, isContentMentionedMe, isContentMentionedMeFirst, datas
+			)
+		)
 		{
-
+net_maclife_wechat_http_BotApp.logger.warning ("因为配置匹配的原因，所以不把这条消息分发到机器人");
+			return;
 		}
 
 		boolean bMultithreadFromConfigFile = StringUtils.equalsIgnoreCase (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.dispatch.thread-mode", ""), "multithread");

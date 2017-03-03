@@ -1111,6 +1111,7 @@ logger.finest ("	" + mapRequestHeaders);
 			{
 				e.printStackTrace ();
 logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				TimeUnit.SECONDS.sleep (5);
 				continue;
 			}
 		}
@@ -1665,7 +1666,7 @@ logger.fine ("	" + fMediaFile);
 			return;
 
 		String sErrorMsg = GetJSONText (jsonBaseResponse, "ErrMsg");
-logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代码: " + nRet + " , 错误信息: " + sErrorMsg));
+logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代码: " + nRet + (StringUtils.isNotEmpty (sErrorMsg) ? ", 错误信息: " + sErrorMsg : "")));
 	}
 
 	/**
@@ -1940,7 +1941,7 @@ logger.warning ("app 线程退出");
 			return;
 
 		String sDriverClassName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.driver");	// , "com.mysql.jdbc.Driver"
-		String sURL = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.url");	// , "jdbc:mysql://localhost/WeChatBotEngine?autoReconnect=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull"
+		String sURL = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.url");	// , "jdbc:mysql://localhost/WeChatBotEngine?autoReconnect=true&amp;zeroDateTimeBehavior=convertToNull"
 		String sUserName = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.username");	// , "root"
 		String sPassword = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.password");
 		String sValidationQuery = net_maclife_wechat_http_BotApp.GetConfig ().getString ("app.jdbc.keep-alive-sql");
@@ -1967,11 +1968,11 @@ net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 		botDS.setUrl (sURL);
 		// 在 prepareCall 时报错:
 		// User does not have access to metadata required to determine stored procedure parameter types. If rights can not be granted, configure connection with "noAccessToProcedureBodies=true" to have driver generate parameters that represent INOUT strings irregardless of actual parameter types.
-		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=utf8mb4&amp;zeroDateTimeBehavior=convertToNull&amp;noAccessToProcedureBodies=true&amp;useInformationSchema=true"); // 没有作用
+		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;zeroDateTimeBehavior=convertToNull&amp;noAccessToProcedureBodies=true&amp;useInformationSchema=true"); // 没有作用
 
 		// http://thenullhandler.blogspot.com/2012/06/user-does-not-have-access-error-with.html // 没有作用
 		// http://bugs.mysql.com/bug.php?id=61203
-		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;characterEncoding=utf8mb4&amp;zeroDateTimeBehavior=convertToNull&amp;useInformationSchema=true");
+		//botDS.setUrl ("jdbc:mysql://192.168.2.1/bot?autoReconnect=true&amp;zeroDateTimeBehavior=convertToNull&amp;useInformationSchema=true");
 
 		botDS.setUsername (sUserName);
 		if (StringUtils.isNotEmpty (sPassword))
