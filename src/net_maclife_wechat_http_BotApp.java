@@ -639,6 +639,76 @@ logger.info (sb.toString ());
 		return System.currentTimeMillis () * 10000 + (nRecycledMessageID ++);
 	}
 
+	public static JsonNode MakeFullStatisticsReportRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount, JsonNode jsonData)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		if (jsonData==null || !(jsonData instanceof ArrayNode))
+		{
+			on.put ("Count", 0);
+			on.set ("List", jacksonObjectMapper_Strict.createArrayNode ());
+		}
+		else
+		{
+			ArrayNode arraynodeData = (ArrayNode) jsonData;
+			on.put ("Count", arraynodeData.size ());
+			on.set ("List", arraynodeData);
+		}
+		return on;
+	}
+	/**
+	 *
+	 * @param jsonData 可以为 null
+	 * @return
+	 */
+	public static JsonNode WebWeChatStatisticsReport (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount, JsonNode jsonData) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+logger.info ("发送统计报告到腾讯 = = …");
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatreport?fun=new";
+logger.fine ("WebWeChatStatisticsReport 的 URL:");
+logger.fine ("	" + sURL);
+
+		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
+		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
+logger.finer ("发送 WebWeChatStatisticsReport 的 http 请求消息头 (Content-Type):");
+logger.finer ("	" + mapRequestHeaders);
+
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullStatisticsReportRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount, jsonData));
+logger.finer ("发送 WebWeChatStatisticsReport 的 http 请求消息体:");
+logger.finer (sRequestBody_JSONString);
+		InputStream is = null;
+		JsonNode node = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				String sContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+				//is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+				//node = jacksonObjectMapper_Loose.readTree (is);
+				//is.close ();
+logger.fine ("获取 WebWeChatStatisticsReport 的 http 响应消息体:");	// 空内容
+logger.fine ("	" + sContent);
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
+
+		//ProcessBaseResponse (node, "WebWeChatStatisticsReport");	// 空内容
+
+		return node;
+	}
+	public static JsonNode WebWeChatStatisticsReport (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		return WebWeChatStatisticsReport (sUserID, sSessionID, sSessionKey, sPassTicket, sMyAccount, null);
+	}
+
 	public static JsonNode MakeFullStatusNotifyRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
@@ -1911,6 +1981,14 @@ logger.warning ("必须输入消息内容");
 						}
 						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
 						engine.SendTextMessage (sToAccount, sMessage);
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "StatReport") || StringUtils.equalsIgnoreCase (sCommand, "EmptyStatReport"))
+					{
+						engine.EmptyStatisticsReport ();
+					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "FakeStatReport"))
+					{
+						engine.FakeStatisticsReport ();
 					}
 					else
 					{

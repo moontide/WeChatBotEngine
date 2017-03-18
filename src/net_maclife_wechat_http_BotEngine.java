@@ -102,7 +102,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	}
 	*/
 
-	class KeepConnectionAliveTask extends TimerTask
+	class KeepSessionAliveTask extends TimerTask
 	{
 
 		@Override
@@ -112,7 +112,9 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 			{
 				try
 				{
-					StatusNotify ();	// 在微信网页版中观察到【可能是】因为调用了这个，微信网页版在登录 12 小时后不用重新登录。尝试一下… （或许是 pingd 接口？）
+					// 在微信网页版中观察到【可能是】因为调用了这个，微信网页版在登录 12 小时后不用重新登录。尝试一下… （或许是 pingd 接口？）
+					//StatisticsReport ();
+					FakeStatisticsReport ();
 				}
 				catch (Exception e)
 				{
@@ -124,8 +126,8 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 
 	}
 	Future<?> engineTask = null;
-	TimerTask timertaskKeepConnectionAlive = new KeepConnectionAliveTask ();
-	Timer timerKeepConnectionAlive = new Timer ();
+	TimerTask timertaskKeepSessionAlive = new KeepSessionAliveTask ();
+	Timer timerKeepSessionAlive = new Timer ();
 	List<net_maclife_wechat_http_Bot> listBots = new ArrayList<net_maclife_wechat_http_Bot> ();
 
 	boolean loggedIn  = false;
@@ -157,7 +159,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		bStopFlag = false;
 		LoadBots ();
 		engineTask = net_maclife_wechat_http_BotApp.executor.submit (this);
-		timerKeepConnectionAlive.schedule (timertaskKeepConnectionAlive, 8*3600*1000, 8*3600*1000);
+		timerKeepSessionAlive.schedule (timertaskKeepSessionAlive, net_maclife_wechat_http_BotApp.GetConfig ().getInt ("engine.keep-session-alive-timer.delay-minutes")*60*1000, net_maclife_wechat_http_BotApp.GetConfig ().getInt ("engine.keep-session-alive-timer.interval-minutes")*60*1000);
 	}
 
 	public void Stop ()
@@ -169,8 +171,8 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		{
 			engineTask.cancel (true);
 		}
-		timertaskKeepConnectionAlive.cancel ();
-		timerKeepConnectionAlive.cancel ();
+		timertaskKeepSessionAlive.cancel ();
+		timerKeepSessionAlive.cancel ();
 	}
 
 	public void LoadBot (String sBotClassName)
@@ -298,6 +300,30 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 	JsonNode Init () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		return net_maclife_wechat_http_BotApp.WebWeChatInit (sUserID, sSessionID, sSessionKey, sPassTicket);
+	}
+
+	JsonNode EmptyStatisticsReport () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		return net_maclife_wechat_http_BotApp.WebWeChatStatisticsReport (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession);
+	}
+
+	JsonNode FakeStatisticsReport () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		ArrayNode jsonFakeData = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Strict.createArrayNode ();
+		ObjectNode jsonFakeData_data1 = jsonFakeData.insertObject (0);
+		jsonFakeData_data1.put ("Type", 1);
+		ObjectNode jsonFakeData_data1_text = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Strict.createObjectNode ();
+		jsonFakeData_data1_text.put ("type", "[action-record]");
+		ObjectNode jsonFakeData_data1_text_data = jsonFakeData_data1_text.putObject ("data");
+		ArrayNode jsonFakeData_data1_text_data_actions = jsonFakeData_data1_text_data.putArray ("actions");
+		ObjectNode jsonFakeData_data1_text_data_actions_action1 = jsonFakeData_data1_text_data_actions.insertObject (0);
+			jsonFakeData_data1_text_data_actions_action1.put ("type", "resize");
+			jsonFakeData_data1_text_data_actions_action1.put ("time", System.currentTimeMillis ());
+			String sRandomFakeResizeAction = (net_maclife_wechat_http_BotApp.random.nextBoolean () ? "width" : "height") + "-" + (net_maclife_wechat_http_BotApp.random.nextBoolean () ? "bigger" : "smaller");
+			jsonFakeData_data1_text_data_actions_action1.put ("action", sRandomFakeResizeAction);
+		jsonFakeData_data1.put ("Text", net_maclife_wechat_http_BotApp.jacksonObjectMapper_Strict.writeValueAsString (jsonFakeData_data1_text));
+
+		return net_maclife_wechat_http_BotApp.WebWeChatStatisticsReport (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, jsonFakeData);
 	}
 
 	JsonNode StatusNotify () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
