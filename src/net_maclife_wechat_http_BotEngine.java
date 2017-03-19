@@ -100,7 +100,6 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 			}
 		}
 	}
-	*/
 
 	class KeepSessionAliveTask extends TimerTask
 	{
@@ -125,9 +124,12 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		}
 
 	}
+	*/
+
 	Future<?> engineTask = null;
-	TimerTask timertaskKeepSessionAlive = new KeepSessionAliveTask ();
-	Timer timerKeepSessionAlive = new Timer ();
+	//TimerTask timertaskKeepSessionAlive = new KeepSessionAliveTask ();
+	//Timer timerKeepSessionAlive = new Timer ();
+
 	List<net_maclife_wechat_http_Bot> listBots = new ArrayList<net_maclife_wechat_http_Bot> ();
 
 	boolean loggedIn  = false;
@@ -159,7 +161,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		bStopFlag = false;
 		LoadBots ();
 		engineTask = net_maclife_wechat_http_BotApp.executor.submit (this);
-		timerKeepSessionAlive.schedule (timertaskKeepSessionAlive, net_maclife_wechat_http_BotApp.GetConfig ().getInt ("engine.keep-session-alive-timer.delay-minutes")*60*1000, net_maclife_wechat_http_BotApp.GetConfig ().getInt ("engine.keep-session-alive-timer.interval-minutes")*60*1000);
+		//timerKeepSessionAlive.schedule (timertaskKeepSessionAlive, net_maclife_wechat_http_BotApp.GetConfig ().getInt ("engine.keep-session-alive-timer.delay-minutes")*60*1000, net_maclife_wechat_http_BotApp.GetConfig ().getInt ("engine.keep-session-alive-timer.interval-minutes")*60*1000);
 	}
 
 	public void Stop ()
@@ -171,8 +173,8 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 		{
 			engineTask.cancel (true);
 		}
-		timertaskKeepSessionAlive.cancel ();
-		timerKeepSessionAlive.cancel ();
+		//timertaskKeepSessionAlive.cancel ();
+		//timerKeepSessionAlive.cancel ();
 	}
 
 	public void LoadBot (String sBotClassName)
@@ -233,7 +235,7 @@ net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Gree
 		{
 			listBots.remove (bot);
 			bot.Stop ();
-net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Blue (bot.GetName () + " 机器人已被卸载"));
+net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Brown (bot.GetName () + " 机器人已被卸载"));
 		}
 		catch (Exception e)
 		{

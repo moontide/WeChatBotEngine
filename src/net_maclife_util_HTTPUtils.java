@@ -332,6 +332,17 @@ System.out.println (proxy);
 		return CURL_Connection (sURL, 0);
 	}
 
+	public static URLConnection CURL_Post_Connection (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData, int nTimeoutSeconds) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return (URLConnection)CURL ("POST", sURL, mapRequestHeaders, arrayPostData, true, true, null, true, nTimeoutSeconds, nTimeoutSeconds,
+				null, null, 0,
+				true, true, null, null, null, null, null, null
+			);
+	}
+	public static URLConnection CURL_Post_Connection (String sURL, Map<String, Object> mapRequestHeaders, byte[] arrayPostData) throws IOException, NoSuchAlgorithmException, KeyManagementException, KeyStoreException, CertificateException, UnrecoverableKeyException
+	{
+		return CURL_Post_Connection (sURL, mapRequestHeaders, arrayPostData, 0);
+	}
 	/**
 	 * 最简化版的 CURL - GET。
 	 * <ul>

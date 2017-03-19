@@ -491,17 +491,6 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		on.put ("DeviceID", sDeviceID);
 		return on;
 	}
-	public static String MakeBaseRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
-	{
-		return
-			"	{\n" +
-			"		\"Uin\": \"" + sUserID + "\",\n" +
-			"		\"Sid\": \"" + sSessionID + "\",\n" +
-			"		\"Skey\": \"" + sSessionKey + "\",\n" +
-			"		\"DeviceID\": \"" + sDeviceID + "\"\n" +
-			"	}" +
-			"";
-	}
 
 	public static JsonNode MakeFullBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
@@ -510,13 +499,6 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		return on;
 	}
 
-	public static String MakeFullBaseRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
-	{
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + "\n" +
-		"}\n";
-	}
 
 	public static String MakeDeviceID ()
 	{
@@ -719,17 +701,6 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		on.put ("ClientMsgId", GenerateLocalMessageID ());
 		return on;
 	}
-	public static String MakeFullStatusNotifyRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount)
-	{
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
-		"	\"Code\": 3,\n" +
-		"	\"FromUserName\": \"" + sMyAccount + "\",\n" +
-		"	\"ToUserName\": \"" + sMyAccount + "\",\n" +
-		"	\"ClientMsgId\": " + GenerateLocalMessageID () + "\n" +
-		"}\n";
-	}
 	public static JsonNode WebWeChatStatusNotify (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("开启状态通知 …");
@@ -867,30 +838,6 @@ logger.info (sb.toString ());
 		}
 		on.set ("List", an);
 		return on;
-	}
-	public static String MakeFullGetRoomContactRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomAccounts)
-	{
-		StringBuilder sbBody = new StringBuilder ();
-		sbBody.append ("{\n");
-		sbBody.append ("	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n");
-		sbBody.append ("	\"Count\": " + listRoomAccounts.size () + ",\n");
-		sbBody.append ("	\"List\":\n");
-		sbBody.append ("	[\n");
-		for (int i=0; i<listRoomAccounts.size (); i++)
-		{
-			sbBody.append ("		{\n");
-			sbBody.append ("			\"UserName\": \"" + listRoomAccounts.get (i) + "\",\n");
-			sbBody.append ("			\"EncryChatRoomAccount\": \"\"\n");
-			sbBody.append ("		}");
-			if (i != listRoomAccounts.size ()-1)
-			{
-				sbBody.append (",");
-			}
-			sbBody.append ("\n");
-		}
-		sbBody.append ("	]\n");
-		sbBody.append ("}\n");
-		return sbBody.toString ();
 	}
 
 	public static JsonNode WebWeChatGetRoomContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomAccounts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
@@ -1093,28 +1040,7 @@ logger.info (sb.toString ());
 		on.put ("rr", System.currentTimeMillis ()/1000);
 		return on;
 	}
-	public static String MakeFullWeChatSyncRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonSyncKey)
-	{
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
-		"	\"SyncKey\": " + jsonSyncKey + ",\n" +
-		"	\"rr\": " + System.currentTimeMillis ()/1000 + "\n" +
-		"}\n";
-	}
-	public static String MakeCookieValue (String sUserID, String sSessionID, String sAuthTicket, String sDataTicket, String s_webwxuvid, String s_wxloadtime, String s_mm_lang)
-	{
-		return
-			"wxuin=" + sUserID +
-			"; wxsid=" + sSessionID +
-			"; webwx_auth_ticket=" + sAuthTicket +
-			"; webwx_data_ticket=" + sDataTicket +
-			"; webwxuvid=" + s_webwxuvid +
-			"; wxloadtime=" + s_wxloadtime +
-			"; mm_lang=" + s_mm_lang +
-			";"
-			;
-	}
+
 	public static String MakeCookieValue (List<HttpCookie> listCookies)
 	{
 		StringBuilder sbResult = new StringBuilder ();
@@ -1220,18 +1146,39 @@ logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求�
 logger.finest ("	\n" + sRequestBody_JSONString);
 					InputStream is = null;
 					JsonNode node = null;
+					URLConnection http = null;
 					for (int i=0; i<nTryTimes; i++)
 					{
 						try
 						{
-							is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
-							node = jacksonObjectMapper_Loose.readTree (is);
-							jsonResult = node;
+							//is = net_maclife_util_HTTPUtils.CURL_Post_Stream (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+							//node = jacksonObjectMapper_Loose.readTree (is);
+							//jsonResult = node;
+							http = net_maclife_util_HTTPUtils.CURL_Post_Connection (sSyncURL, mapRequestHeaders, sRequestBody_JSONString.getBytes ());
+							int iResponseCode = ((HttpURLConnection)http).getResponseCode();
+							int iMainResponseCode = iResponseCode/100;
+							if (iMainResponseCode==2)
+							{
+								Map<String, List<String>> mapHeaders = http.getHeaderFields ();
+								cookieManager.put (new URI(sSyncURL), mapHeaders);
+								for (String sHeaderName : mapHeaders.keySet ())
+								{
+									if (StringUtils.equalsIgnoreCase (sHeaderName, "Set-Cookie"))
+									{
+logger.finer (net_maclife_util_ANSIEscapeTool.LightGreen ("获取 WebWeChatGetMessagePackage 中 webwxsync 设置的新 Cookie （保持会话不过期可能就指望它了）:"));
+										List<String> listCookieStrings = mapHeaders.get (sHeaderName);
+logger.finer ("	" + listCookieStrings);
+									}
+								}
 logger.info ("\n--------------------------------------------------");
 logger.finer ("获取 WebWeChatGetMessagePackage 中 webwxsync 的 http 响应消息体:");
 logger.finer ("\n" + node);
-							is.close ();
-							break;
+								is = http.getInputStream ();
+								node = jacksonObjectMapper_Loose.readTree (is);
+								jsonResult = node;
+								is.close ();
+								break;
+							}
 						}
 						//catch (UnknownHostException | SocketTimeoutException e)
 						catch (IOException e)
@@ -1351,7 +1298,7 @@ logger.fine ("发消息 WebWeChatSendMessage …");
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendEmotionMessageRequestJSONString (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendEmotionMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			default:
 				break;
@@ -1405,23 +1352,6 @@ logger.fine ("\n" + node);
 		on.set ("Msg", msg);
 		return on;
 	}
-	public static String MakeFullSendTextMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMessage)
-	{
-		long nLocalMessageID = GenerateLocalMessageID ();
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
-		"	\"Msg\":\n" +
-		"	{\n" +
-		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT + ",\n" +
-		"		\"Content\": \"" + StringUtils.replace (sMessage, "\"", "\\\"") + "\",\n" +
-		"		\"FromUserName\": \"" + sFrom + "\",\n" +
-		"		\"ToUserName\": \"" + sTo + "\",\n" +
-		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
-		"		\"ClientMsgId\": \"" + nLocalMessageID + "\"\n" +
-		"	}\n" +
-		"}\n";
-	}
 	public static JsonNode WebWeChatSendTextMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发文本消息:\n" + net_maclife_util_ANSIEscapeTool.Cyan (sMessage));
@@ -1443,24 +1373,6 @@ logger.info ("发文本消息:\n" + net_maclife_util_ANSIEscapeTool.Cyan (sMessa
 		on.set ("Msg", msg);
 		on.put ("Scene", 0);
 		return on;
-	}
-	public static String MakeFullSendImageMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
-	{
-		long nLocalMessageID = GenerateLocalMessageID ();
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
-		"	\"Msg\":\n" +
-		"	{\n" +
-		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE + ",\n" +
-		"		\"MediaId\": \"" + sMediaID + "\",\n" +
-		"		\"FromUserName\": \"" + sFrom + "\",\n" +
-		"		\"ToUserName\": \"" + sTo + "\",\n" +
-		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
-		"		\"ClientMsgId\": \"" + nLocalMessageID + "\"\n" +
-		"	},\n" +
-		"	\"Scene\": 0\n" +
-		"}\n";
 	}
 	public static JsonNode WebWeChatSendImageMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
@@ -1485,25 +1397,6 @@ logger.info ("发图片消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static String MakeFullSendEmotionMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
-	{
-		long nLocalMessageID = GenerateLocalMessageID ();
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
-		"	\"Msg\":\n" +
-		"	{\n" +
-		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION + ",\n" +
-		"		\"EmojiFlag\": 2,\n" +
-		"		\"EMotionMd5\": \"" + sMediaID + "\",\n" +
-		"		\"FromUserName\": \"" + sFrom + "\",\n" +
-		"		\"ToUserName\": \"" + sTo + "\",\n" +
-		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
-		"		\"ClientMsgId\": \"" + nLocalMessageID + "\"\n" +
-		"	},\n" +
-		"	\"Scene\": 0\n" +
-		"}\n";
-	}
 	public static JsonNode WebWeChatSendEmotionMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发表情图消息: " + sMediaID);
@@ -1526,24 +1419,6 @@ logger.info ("发表情图消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static String MakeFullSendVideoMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
-	{
-		long nLocalMessageID = GenerateLocalMessageID ();
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
-		"	\"Msg\":\n" +
-		"	{\n" +
-		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG + ",\n" +
-		"		\"MediaId\": \"" + sMediaID + "\",\n" +
-		"		\"FromUserName\": \"" + sFrom + "\",\n" +
-		"		\"ToUserName\": \"" + sTo + "\",\n" +
-		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
-		"		\"ClientMsgId\": \"" + nLocalMessageID + "\"\n" +
-		"	},\n" +
-		"	\"Scene\": 0\n" +
-		"}\n";
-	}
 	public static JsonNode WebWeChatSendVideoMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发视频消息: " + sMediaID);
@@ -1564,23 +1439,6 @@ logger.info ("发视频消息: " + sMediaID);
 			msg.put ("ClientMsgId", nLocalMessageID);
 		on.set ("Msg", msg);
 		return on;
-	}
-	public static String MakeFullSendApplicationMessageRequestJSONString (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sXMLMessage)
-	{
-		long nLocalMessageID = GenerateLocalMessageID ();
-		return
-		"{\n" +
-		"	\"BaseRequest\":\n" + MakeBaseRequestJSONString (sUserID, sSessionID, sSessionKey, sDeviceID) + ",\n" +
-		"	\"Msg\":\n" +
-		"	{\n" +
-		"		\"Type\": " + net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP + ",\n" +
-		"		\"Content\": \"" + sXMLMessage + "\",\n" +
-		"		\"FromUserName\": \"" + sFrom + "\",\n" +
-		"		\"ToUserName\": \"" + sTo + "\",\n" +
-		"		\"LocalID\": \"" + nLocalMessageID + "\",\n" +
-		"		\"ClientMsgId\": \"" + nLocalMessageID + "\"\n" +
-		"	}\n" +
-		"}\n";
 	}
 	public static JsonNode WebWeChatSendApplicationMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
