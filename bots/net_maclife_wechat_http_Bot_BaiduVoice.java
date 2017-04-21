@@ -239,7 +239,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 					JsonNode jsonResults = jsonNode.get ("result");
 					if (jsonResults.size () == 1)
 					{
-						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? "你" : sReplyToName_RoomMember) + " 说道:\n" + jsonResults.get (0).asText ());
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? sReplyToName : sReplyToName_RoomMember) + " 说道:\n" + jsonResults.get (0).asText ());
 						return
 							net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 							| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -253,7 +253,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 						sb.append (jsonResults.get (i).asText ());
 						sb.append ("\n");
 					}
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? "你" : sReplyToName_RoomMember) + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? sReplyToName : sReplyToName_RoomMember) + " 可能说了下面某句话:\n" + jsonResults.get (0).asText ());
 					return
 						net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 						| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -277,7 +277,7 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "产品线当前日请求数超过限额");
 					break;
 				default:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "听不清 " + (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? "你" : sReplyToName_RoomMember) + " 说了些啥: " + err_msg);
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "听不清 " + (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? sReplyToName : sReplyToName_RoomMember) + " 说了些啥: " + err_msg);
 					break;
 			}
 		}
