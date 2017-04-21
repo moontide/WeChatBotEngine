@@ -633,7 +633,25 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 	public JsonNode SearchForSingleMemberContactInRoom (String sRoomAccountInThisSession, String sRoomMemberAccountInThisSession, String sAliasAccount, String sDisplayName, String sNickName)
 	{
 		JsonNode jsonRoom = GetRoomByRoomAccount (sRoomAccountInThisSession);
-		return SearchForSingleMemberContactInRoom (jsonRoom, sRoomMemberAccountInThisSession, sAliasAccount, sDisplayName, sNickName);
+		JsonNode jsonRoomMemberContact = SearchForSingleMemberContactInRoom (jsonRoom, sRoomMemberAccountInThisSession, sAliasAccount, sDisplayName, sNickName);
+		if (jsonRoomMemberContact == null)
+		{
+			//这里要重新获取一下该群的通讯录，因为，可能是与新成员加入了
+			try
+			{
+				JsonNode jsonThisRoomContact = GetRoomContacts (sRoomAccountInThisSession);
+				if (jsonThisRoomContact != null)
+				{
+					ReplaceOrAddRoomContact (jsonThisRoomContact);
+					jsonRoomMemberContact = SearchForSingleMemberContactInRoom (jsonThisRoomContact, sRoomMemberAccountInThisSession, sAliasAccount, sDisplayName, sNickName);
+				}
+			}
+			catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return jsonRoomMemberContact;
 	}
 	public JsonNode SearchForSingleMemberContactInRoom (JsonNode jsonRoom, String sRoomMemberAccountInThisSession)
 	{
@@ -641,7 +659,8 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 	}
 	public JsonNode SearchForSingleMemberContactInRoom (String sRoomAccountInThisSession, String sRoomMemberAccountInThisSession)
 	{
-		return SearchForSingleMemberContactInRoom (sRoomAccountInThisSession, sRoomMemberAccountInThisSession, null, null, null);
+		JsonNode jsonRoomMemberContact = SearchForSingleMemberContactInRoom (sRoomAccountInThisSession, sRoomMemberAccountInThisSession, null, null, null);
+		return jsonRoomMemberContact;
 	}
 
 	public boolean IsRoomTextMessageMentionedMe (String sRoomTextMessage, String sMyDisplayNameInARoom)
@@ -738,26 +757,6 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 	{
 		if (jsonRoomMemberContact == null)
 			jsonRoomMemberContact = SearchForSingleMemberContactInRoom (sEncryptedRoomAccount, sEncryptedContactAccount);
-		if (jsonRoomMemberContact == null)
-		{
-			//这里要重新获取一下该群的通讯录，因为，可能是与新成员加入了
-			try
-			{
-				JsonNode jsonThisRoomContact = GetRoomContacts (sEncryptedRoomAccount);
-				if (jsonThisRoomContact != null)
-				{
-					ReplaceOrAddRoomContact (jsonThisRoomContact);
-					jsonRoomMemberContact = SearchForSingleMemberContactInRoom (jsonThisRoomContact, sEncryptedContactAccount);
-					return GetMemberContactNameInRoom (jsonRoomMemberContact);
-				}
-			}
-			catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e)
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return null;
-		}
 
 		return GetMemberContactNameInRoom (jsonRoomMemberContact);
 	}
@@ -1142,7 +1141,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 				if (StringUtils.isNotEmpty (sReplyToAccount_RoomMember))
 				{
 					jsonReplyTo_RoomMember = SearchForSingleMemberContactInRoom (sReplyToAccount, sReplyToAccount_RoomMember);
-					sReplyToName_RoomMember = GetMemberContactNameInRoom (sReplyToAccount, sReplyToAccount_RoomMember);
+					sReplyToName_RoomMember = GetMemberContactNameInRoom (jsonReplyTo_RoomMember);
 				}
 				//sReplyToName = GetMemberContactNameInRoom (sReplyToAccount, sReplyToAccount_RoomMember);	// 尽可能的取群昵称
 			}

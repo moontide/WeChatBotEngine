@@ -925,6 +925,8 @@ logger.info (sb.toString ());
 	 */
 	public static List<JsonNode> SearchForContacts (JsonNode jsonMemberList, String sEncryptedAccountInASession, String sAliasAccount, String sRemarkName, String sDisplayName, String sNickName)
 	{
+		if (jsonMemberList == null)
+			return null;
 		List<JsonNode> listUsersMatched = new ArrayList <JsonNode> ();
 		//JsonNode jsonUser = null;
 		for (int i=0; i<jsonMemberList.size (); i++)
@@ -1012,7 +1014,7 @@ logger.info (sb.toString ());
 	public static JsonNode SearchForSingleContact (JsonNode jsonMemberList, String sEncryptedAccountInThisSession, String sAlias, String sRemarkName, String sDisplayName, String sNickName)
 	{
 		List<JsonNode> listUsers = SearchForContacts (jsonMemberList, sEncryptedAccountInThisSession, sAlias, sRemarkName, sDisplayName, sNickName);
-		return listUsers.size ()==0 ? null : listUsers.get (0);
+		return (listUsers==null || listUsers.size ()==0) ? null : listUsers.get (0);
 	}
 
 	public static String MakeSyncCheckKeysQueryString (JsonNode jsonSyncCheckKeys)
@@ -1159,6 +1161,7 @@ logger.finest ("	\n" + sRequestBody_JSONString);
 							int iMainResponseCode = iResponseCode/100;
 							if (iMainResponseCode==2)
 							{
+logger.info ("\n--------------------------------------------------");
 								Map<String, List<String>> mapHeaders = http.getHeaderFields ();
 								cookieManager.put (new URI(sSyncURL), mapHeaders);
 								for (String sHeaderName : mapHeaders.keySet ())
@@ -1170,11 +1173,11 @@ logger.finer (net_maclife_util_ANSIEscapeTool.LightGreen ("获取 WebWeChatGetMe
 logger.finer ("	" + listCookieStrings);
 									}
 								}
-logger.info ("\n--------------------------------------------------");
+
 logger.finer ("获取 WebWeChatGetMessagePackage 中 webwxsync 的 http 响应消息体:");
-logger.finer ("\n" + node);
 								is = http.getInputStream ();
 								node = jacksonObjectMapper_Loose.readTree (is);
+logger.finer ("\n" + node);
 								jsonResult = node;
 								is.close ();
 								break;
