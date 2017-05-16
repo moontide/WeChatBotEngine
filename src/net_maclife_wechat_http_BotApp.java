@@ -104,6 +104,8 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 		fMediaFilesDirectory.mkdirs ();
 	}
 
+	public static String sSessionCacheFileName = cacheDirectory + File.separator + "wechat-session-cache.json";
+	public static String sCookiesCacheFileName = cacheDirectory + File.separator + "wechat-cookie-cache.json";
 
 	static ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	static ScriptEngine public_jse = scriptEngineManager.getEngineByName("JavaScript");
@@ -840,7 +842,7 @@ logger.info (sb.toString ());
 		return on;
 	}
 
-	public static JsonNode WebWeChatGetRoomContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomAccounts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatGetRoomsContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomAccounts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("获取 " + listRoomAccounts.size () + " 个聊天室的联系人 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
@@ -1002,14 +1004,14 @@ logger.info (sb.toString ());
 	}
 
 	/**
-	 * 查找
+	 * 搜索并返回符合条件的第一个联系人，如果没有搜到符合条件的联系人，则返回 <code>null</code>。
 	 * @param jsonMemberList
 	 * @param sEncryptedAccountInThisSession
 	 * @param sAlias
 	 * @param sRemarkName
 	 * @param sDisplayName
 	 * @param sNickName
-	 * @return
+	 * @return 返回符合条件的第一个联系人，如果没有搜到符合条件的联系人，则返回 <code>null</code>
 	 */
 	public static JsonNode SearchForSingleContact (JsonNode jsonMemberList, String sEncryptedAccountInThisSession, String sAlias, String sRemarkName, String sDisplayName, String sNickName)
 	{
@@ -1964,7 +1966,7 @@ net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 	{
 		if (node==null || node.get (sFieldName)==null)
 			return sDefault;
-		return node.get (sFieldName).asText ();
+		return node.get (sFieldName).asText (sDefault);
 	}
 	public static String GetJSONText (JsonNode node, String sFieldName)
 	{
@@ -1975,11 +1977,22 @@ net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 	{
 		if (node==null || node.get (sFieldName)==null)
 			return nDefault;
-		return node.get (sFieldName).asInt ();
+		return node.get (sFieldName).asInt (nDefault);
 	}
 	public static int GetJSONInt (JsonNode node, String sFieldName)
 	{
 		return GetJSONInt (node, sFieldName, -1);
+	}
+
+	public static long GetJSONLong (JsonNode node, String sFieldName, long nDefault)
+	{
+		if (node==null || node.get (sFieldName)==null)
+			return nDefault;
+		return node.get (sFieldName).asLong (nDefault);
+	}
+	public static long GetJSONLong (JsonNode node, String sFieldName)
+	{
+		return GetJSONLong (node, sFieldName, -1L);
 	}
 
 

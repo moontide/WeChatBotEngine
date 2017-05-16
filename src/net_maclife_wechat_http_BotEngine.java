@@ -24,7 +24,6 @@ import nu.xom.*;
  */
 class net_maclife_wechat_http_BotEngine implements Runnable
 {
-	public static String sSessionCacheFileName = net_maclife_wechat_http_BotApp.cacheDirectory + File.separator + "wechat-session-cache.json";
 	// 几种 Bot 链处理方式标志（Bot 链处理方式仅仅在 ${engine.message.dispatch.thread-mode} 配置为【单线程/共享线程】时才有用）。组合值列表：
 	// 0: 本 Bot 没处理，后面的 Bot 也别处理了
 	// 1: 本 Bot 已处理，后面的 Bot 别处理了
@@ -338,16 +337,20 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 		return net_maclife_wechat_http_BotApp.WebWeChatGetContacts (sUserID, sSessionID, sSessionKey, sPassTicket);
 	}
 
-	JsonNode GetRoomContacts (List<String> listRoomAccounts) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	JsonNode GetRoomsContactsFromServer (List<String> listRoomAccounts) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatGetRoomContacts (sUserID, sSessionID, sSessionKey, sPassTicket, listRoomAccounts);
+		return net_maclife_wechat_http_BotApp.WebWeChatGetRoomsContacts (sUserID, sSessionID, sSessionKey, sPassTicket, listRoomAccounts);
 	}
 
-	JsonNode GetRoomContacts (String sRoomAccount) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	JsonNode GetRoomContactFromServer (String sRoomAccount) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		List<String> listRoomAccounts = new ArrayList<String> ();
 		listRoomAccounts.add (sRoomAccount);
-		return GetRoomContacts (listRoomAccounts);
+		JsonNode jn = GetRoomsContactsFromServer (listRoomAccounts);
+		if (jn!=null && jn.get ("ContactList")!=null && jn.get ("ContactList").size ()>=1)
+			return jn.get ("ContactList").get (0);
+		else
+			return null;
 	}
 
 	JsonNode GetMessagePackage (JsonNode jsonSyncCheckKeys) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, URISyntaxException, InterruptedException
@@ -592,26 +595,27 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		return null;
 	}
 
-	public JsonNode GetRoomByRoomAccount (String sRoomAccount)
+	public JsonNode GetRoomByRoomAccount (String sRoomAccount, boolean bReadCacheFirst)
 	{
-		JsonNode jsonRooms = jsonRoomsContacts.get ("ContactList");
 		JsonNode jsonRoom = null;
-		for (int i=0; i<jsonRooms.size (); i++)
+		JsonNode jsonRoomsList = jsonRoomsContacts.get ("ContactList");
+		if (bReadCacheFirst)
 		{
-			jsonRoom = jsonRooms.get (i);
-			if (StringUtils.equalsIgnoreCase (sRoomAccount, net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "UserName")))
-				return jsonRoom;
+			for (int i=0; i<jsonRoomsList.size (); i++)
+			{
+				jsonRoom = jsonRoomsList.get (i);
+				if (StringUtils.equalsIgnoreCase (sRoomAccount, net_maclife_wechat_http_BotApp.GetJSONText (jsonRoom, "UserName")))
+					return jsonRoom;
+			}
 		}
 
 		// 如果找不到聊天室，则尝试重新获取一次
 		try
 		{
-			JsonNode jsonThisRoomContact = GetRoomContacts (sRoomAccount);
-			JsonNode jsonThisRooms = jsonThisRoomContact.get ("ContactList");
-			if (jsonThisRooms.size () == 1)
+			jsonRoom = GetRoomContactFromServer (sRoomAccount);
+			if (jsonRoom != null)
 			{
-				jsonRoom = jsonThisRooms.get (0);
-				((ArrayNode)jsonRooms).add (jsonRoom);
+				((ArrayNode)jsonRoomsList).add (jsonRoom);
 				return jsonRoom;
 			}
 		}
@@ -621,32 +625,43 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		}
 		return null;
 	}
+	public JsonNode GetRoomByRoomAccount (String sRoomAccount)
+	{
+		return GetRoomByRoomAccount (sRoomAccount, true);
+	}
+
 	public List<JsonNode> SearchForContactsInRoom (String sRoomAccountInThisSession, String sRoomMemberAccountInThisSession, String sAliasAccount, String sDisplayName, String sNickName)
 	{
 		JsonNode jsonRoom = GetRoomByRoomAccount (sRoomAccountInThisSession);
-		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonRoom.get ("MemberList"), sRoomMemberAccountInThisSession, sAliasAccount, null, sDisplayName, sNickName);
+		JsonNode jsonList = jsonRoom.get ("MemberList");
+		return net_maclife_wechat_http_BotApp.SearchForContacts (jsonList, sRoomMemberAccountInThisSession, sAliasAccount, null, sDisplayName, sNickName);
 	}
 	public JsonNode SearchForSingleMemberContactInRoom (JsonNode jsonRoom, String sRoomMemberAccountInThisSession, String sAliasAccount, String sDisplayName, String sNickName)
 	{
-		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonRoom.get ("MemberList"), sRoomMemberAccountInThisSession, sAliasAccount, null, sDisplayName, sNickName);
+		JsonNode jsonList = jsonRoom.get ("MemberList");
+		return net_maclife_wechat_http_BotApp.SearchForSingleContact (jsonList, sRoomMemberAccountInThisSession, sAliasAccount, null, sDisplayName, sNickName);
 	}
 	public JsonNode SearchForSingleMemberContactInRoom (String sRoomAccountInThisSession, String sRoomMemberAccountInThisSession, String sAliasAccount, String sDisplayName, String sNickName)
 	{
+//net_maclife_wechat_http_BotApp.logger.info ("在聊天室 (帐号=" + sRoomAccountInThisSession + ") 中寻找联系人 (帐号=" + sRoomMemberAccountInThisSession + (StringUtils.isEmpty (sAliasAccount) ? "" : "，自定义帐号=" + sAliasAccount) + (StringUtils.isEmpty (sDisplayName) ? "" : "，群备注名=" + sDisplayName) + (StringUtils.isEmpty (sNickName) ? "" : "，昵称=" + sNickName) + ")");
 		JsonNode jsonRoom = GetRoomByRoomAccount (sRoomAccountInThisSession);
+//net_maclife_wechat_http_BotApp.logger.info ("找到的聊天室=\n" + jsonRoom);
 		JsonNode jsonRoomMemberContact = SearchForSingleMemberContactInRoom (jsonRoom, sRoomMemberAccountInThisSession, sAliasAccount, sDisplayName, sNickName);
+//net_maclife_wechat_http_BotApp.logger.info (jsonRoomMemberContact == null ? "未找到群成员" : "找到的群成员=\n" + jsonRoomMemberContact);
 		if (jsonRoomMemberContact == null)
 		{
 			//这里要重新获取一下该群的通讯录，因为，可能是与新成员加入了
 			try
 			{
-				JsonNode jsonThisRoomContact = GetRoomContacts (sRoomAccountInThisSession);
-				if (jsonThisRoomContact != null)
+				JsonNode jsonContactForThisRoom = GetRoomByRoomAccount (sRoomAccountInThisSession, false);
+//net_maclife_wechat_http_BotApp.logger.finer ("重新获取的聊天室信息=\n" + jsonContactForThisRoom);
+				if (jsonContactForThisRoom != null)
 				{
-					ReplaceOrAddRoomContact (jsonThisRoomContact);
-					jsonRoomMemberContact = SearchForSingleMemberContactInRoom (jsonThisRoomContact, sRoomMemberAccountInThisSession, sAliasAccount, sDisplayName, sNickName);
+					jsonRoomMemberContact = SearchForSingleMemberContactInRoom (jsonContactForThisRoom, sRoomMemberAccountInThisSession, sAliasAccount, sDisplayName, sNickName);
+//net_maclife_wechat_http_BotApp.logger.fine ("在重新获取的聊天室中找到的联系人=\n" + jsonRoomMemberContact);
 				}
 			}
-			catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e)
+			catch (Exception e)
 			{
 				e.printStackTrace();
 			}
@@ -768,36 +783,36 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 	/**
 	 * 用 jsonRoomContact 取代当前群列表中相同 "UserName" 的原群，如果找不到原来的群（比如：未添加到通讯录的群联系人）。
 	 * 主要用于 ModContact 事件更新联系人
-	 * @param jsonRoomContact
+	 * @param jsonNewRoomContact
 	 * @return 如果找不到原来的联系人，则将该联系人加入到通讯录中，并返回该新联系人。 如果找到并替换，则原样返回被替换的原来的联系人信息
 	 */
-	public JsonNode ReplaceOrAddRoomContact (JsonNode jsonRoomContact)
+	public JsonNode ReplaceOrAddRoomContact (JsonNode jsonNewRoomContact)
 	{
 		if (jsonRoomsContacts == null)
 			return null;
-		JsonNode jsonContactsList = jsonRoomsContacts.get ("ContactList");
+		ArrayNode jsonContactsList = (ArrayNode)jsonRoomsContacts.get ("ContactList");
 		if (jsonContactsList == null)
 			return null;
-		String sAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomContact, "UserName");
+		String sAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonNewRoomContact, "UserName");
 		for (int i=0; i<jsonContactsList.size (); i++)
 		{
 			JsonNode jsonOldContact = jsonContactsList.get (i);
 			if (StringUtils.equalsIgnoreCase (sAccount, net_maclife_wechat_http_BotApp.GetJSONText (jsonOldContact, "UserName")))
 			{
-				((ArrayNode)jsonContactsList).set (i, jsonRoomContact);
+				jsonContactsList.set (i, jsonNewRoomContact);
 				return jsonOldContact;
 				//break;
 			}
 		}
-		((ArrayNode)jsonContactsList).add (jsonRoomContact);
-		return jsonRoomContact;
+		jsonContactsList.add (jsonNewRoomContact);
+		return jsonNewRoomContact;
 	}
 
 
 
 	private JsonNode GetSessionCache () throws JsonProcessingException, IOException
 	{
-		File fSessionCache = new File (sSessionCacheFileName);
+		File fSessionCache = new File (net_maclife_wechat_http_BotApp.sSessionCacheFileName);
 		return net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (fSessionCache);
 	}
 
@@ -805,18 +820,65 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 	{
 		try
 		{
-			String sSessionCache_JSONString =
-				"{\n\tUserID: \"" + sUserID + "\"" +
-				",\n	SessionID: \"" + sSessionID + "\"" +
-				",\n	SessionKey: \"" + sSessionKey + "\"" +
-				",\n	PassTicket: \"" + sPassTicket + "\"" +
-				",\n	SyncCheckKeys: " + jsonSyncCheckKey +
-				",\n	EncryptedAccountInThisSession: \"" + sMyEncryptedAccountInThisSession + "\"" +
-				",\n	CustomAccount: \"" + sMyCustomAccount + "\"" +
-				",\n	NickName: \"" + sMyNickName + "\"" +
-				"\n}";
+			ObjectNode jsonSessionCache = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.createObjectNode ();
+			jsonSessionCache.put ("UserID", sUserID);
+			jsonSessionCache.put ("SessionID", sSessionID);
+			jsonSessionCache.put ("SessionKey", sSessionKey);
+			jsonSessionCache.put ("PassTicket", sPassTicket);
+			jsonSessionCache.set ("SyncCheckKeys", jsonSyncCheckKey);
+			jsonSessionCache.put ("EncryptedAccountInThisSession", sMyEncryptedAccountInThisSession);
+			jsonSessionCache.put ("CustomAccount", sMyCustomAccount);
+			jsonSessionCache.put ("NickName", sMyNickName);
+
+			String sSessionCache_JSONString = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.writerWithDefaultPrettyPrinter ().writeValueAsString (jsonSessionCache);
+
 			OutputStream os = new FileOutputStream (fSessionCache);
 			IOUtils.write (sSessionCache_JSONString, os, net_maclife_wechat_http_BotApp.utf8);
+			os.close ();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+	}
+
+
+
+	private JsonNode GetCookiesCache () throws JsonProcessingException, IOException
+	{
+		File fCookieCache = new File (net_maclife_wechat_http_BotApp.sCookiesCacheFileName);
+		return net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (fCookieCache);
+	}
+
+	private void SaveCookiesCache (File fCookiesCache)
+	{
+		try
+		{
+			ArrayNode jsonCookies = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.createArrayNode ();
+			CookieStore cookieStore = net_maclife_wechat_http_BotApp.cookieManager.getCookieStore ();
+			List<HttpCookie> listCookies = cookieStore.getCookies ();
+			for (HttpCookie cookie : listCookies)
+			{
+				ObjectNode jsonCookie = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.createObjectNode ();
+				jsonCookie.put ("name", cookie.getName ());
+				jsonCookie.put ("value", cookie.getValue ());
+				jsonCookie.put ("domain", cookie.getDomain ());
+				jsonCookie.put ("path", cookie.getPath ());
+				jsonCookie.put ("maxAge", cookie.getMaxAge ());
+				jsonCookie.put ("secure", cookie.getSecure ());
+				jsonCookie.put ("version", cookie.getVersion ());
+				jsonCookie.put ("discard", cookie.getDiscard ());
+				jsonCookie.put ("portlist", cookie.getPortlist ());
+				jsonCookie.put ("comment", cookie.getComment ());
+				jsonCookie.put ("commentURL", cookie.getCommentURL ());
+				jsonCookie.put ("httpOnly", cookie.isHttpOnly ());
+
+				jsonCookies.add (jsonCookie);
+			}
+			String sCookieCache_JSONString = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.writerWithDefaultPrettyPrinter ().writeValueAsString (jsonCookies);
+
+			OutputStream os = new FileOutputStream (fCookiesCache);
+			IOUtils.write (sCookieCache_JSONString, os, net_maclife_wechat_http_BotApp.utf8);
 			os.close ();
 		}
 		catch (Exception e)
@@ -845,7 +907,34 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 				JsonNode jsonSyncCheckKeys = null;
 				try
 				{
-					File fSessionCache = new File (sSessionCacheFileName);
+					File fSessionCache = new File (net_maclife_wechat_http_BotApp.sSessionCacheFileName);
+					File fCookiesCache = new File (net_maclife_wechat_http_BotApp.sCookiesCacheFileName);
+					if (fCookiesCache.exists ())
+					{
+						JsonNode jsonCookieCache = GetCookiesCache ();
+						JsonNode jsonCookies = jsonCookieCache;
+						// 要把 Cookie 恢复出来，以尽可能让缓存的会话有效。当然，距离上一次退出后，如果是长时间未登录，即使是有 Cookie 也未必会让会话有效了。
+						CookieStore cookieStore = net_maclife_wechat_http_BotApp.cookieManager.getCookieStore ();
+						if (jsonCookies!=null)
+						{
+							for (JsonNode jsonCookie : (ArrayNode)jsonCookies)
+							{
+								HttpCookie cookie = new HttpCookie (net_maclife_wechat_http_BotApp.GetJSONText (jsonCookie, "name"), net_maclife_wechat_http_BotApp.GetJSONText (jsonCookie, "value"));
+								cookie.setDomain (net_maclife_wechat_http_BotApp.GetJSONText (jsonCookie, "domain"));
+								cookie.setPath (net_maclife_wechat_http_BotApp.GetJSONText (jsonCookie, "path"));
+								cookie.setMaxAge (net_maclife_wechat_http_BotApp.GetJSONLong (jsonCookie, "maxAge"));
+								cookie.setSecure (jsonCookie.get ("secure").asBoolean ());
+								cookie.setVersion (net_maclife_wechat_http_BotApp.GetJSONInt (jsonCookie, "version"));
+								cookie.setDiscard (jsonCookie.get ("discard").asBoolean ());
+								cookie.setPortlist (net_maclife_wechat_http_BotApp.GetJSONText (jsonCookie, "portlist"));
+								cookie.setComment (net_maclife_wechat_http_BotApp.GetJSONText (jsonCookie, "comment"));
+								cookie.setCommentURL (net_maclife_wechat_http_BotApp.GetJSONText (jsonCookie, "commentURL"));
+								cookie.setHttpOnly (jsonCookie.get ("httpOnly").asBoolean ());
+
+								cookieStore.add (null, cookie);
+							}
+						}
+					}
 					if (!bSessionExpired && fSessionCache.exists () && ((fSessionCache.lastModified () + 12 * 3600 * 1000) > System.currentTimeMillis ()))	// 目前的微信 Session 只有 12 小时的生命
 					{
 						JsonNode jsonSessionCache = GetSessionCache ();
@@ -909,6 +998,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 						sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "NickName");
 						jsonSyncCheckKeys = jsonInit.get ("SyncKey");
 						SaveSessionCache (fSessionCache, jsonSyncCheckKeys);
+						SaveCookiesCache (fCookiesCache);
 					}
 
 					JsonNode jsonStatusNotify = StatusNotify ();
@@ -916,7 +1006,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 					// 5. 获取联系人
 					jsonContacts = GetContacts ();
 					List<String> listRoomAccounts = net_maclife_wechat_http_BotApp.GetRoomAccountsFromContacts (jsonContacts);
-					jsonRoomsContacts = GetRoomContacts (listRoomAccounts);	// 补全各个群的联系人列表
+					jsonRoomsContacts = GetRoomsContactsFromServer (listRoomAccounts);	// 补全各个群的联系人列表
 
 					// 触发“已登录”事件
 					OnLoggedIn ();
@@ -953,6 +1043,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 							// 处理“接收”到的（实际是同步获取而来）消息
 							jsonSyncCheckKeys = jsonMessagePackage.get ("SyncCheckKey");	// 新的 SyncCheckKeys
 							SaveSessionCache (fSessionCache, jsonSyncCheckKeys);
+							SaveCookiesCache (fCookiesCache);
 
 							// 处理（实际上，应该交给 Bot 们处理）
 							OnMessagePackageReceived (jsonMessagePackage);
@@ -1753,33 +1844,35 @@ net_maclife_wechat_http_BotApp.logger.info ("请求加好友消息: \n" + sb);
 		String sTargetAccount = null;
 		try
 		{
-			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
-			Element msg = doc.getRootElement ();
-			Element op = msg.getFirstChildElement ("op");
-			sOperationType = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (op, "id");
-			switch (sOperationType)
+			if (StringUtils.isNotEmpty (sContent))	// 北京时间 2017-04-27 17:44 之后，取到的内容变成空的了，再也不能通过这个消息获得“明文ID”了
 			{
-				case "2":	// 微信手机端打开一个聊天窗口时收到该类型的消息
+				nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
+				Element msg = doc.getRootElement ();
+				Element op = msg.getFirstChildElement ("op");
+				sOperationType = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (op, "id");
+				switch (sOperationType)
+				{
+					case "2":	// 微信手机端打开一个聊天窗口时收到该类型的消息
 //<msg>
 //	<op id='2'>
 //		<username>未加密的帐号（打开的联系人的帐号）</username>
 //	</op>
 //</msg>
-					sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
+						sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
 net_maclife_wechat_http_BotApp.logger.info ("手机端打开了新的聊天窗口，联系人/聊天室的未加密的帐号：" + sTargetAccount);
-					DispatchEvent ("OnChatWindowOpenedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sTargetAccount);
-					break;
-				case "5":	// 微信手机端关闭（后退）订阅号列表窗口时收到该类型的消息
+						DispatchEvent ("OnChatWindowOpenedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sTargetAccount);
+						break;
+					case "5":	// 微信手机端关闭（后退）订阅号列表窗口时收到该类型的消息
 //<msg>
 //	<op id='5'>
 //		<username>未加密的帐号（打开的联系人的帐号）</username>
 //	</op>
 //</msg>
-					sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
+						sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
 net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表窗口，之前打开联系人/聊天室的未加密的帐号：" + sTargetAccount);
-					DispatchEvent ("OnChatWindowOpenedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sTargetAccount);
-					break;
-				case "4":
+						DispatchEvent ("OnChatWindowOpenedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sTargetAccount);
+						break;
+					case "4":
 //<msg>
 //	<op id='4'>
 //		<username>
@@ -1802,8 +1895,9 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 //		</unreadfunctionlist>
 //	</op>
 //</msg>
-					sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
-					break;
+						sTargetAccount = net_maclife_wechat_http_BotApp.GetXMLValue (op, "username");
+						break;
+				}
 			}
 		}
 		catch (ParsingException | IOException e)
