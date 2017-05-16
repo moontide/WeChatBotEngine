@@ -10,13 +10,13 @@ import org.jsoup.select.*;
 import com.fasterxml.jackson.databind.*;
 
 /**
- * 把所有 emoji 字符都显示出来的测试 Bot。
+ * 通过 emoji 命令，来查询并显示 emoji 字符的 Bot。
  * <p>
  * 注意：当在手机上发 emoji 表情时，比如：😞，web 端收到的是类似 <code>&lt;span class="emoji emoji1f612"&gt;&lt;/span&gt;</code> 这样的文字（难道微信担心 Web 版在不同浏览器下表现不一致？）。
  * 手机微信上的 emoji 字符的显示，应该是（猜测）手机操作系统自己显示的，比如 android ios 用系统内置的 emoji 字体来显示（再说一遍，是猜测）。
  * </p>
  * <p>
- * emoji 数据库是从 http://unicode.org/emoji/charts/full-emoji-list.html (这个 html 有 36M 大小！！！) 获取并用一个专门的程序写入的。
+ * emoji 数据库是从 http://unicode.org/emoji/charts/full-emoji-list.html (这个 html 有 36M 大小！！！) 获取，然后通过本程序生成 SQL 脚本文件，然后执行该 SQL 脚本文件写入的。
  * </p>
  * @author liuyan
  *

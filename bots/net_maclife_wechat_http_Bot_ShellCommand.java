@@ -88,7 +88,7 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 					// 只有命令时，打印帮助信息
 					if (StringUtils.isEmpty (sCommandParametersInputed))
 					{
-						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 需要指定要执行的命令。\n\n用法:\n" + sCommand + "[.行数][.stderr][.t=超时秒数]  <系统命令> [及其参数]...\n\n.行数：用来指定最多返回该命令的输出内容的行数。如 .3 最多返回前 3 行。\n.stderr: stderr 与 stdout 合并。\n.t=超时秒数: 设置进程的超时时长");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 需要指定要执行的命令。\n\n用法:\n" + sCommand + "[.行数][.stderr][.t=超时秒数][.ll]  <系统命令> [及其参数]...\n\n.行数：用来指定最多返回该命令的输出内容的行数。如 .3 最多返回前 3 行。\n.stderr: stderr 与 stdout 合并。\n.t=超时秒数: 设置进程的超时时长\n.ll 或 .lbl、.rt、.rtr、.zss、.ss、.准实时、.实时 是打开准实时输出的选项，当命令执行时间过长时，可以利用该选项“准实时”获得输出 -- 一行一个输出，这可能会比较扰人。");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
 
