@@ -1924,11 +1924,18 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
 			Element sysmsg = doc.getRootElement ();
 			Element revokemsg = sysmsg.getFirstChildElement ("revokemsg");
-			String sMsgID_oldversion = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "oldmsgid");
-			String sRevokedMsgID = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "msgid");
+			String sPeerAccount = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "session");
+			String sRevokedMsgID = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "oldmsgid");
+			String sMsgIDOfTheRevokeMsg = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "msgid");
 			String sReplacedByMsg = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "replacemsg");
 
 			StringBuilder sb = new StringBuilder ();
+			if (StringUtils.isNotEmpty (sPeerAccount))
+			{
+				sb.append ("对方的明文帐号: ");
+				sb.append (sPeerAccount);
+				sb.append ("\n");
+			}
 			if (StringUtils.isNotEmpty (sRevokedMsgID))
 			{
 				sb.append ("被撤回的消息ID: ");
@@ -1942,7 +1949,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 				sb.append ("\n");
 			}
 net_maclife_wechat_http_BotApp.logger.info ("“消息已撤回”消息：\n" + sb);
-			DispatchEvent ("OnMessageIsRevokedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sRevokedMsgID, sReplacedByMsg);
+			DispatchEvent ("OnMessageIsRevokedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sMsgIDOfTheRevokeMsg, sReplacedByMsg);
 		}
 		catch (ParsingException | IOException e)
 		{
