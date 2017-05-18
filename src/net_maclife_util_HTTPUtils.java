@@ -586,4 +586,35 @@ System.out.println (proxy);
 		String[] arrayMimeParts = arrayContentTypeParts[0].split ("/");
 		return arrayMimeParts[1];
 	}
+
+	/**
+	 * 从 HTTPURLConnection 中获取响应的字符集编码。
+	 * 首先，将从 getContentEncoding() 中获取，若有，则返回该字符集编码。若没有，则继续从 getContentType() 中获取，若取的到，则返回该字符集编码，否则，返回默认字符集编码。
+	 * @param http
+	 * @param sDefaultCharset
+	 * @return
+	 */
+	public static String GetContentEncodingFromHTTPHead (HttpURLConnection http, String sDefaultCharset)
+	{
+		String sCharset = http.getContentEncoding ();
+		if (sCharset != null)
+			return sCharset;
+		String sContentType = http.getContentType ();
+		if (sContentType == null)
+			return sDefaultCharset;
+
+		String[] arrayContentTypeItems = sContentType.split(";");
+
+		for (int i=1; i<arrayContentTypeItems.length; i++)
+		{
+			String sAttributeString = arrayContentTypeItems[i].trim();
+
+			if (sAttributeString.toLowerCase().startsWith("charset="))
+			{
+				sCharset = sAttributeString.substring("charset=".length());
+				return sCharset;
+			}
+		}
+		return sDefaultCharset;
+	}
 }
