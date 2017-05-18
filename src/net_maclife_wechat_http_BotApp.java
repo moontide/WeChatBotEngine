@@ -916,7 +916,7 @@ logger.info (sb.toString ());
 	/**
 	 * 从 WebWeChatGetContacts 返回的 JsonNode 中的 MemberList 中找出符合条件的联系人。
 	 * 只要指定了 sEncryptedAccountInASession，就会搜到唯一一个联系人（除非给出的 ID 不正确），
-	 * 如果没指定 sEncryptedAccountInASession (null 或空字符串)，则尽可能全部指定 sAlias、sRemarkName、sNickName，以便更精确的匹配联系人。
+	 * 如果没指定 sEncryptedAccountInASession (null 或空字符串)，则尽可能全部指定 sAlias、sRemarkName、sNickName，以便更精确的匹配（即：匹配到的人数量尽可能只有 1 个）联系人。
 	 * @param jsonMemberList
 	 * @param sEncryptedAccountInASession 类似  @********** filehelper weixin 等 ID，可以唯一对应一个联系人。最高优先级。
 	 * @param sAliasAccount 自定义帐号。如果 UserIDInThisSession 为空，则尝试根据 sAlias 获取。次优先级。
@@ -929,19 +929,27 @@ logger.info (sb.toString ());
 	{
 		if (jsonMemberList == null)
 			return null;
-		List<JsonNode> listUsersMatched = new ArrayList <JsonNode> ();
-		//JsonNode jsonUser = null;
+		List<JsonNode> listContactsMatched = new ArrayList <JsonNode> ();
+		List<Integer> listNonUniqueContactsWeights = new ArrayList <Integer> ();
+
+		if (jsonMemberList.size () > 0xFFFFFF)
+		{
+logger.severe ("联系人数量超过 0xFFFFFF" + 0xFFFFFF + " 个，这样可能会导致搜索联系人出问题 -- 无法获取到正确的联系人、排序权重也不正确。");
+		}
+
 		for (int i=0; i<jsonMemberList.size (); i++)
 		{
 			JsonNode node = jsonMemberList.get (i);
+
+			int nMatchWeight = 0;
 
 			if (StringUtils.isNotEmpty (sEncryptedAccountInASession))
 			{
 				String sTemp = GetJSONText (node, "UserName");
 				if (StringUtils.equalsIgnoreCase (sEncryptedAccountInASession, sTemp))
 				{
-					//jsonUser = node;
-					listUsersMatched.add (node);
+					nMatchWeight |= 0x10;
+					listContactsMatched.add (node);
 					break;	// 加密帐号是唯一的，找到了就不再继续找了
 				}
 			}
@@ -951,57 +959,64 @@ logger.info (sb.toString ());
 				String sTemp = GetJSONText (node, "Alias");
 				if (StringUtils.equalsIgnoreCase (sAliasAccount, sTemp))
 				{
-					//jsonUser = node;
-					//break;
-					listUsersMatched.add (node);
+					nMatchWeight |= 0x08;
+					listContactsMatched.add (node);
 					break;	// 微信号也应该是唯一的，找到了就不再继续找了
 				}
 			}
 
-			else if (StringUtils.isNotEmpty (sRemarkName))
+			if (StringUtils.isNotEmpty (sRemarkName))
 			{
 				String sTemp = GetJSONText (node, "RemarkName");
 				if (StringUtils.equalsIgnoreCase (sRemarkName, sTemp))
 				{
-					//jsonUser = node;
-					//break;
-					listUsersMatched.add (node);
+					nMatchWeight |= 0x04;
 				}
 			}
 
-			else if (StringUtils.isNotEmpty (sDisplayName))
+			if (StringUtils.isNotEmpty (sDisplayName))
 			{
 				String sTemp = GetJSONText (node, "DisplayName");
 				if (StringUtils.equalsIgnoreCase (sDisplayName, sTemp))
 				{
-					//jsonUser = node;
-					//break;
-					listUsersMatched.add (node);
+					nMatchWeight |= 0x02;
 				}
 			}
 
-			else if (StringUtils.isNotEmpty (sNickName))
+			if (StringUtils.isNotEmpty (sNickName))
 			{
 				String sTemp = GetJSONText (node, "NickName");
 				if (StringUtils.equalsIgnoreCase (sNickName, sTemp))
 				{
-					//jsonUser = node;
-					//break;
-					listUsersMatched.add (node);
+					nMatchWeight |= 0x01;
 				}
 			}
+			if (nMatchWeight > 0)
+			{
+				listContactsMatched.add (node);
+
+				// 利用 int 的 3 个低字节存储索引号、高字节存储【匹配/排序】的权重，所以，要确保：
+				//   联系人数量不超过 3 字节代表的数值：16777215
+				// 权重在高字节可以按整数类型数值自然排序
+				listNonUniqueContactsWeights.add ((nMatchWeight << 24) | (listContactsMatched.size ()-1));
+			}
+
 		}
 
-		//// 如果匹配到多个（通常来说，是在未指定 ），则再根据 自定义帐号、备注名、昵称 共同筛选出全部匹配的
-		//if (listUsersMatched.size () > 1)
-		//{
-		//	for (int i=listUsersMatched.size ()-1; i>=0; i--)
-		//	{
-		//		jsonUser = listUsersMatched.get (i);
-		//	}
-		//}
-		return listUsersMatched;
+		// 如果匹配到多个，则再根据匹配的权重排序 备注名、群昵称、昵称
+		if (listContactsMatched.size () > 1)
+		{
+			Collections.sort (listNonUniqueContactsWeights, Collections.reverseOrder ());
+			List<JsonNode> listNonUniqueContactsMatched_Sorted = new ArrayList <JsonNode> ();
+			for (int n : listNonUniqueContactsWeights)
+			{
+				listNonUniqueContactsMatched_Sorted.add (listContactsMatched.get (n & 0xFFFFFF));
+			}
+			listContactsMatched = listNonUniqueContactsMatched_Sorted;
+		}
+		return listContactsMatched;
 	}
+
 
 	/**
 	 * 搜索并返回符合条件的第一个联系人，如果没有搜到符合条件的联系人，则返回 <code>null</code>。
@@ -1845,6 +1860,80 @@ logger.warning ("必须输入消息内容");
 						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
 						engine.SendTextMessage (sToAccount, sMessage);
 					}
+					else if (StringUtils.equalsIgnoreCase (sCommand, "msgToAlias") || StringUtils.equalsIgnoreCase (sCommand, "sendToAlias")	// 根据用户的微信号来发消息
+							|| StringUtils.equalsIgnoreCase (sCommand, "msgToRemarkName") || StringUtils.equalsIgnoreCase (sCommand, "sendToRemarkName")	// 根据自己给用户做的备注名来发消息
+							|| StringUtils.equalsIgnoreCase (sCommand, "msgToNickName") || StringUtils.equalsIgnoreCase (sCommand, "sendToNickName")	// 根据用户的昵称来发消息
+					)
+					{
+						String sSearchBy = "";
+						String sSearchByName = "";
+						if (StringUtils.startsWithIgnoreCase (sCommand, "msgTo"))
+						{
+							sSearchBy = StringUtils.substring (sCommand, 5);
+						}
+						else if (StringUtils.startsWithIgnoreCase (sCommand, "sendTo"))
+						{
+							sSearchBy = StringUtils.substring (sCommand, 6);
+						}
+						else
+						{
+							continue;
+						}
+
+						if (StringUtils.equalsIgnoreCase (sSearchBy, "Alias"))
+							sSearchByName = "微信号";
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "RemarkName"))
+							sSearchByName = "备注名";
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "NickName"))
+							sSearchByName = "昵称";
+
+						if (StringUtils.isEmpty (sParam))
+						{
+logger.warning (sCommand + " <接收人的" + sSearchByName + "> <消息内容>");
+							continue;
+						}
+						String[] arraySendMessage = sParam.split (" +", 2);
+						String sToTarget = null;
+						String sMessage = null;
+						if (arraySendMessage.length > 0)
+							sToTarget = arraySendMessage[0];
+						if (arraySendMessage.length > 1)
+							sMessage = arraySendMessage[1];
+
+						if (StringUtils.isEmpty (sToTarget))
+						{
+logger.warning ("必须输入接收人的" + sSearchByName + "。");
+							continue;
+						}
+						if (StringUtils.isEmpty (sMessage))
+						{
+logger.warning ("必须输入消息内容");
+							continue;
+						}
+
+						List<JsonNode> listContacts = null;
+						if (StringUtils.equalsIgnoreCase (sSearchBy, "Alias"))
+							listContacts = engine.SearchForContacts (null, sToTarget, null, null);
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "RemarkName"))
+							listContacts = engine.SearchForContacts (null, null, sToTarget, null);
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "NickName"))
+							listContacts = engine.SearchForContacts (null, null, null, sToTarget);
+						if (listContacts.size () != 1)
+						{
+							if (listContacts.size () == 0)
+							{
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sSearchByName + "【" + sToTarget + "】未搜到联系人。注意：只从微信通信录中搜索，群聊如果没有加到微信通信录，是搜不到的（联系人里没有）。"));
+							}
+							else
+							{
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sSearchByName + "【" + sToTarget + "】搜索到的联系人不是 1 个，而是 " + listContacts.size () + " 个。"));
+							}
+							continue;
+						}
+						JsonNode jsonContact = listContacts.get (0);
+						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
+						engine.SendTextMessage (GetJSONText (jsonContact, "UserName"), sMessage);
+					}
 					else if (StringUtils.equalsIgnoreCase (sCommand, "StatReport") || StringUtils.equalsIgnoreCase (sCommand, "EmptyStatReport"))
 					{
 						engine.EmptyStatisticsReport ();
@@ -1855,7 +1944,7 @@ logger.warning ("必须输入消息内容");
 					}
 					else
 					{
-logger.warning ("未知控制台命令: " + sCommand);
+logger.warning (net_maclife_util_ANSIEscapeTool.Red ("未知控制台命令: " + sCommand));
 					}
 				}
 				catch (Exception e)

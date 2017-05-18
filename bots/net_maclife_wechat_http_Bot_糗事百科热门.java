@@ -9,7 +9,7 @@ import org.jsoup.select.*;
 /**
  * 获取糗事百科热门信息。目前，不打算用 Bot 形式来处理糗事百科，而仅仅当做 Relay Bot 的一个外部消息源。
  * @author liuyan
- * @deprecated 除了个别网站（比如需要先获取一个网页、取得 Cookie 或者某数值，再用该数值访问第二个网页），其他所有抓取网页的 Bot，都建议改为 net_maclife_wechat_http_Bot_HTMLSoup 的模板来处理。
+ * @deprecated 除了个别网站（比如需要先获取一个网页、取得 Cookie 或者某数值，再用该数值访问第二个网页），其他所有抓取网页的 Bot，都建议改为 net_maclife_wechat_http_Bot_WebSoup 的模板来处理。
  *
  */
 @Deprecated

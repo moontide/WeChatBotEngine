@@ -293,7 +293,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 		}
 	}
 
-	public boolean IsMe (String  sEncryptedAccount)
+	public boolean IsMe (String sEncryptedAccount)
 	{
 		return StringUtils.equalsIgnoreCase (sMyEncryptedAccountInThisSession, sEncryptedAccount);
 	}
@@ -1205,7 +1205,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 			if (isReplyToRoom)
 			{	// 如果是发自聊天室，则从聊天室的成员列表中获取真正的发送人（极有可能不在自己的联系人内，只能从聊天室成员列表中获取）
 				// <del>因为之前已经交换过收发人，所以，自己点开群聊窗口后，不再做【获取真实发件人】的处理（只有真正别人在群里发过来的信息才需要这样处理）</del>
-				// 自己发送到群聊的信息，也会出现 @xxxx:\n消息内容  的格式，则： 1.取出群聊成员发送人 2.取出去掉群聊成员后的消息内容
+				// 自己发送到群聊的信息，也会出现 @xxxx:\n消息内容 的格式，则： 1.取出群聊成员发送人 2.取出去掉群聊成员后的消息内容
 				Matcher matcher = PATTERN_GROUP_CHAT_ACTUAL_MEMBER.matcher (sContent);
 				if (matcher.matches ())
 				{
@@ -2096,7 +2096,7 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 
 	/**
 	 * 派发事件/消息。
-	 * 关于函数名 DispatchEvent_WithMultithreadSwitch ： 不能使用与下面  DispatchEvent 的重名的函数，因为可变参数 args 的关系，所以在调用的时候，会导致不能确定调用哪个函数的问题（在编译器眼里，args 可能会把 nMultithreadSwitch 涵盖进去）。
+	 * 关于函数名 DispatchEvent_WithMultithreadSwitch ： 不能使用与下面 DispatchEvent 的重名的函数，因为可变参数 args 的关系，所以在调用的时候，会导致不能确定调用哪个函数的问题（在编译器眼里，args 可能会把 nMultithreadSwitch 涵盖进去）。
 	 * @param sEvent 事件名/消息名
 	 * @param nMultithreadSwitch 选择是否用多线程模式派发消息。如果小于 0，则采用配置文件里的配置。如果等于 0 则不使用多线程。如果大于 0 则使用多线程。
 	 * @param args 各事件的参数
