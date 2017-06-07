@@ -136,7 +136,7 @@ System.err.println ("【" + s发帖人 + "】 为黑名单用户，原因： " +
 				String[] arrayColumns = sLine.split ("	", 3);	// <TAB> 分隔符
 				if (arrayColumns==null || arrayColumns.length < 2)
 				{
-System.out.println ("第 " + n + " 行不存在，或者列数小于 2");
+System.err.println ("第 " + n + " 行不存在，或者列数小于 2");
 					continue;
 				}
 
@@ -159,7 +159,7 @@ System.out.println ("第 " + n + " 行不存在，或者列数小于 2");
 				}
 				else
 				{
-System.out.println ("第 " + n + " 行第一列是非法的“模式”：" + sMode);
+System.err.println ("第 " + n + " 行第一列是非法的“模式”：" + sMode);
 					continue;
 				}
 			}
@@ -188,13 +188,17 @@ System.out.println ("第 " + n + " 行第一列是非法的“模式”：" + sM
 				if (sLine == null)
 					break;
 
+				sLine = StringUtils.trimToEmpty (sLine);
+				if (StringUtils.isEmpty (sLine))	// 空行、空白字符行，不做处理
+					continue;
+
 				if (StringUtils.startsWithAny (sLine, "#", "//"))	// 备注行，不做处理
 					continue;
 
 				String[] arrayColumns = sLine.split ("	", 3);	// <TAB> 分隔符
 				if (arrayColumns==null || arrayColumns.length < 2)
 				{
-System.out.println ("第 " + n + " 行不存在，或者列数小于 2");
+System.err.println ("第 " + n + " 行不存在，或者列数小于 2");
 					continue;
 				}
 
@@ -217,7 +221,7 @@ System.out.println ("第 " + n + " 行不存在，或者列数小于 2");
 				}
 				else
 				{
-System.out.println ("第 " + n + " 行第一列是非法的“模式”：" + sMode);
+System.err.println ("第 " + n + " 行第一列是非法的“模式”：" + sMode);
 					continue;
 				}
 			}
