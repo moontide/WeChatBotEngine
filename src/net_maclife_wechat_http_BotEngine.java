@@ -615,7 +615,7 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 			jsonRoom = GetRoomContactFromServer (sRoomAccount);
 			if (jsonRoom != null)
 			{
-				((ArrayNode)jsonRoomsList).add (jsonRoom);
+				ReplaceOrAddRoomContact (jsonRoom);
 				return jsonRoom;
 			}
 		}
@@ -1444,6 +1444,33 @@ net_maclife_wechat_http_BotApp.logger.finest ("收到新的同步检测 Key");
 			final String QQMAP_URL_PREFIX = "http://apis.map.qq.com/uri/v1/geocoder?coord=";
 			if (StringUtils.startsWith (sURL, QQMAP_URL_PREFIX))
 			{
+				/*
+				nu.xom.Document xmldocOriginalContent;
+				try
+				{
+					String sOriginalContent = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "OriContent");
+					//?xml version="1.0"?>
+					//<msg>
+					//	<location x="****" y="****" scale="16" label="市北区普集路普吉新区" maptype="0" poiname="[位置]" />
+					// </msg>
+
+					xmldocOriginalContent = net_maclife_wechat_http_BotApp.xomBuilder.build (sOriginalContent, null);
+					Element msg = xmldocOriginalContent.getRootElement ();
+					Element location = msg.getFirstChildElement ("location");
+					String s纬度 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (location, "x");
+					String s经度 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (location, "y");
+					String s缩放级别 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (location, "scale");
+					String s位置 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (location, "label");
+					String s地图类型 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (location, "maptype");
+					String s位置名 = net_maclife_wechat_http_BotApp.GetXMLAttributeValue (location, "poiname");
+				}
+				catch (ParsingException | IOException e)
+				{
+					e.printStackTrace();
+				}
+				//*/
+
+
 				String sCoords = StringUtils.substring (sURL, QQMAP_URL_PREFIX.length ());
 				String[] arrayCoords = sCoords.split (",");
 				String sLongitude = arrayCoords [1];

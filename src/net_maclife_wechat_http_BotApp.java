@@ -137,7 +137,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 		jacksonObjectMapper_Loose.configure (MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);	// 字段名不区分大小写
 
 		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);	// 允许用单引号把数值引起来
-		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);	// 数值前面补 0
+		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);	// 允许数值前面带 0
 	}
 
 	static nu.xom.Builder xomBuilder = new nu.xom.Builder();
@@ -1185,7 +1185,7 @@ logger.info ("\n--------------------------------------------------");
 								{
 									if (StringUtils.equalsIgnoreCase (sHeaderName, "Set-Cookie"))
 									{
-logger.finer (net_maclife_util_ANSIEscapeTool.LightGreen ("获取 WebWeChatGetMessagePackage 中 webwxsync 设置的新 Cookie （保持会话不过期可能就指望它了）:"));
+logger.finer (net_maclife_util_ANSIEscapeTool.LightGreen ("获取 WebWeChatGetMessagePackage 中 webwxsync 设置的新 Cookie （保持会话不过期就指望它了）:"));
 										List<String> listCookieStrings = mapHeaders.get (sHeaderName);
 logger.finer ("	" + listCookieStrings);
 									}
