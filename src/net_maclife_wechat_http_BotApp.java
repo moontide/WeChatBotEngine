@@ -6,6 +6,7 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
+import java.util.regex.*;
 
 import javax.imageio.*;
 import javax.script.*;
@@ -511,8 +512,12 @@ logger.fine ("	[" + eXML.toXML() + "]");
 	public static void AppendContactInformation (StringBuilder sb, JsonNode jsonContact, boolean bIsRoomMember)
 	{
 		String sNickName = GetJSONText (jsonContact, "NickName");
+		if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+			sNickName = RestoreEmojiCharacters (sNickName);
 		sb.append (sNickName);
 		String sRemarkNameOrDisplayName = GetJSONText (jsonContact, bIsRoomMember ? "DisplayName" : "RemarkName");
+		if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+			sRemarkNameOrDisplayName = RestoreEmojiCharacters (sRemarkNameOrDisplayName);
 
 		int nVerifyFlag = GetJSONInt (jsonContact, "VerifyFlag");
 		boolean isPublicAccount = IsPublicAccount (nVerifyFlag);
@@ -879,6 +884,13 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 
 		ProcessBaseResponse (node, "WebWeChatGetRoomContacts");
 
+		DumpGroupsContacts (node);
+		//
+		return node;
+	}
+
+	public static void DumpGroupsContacts (JsonNode node)
+	{
 		StringBuilder sb = new StringBuilder ();
 		//sb.append ("\n");
 		int nCount = GetJSONInt (node, "Count");
@@ -889,7 +901,10 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 			JsonNode jsonContact = jsonContactList.get (i);
 			sb.append (String.format ("%" + String.valueOf (nCount).length () + "d", (i+1)));
 			sb.append ("  ");
-			sb.append (GetJSONText (jsonContact, "NickName"));
+			if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+				sb.append (RestoreEmojiCharacters (GetJSONText (jsonContact, "NickName")));
+			else
+				sb.append (GetJSONText (jsonContact, "NickName"));
 
 			JsonNode jsonMemberList = jsonContact.get ("MemberList");
 			for (int j=0; j<jsonMemberList.size (); j++)
@@ -909,8 +924,6 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 			sb.append ("\n");
 		}
 logger.info (sb.toString ());
-		//
-		return node;
 	}
 
 	/**
@@ -1691,6 +1704,34 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 		String sNickName = GetJSONText (jsonContactInRoom, "NickName");
 		String sDisplayName = GetJSONText (jsonContactInRoom, "DisplayName");
 		return IsRoomTextMessageMentionedThisOneFirst (sRoomTextMessage, sNickName, sDisplayName);
+	}
+
+	public static final String REGEXP_FindTransformedEmojiString = "<span class=\"emoji emoji(\\p{XDigit}+)\"></span>";
+	public static Pattern PATTERN_FindTransformedEmojiString = Pattern.compile (REGEXP_FindTransformedEmojiString, Pattern.CASE_INSENSITIVE);
+	public static String RestoreEmojiCharacters (String sContent)
+	{
+logger.finest ("原内容: " + sContent);
+		Matcher matcher = PATTERN_FindTransformedEmojiString.matcher (sContent);
+		boolean bMatched = false;
+		StringBuffer sbReplace = new StringBuffer ();
+		while (matcher.find ())
+		{
+			bMatched = true;
+			String sEmojiHexString = matcher.group(1);
+			int nEmojiCode = Integer.parseInt (sEmojiHexString, 16);
+			//sbReplace.append (b)Character (nEmojiCode);
+			matcher.appendReplacement (sbReplace, String.valueOf (Character.toChars (nEmojiCode)));	// 直接剔除掉，然后再补上 emoji 字符。<del>（不直接替换的原因：appendReplacement 只接受 String 参数，而不接受 char[] 参数）</del>
+			//sbReplace.append (String.valueOf (Character.toChars (nEmojiCode)));
+		}
+		matcher.appendTail (sbReplace);
+//System.out.println (sbReplace);
+
+		if (bMatched)
+			sContent = sbReplace.toString ();
+
+logger.finest ("替换后: " + sContent);
+
+		return sContent;
 	}
 
 

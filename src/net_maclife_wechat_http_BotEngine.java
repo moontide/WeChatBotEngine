@@ -711,6 +711,11 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		else
 			sName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "NickName");
 
+		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+		{
+			sName = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sName);
+		}
+
 		return sName;
 	}
 
@@ -758,6 +763,10 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		else
 			sName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomMemberContact, "NickName");
 
+		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+		{
+			sName = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sName);
+		}
 		return sName;
 	}
 
@@ -996,6 +1005,10 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 						sMyEncryptedAccountInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "UserName");
 						sMyCustomAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "Alias");
 						sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "NickName");
+						if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+						{
+							sMyNickName = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sMyNickName);
+						}
 						jsonSyncCheckKeys = jsonInit.get ("SyncKey");
 						SaveSessionCache (fSessionCache, jsonSyncCheckKeys);
 						SaveCookiesCache (fCookiesCache);
@@ -1021,7 +1034,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 							jsonMessagePackage = GetMessagePackage (jsonSyncCheckKeys);
 							if (jsonMessagePackage == null)
 							{
-								TimeUnit.SECONDS.sleep (2);
+								TimeUnit.SECONDS.sleep (5);
 								continue;
 							}
 
@@ -1036,7 +1049,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 									System.err.print ("，消息=" + sErrMsg);
 								}
 								System.err.println ();
-								TimeUnit.SECONDS.sleep (2);
+								TimeUnit.SECONDS.sleep (5);
 								continue;
 							}
 
@@ -1051,6 +1064,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 					}
 					catch (IllegalStateException e)
 					{
+						e.printStackTrace ();
 						bSessionExpired = true;
 						continue _outer_loop;
 					}
@@ -1063,7 +1077,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 				{
 					e.printStackTrace ();
 					// 因为在循环内，出现异常，先暂停一会，免得不断重复
-					TimeUnit.SECONDS.sleep (2);
+					TimeUnit.SECONDS.sleep (5);
 				}
 			}
 		}
@@ -1170,6 +1184,10 @@ net_maclife_wechat_http_BotApp.logger.finest ("收到 " + nAddMsgCount + " 条�
 			sContent = StringEscapeUtils.unescapeXml (sContent);
 			//sContent = StringUtils.replaceEach (sContent, new String[]{"<br/>", "&lt;", "&gt;", "&amp;"}, new String[]{"\n", "<", ">", "&"});
 			//sContent = StringEscapeUtils.unescapeHtml4 (sContent);
+			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.content.restore-emoji-character"), false))
+			{
+				sContent = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sContent);
+			}
 
 			String sFromAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "FromUserName");	// 发送人帐号，有可能是自己（在其他设备上发的）
 			JsonNode jsonFrom = SearchForSingleContact (sFromAccount);
@@ -1301,6 +1319,10 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Gray
 					{
 						JsonNode jsonMeInThisRoom = SearchForSingleMemberContactInRoom (sReplyToAccount, sMyEncryptedAccountInThisSession);
 						String sMyDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.GetJSONText (jsonMeInThisRoom, "DisplayName");
+						if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+						{
+							sMyDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sMyDisplayNameInThisRoom);
+						}
 						bRoomMessageContentMentionedMe = IsRoomTextMessageMentionedMe (sContent, sMyDisplayNameInThisRoom);
 						bRoomMessageContentMentionedMeFirst = IsRoomTextMessageMentionedMeFirst (sContent, sMyDisplayNameInThisRoom);
 
