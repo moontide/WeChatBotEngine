@@ -99,35 +99,9 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 			}
 		}
 	}
-
-	class KeepSessionAliveTask extends TimerTask
-	{
-
-		@Override
-		public void run ()
-		{
-			if (loggedIn)
-			{
-				try
-				{
-					// 在微信网页版中观察到【可能是】因为调用了这个，微信网页版在登录 12 小时后不用重新登录。尝试一下… （或许是 pingd 接口？）
-					//StatisticsReport ();
-					FakeStatisticsReport ();
-				}
-				catch (Exception e)
-				{
-					e.printStackTrace();
-				}
-			}
-
-		}
-
-	}
 	*/
 
 	Future<?> engineTask = null;
-	//TimerTask timertaskKeepSessionAlive = new KeepSessionAliveTask ();
-	//Timer timerKeepSessionAlive = new Timer ();
 
 	List<net_maclife_wechat_http_Bot> listBots = new ArrayList<net_maclife_wechat_http_Bot> ();
 
@@ -381,13 +355,15 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 	 * @param sToAccount_RoomMember
 	 * @param sToName_RoomMember
 	 * @param sMessage
+	 * @param bUseAppendTimestampConfig 是否使用配置文件里的“附加时间戳”的配置项。
+	 * @param bAppendTimestamp 当不使用配置文件里的“附加时间戳”的配置项时 (bUseAppendTimestampConfig == false)，用该参数决定是否要“附加时间戳”。这两个参数，最初是因为“消息中继”机器人不附加任何消息（比如：有的微信公众号，给该公众号发“签到”获得积分，如果附加了时间戳，则改变了消息内容）的需求而加的。
 	 * @param bInsertExtraNewLineBeforeTimestamp
 	 * @param bMentionedMeInIncomingRoomMessage
-	 * @param bMentionedMeFirstnIncomingRoomMessage
+	 * @param bMentionedMeFirstInIncomingRoomMessage
 	 */
-	public void SendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage, boolean bInsertExtraNewLineBeforeTimestamp, boolean bMentionedMeInIncomingRoomMessage, boolean bMentionedMeFirstnIncomingRoomMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void SendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage, boolean bUseAppendTimestampConfig, boolean bAppendTimestamp, boolean bInsertExtraNewLineBeforeTimestamp, boolean bMentionedMeInIncomingRoomMessage, boolean bMentionedMeFirstInIncomingRoomMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.text.append-timestamp", "yes")))
+		if (bUseAppendTimestampConfig && net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.text.append-timestamp", "yes")) || (!bUseAppendTimestampConfig && bAppendTimestamp))
 		{
 			sMessage = sMessage + (bInsertExtraNewLineBeforeTimestamp ? "\n" : "") + "\n" + new java.sql.Timestamp (System.currentTimeMillis ());
 		}
@@ -397,10 +373,13 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 		}
 		else
 		{	// 聊天室，需要做一下处理： @一下发送人，然后是消息
-			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, (bMentionedMeFirstnIncomingRoomMessage && StringUtils.isNotEmpty (sToName_RoomMember) ? "@" + sToName_RoomMember + "\n" : "") + sMessage);
+			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, (bMentionedMeFirstInIncomingRoomMessage && StringUtils.isNotEmpty (sToName_RoomMember) ? "@" + sToName_RoomMember + "\n" : "") + sMessage);
 		}
 	}
-
+	public void SendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage, boolean bInsertExtraNewLineBeforeTimestamp, boolean bMentionedMeInIncomingRoomMessage, boolean bMentionedMeFirstInIncomingRoomMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		SendTextMessage (sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage, true, false, bInsertExtraNewLineBeforeTimestamp, bMentionedMeInIncomingRoomMessage, bMentionedMeFirstInIncomingRoomMessage);
+	}
 	public void SendTextMessage (String sToAccount, String sToName, String sTo_RoomMemberAccount, String sToName_RoomMember, String sMessage, boolean bInsertExtraNewLineBeforeTimestamp) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		SendTextMessage (sToAccount, sToName, sTo_RoomMemberAccount, sToName_RoomMember, sMessage, bInsertExtraNewLineBeforeTimestamp, false, false);
@@ -482,24 +461,22 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 	 * @param sToAccount_RoomMember
 	 * @param sToName
 	 * @param sMessage
-	 * @throws KeyManagementException
-	 * @throws UnrecoverableKeyException
-	 * @throws JsonProcessingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws KeyStoreException
-	 * @throws CertificateException
-	 * @throws IOException
+	 * @throws 很多Exception
 	 */
-	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage, boolean bUseAppendBotNameConfig, boolean bAppendBotName) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		sMessage = StringUtils.trimToEmpty (sMessage);
-		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.text.append-bot-name", "yes")))
+		if (bUseAppendBotNameConfig && net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.text.append-bot-name", "yes")) || (!bUseAppendBotNameConfig && bAppendBotName))
 		{
 			sMessage = sMessage + "\n\n-- 【" + bot.GetName () + "】机器人";
 			SendTextMessage (sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage, false);
 		}
 		else
 			SendTextMessage (sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage, true);
+	}
+	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		BotSendTextMessage (bot, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage, true, false);
 	}
 	public void BotSendTextMessage (net_maclife_wechat_http_Bot bot, String sToAccount, String sToName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{

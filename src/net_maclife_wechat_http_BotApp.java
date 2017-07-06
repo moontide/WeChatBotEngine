@@ -1125,6 +1125,7 @@ logger.finest ("	" + sSyncCheckURL);
 logger.finest ("发送 WebWeChatGetMessagePackage 中 synccheck 的 http 请求消息头 (Cookie):");
 logger.finest ("	" + mapRequestHeaders);
 
+		JsonNode jsonResult = null;
 		String sContent = null;
 		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
 		for (int i=0; i<nTryTimes; i++)
@@ -1142,6 +1143,15 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 				TimeUnit.SECONDS.sleep (5);
 				continue;
 			}
+			catch (IllegalStateException e)
+			{
+				if (StringUtils.containsIgnoreCase (e.toString (), "HTTP/1.1 0"))
+				{
+logger.info ("对方正在输入…？");
+					// 对方正在输入：
+					return jsonResult;
+				}
+			}
 		}
 logger.finest ("获取 WebWeChatGetMessagePackage 中 synccheck 的 http 响应消息体:");
 logger.finest ("	" + sContent);
@@ -1150,7 +1160,6 @@ logger.finest ("	" + sContent);
 		String sSyncCheckReturnCode = public_jse.eval (sJSCode + "; synccheck.retcode;").toString ();
 		String sSyncCheckSelector = public_jse.eval (sJSCode + "; synccheck.selector;").toString ();
 
-		JsonNode jsonResult = null;
 		if (StringUtils.equalsIgnoreCase (sSyncCheckReturnCode, "0"))
 		{
 //logger.finest ("WebWeChatGetMessagePackage 中 synccheck 返回 selector " + sSyncCheckSelector);
@@ -2123,6 +2132,17 @@ net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 	public static long GetJSONLong (JsonNode node, String sFieldName)
 	{
 		return GetJSONLong (node, sFieldName, -1L);
+	}
+
+	public static boolean GetJSONBoolean (JsonNode node, String sFieldName, boolean bDefault)
+	{
+		if (node==null || node.get (sFieldName)==null)
+			return bDefault;
+		return node.get (sFieldName).asBoolean (bDefault);
+	}
+	public static boolean GetJSONBoolean (JsonNode node, String sFieldName)
+	{
+		return GetJSONBoolean (node, sFieldName, false);
 	}
 
 

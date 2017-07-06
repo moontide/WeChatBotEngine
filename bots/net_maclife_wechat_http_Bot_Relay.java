@@ -39,6 +39,8 @@ import com.fasterxml.jackson.databind.*;
 			}
 			, ...
 		],
+	UseAppendBotNameConfig: true | false,	// true | false，是否使用“在消息中附加 Bot 名”配置项。若没有该 json 属性，则默认为 true -- 兼容以前的配置
+	AppendBotName: true | false,			// true | false，当 UseAppendBotNameConfig 为 false 时，则使用该参数明确指定是否要“在消息中附加 Bot 名”。若没有该 json 属性，则默认为 false -- 兼容以前的配置
 	MessageType: "消息类型",	// 取值 "text" | "voice" | "video"。 该字段也可以忽略，若为空或者忽略，则默认为 "text"
 	Message: "消息"	// 对于 text 文本消息，直接传文字。 对于 voice 和 video，需要用 base64 编码后传递
 }
@@ -136,6 +138,8 @@ net_maclife_wechat_http_BotApp.logger.fine (GetName() + " 收到数据:\n" + net
 			String sMessageType = net_maclife_wechat_http_BotApp.GetJSONText (jsonMessageToRelay, "MessageType");
 			String sMessageType_LowerCase = StringUtils.lowerCase (sMessageType);
 			String sMessage = net_maclife_wechat_http_BotApp.GetJSONText (jsonMessageToRelay, "Message");
+			boolean bUseAppendBotNameConfig = net_maclife_wechat_http_BotApp.GetJSONBoolean (jsonMessageToRelay, "UseAppendBotNameConfig", true);
+			boolean bAppendBotName = net_maclife_wechat_http_BotApp.GetJSONBoolean (jsonMessageToRelay, "AppendBotName", false);
 			if (StringUtils.isEmpty (sMessage))
 			{
 				out.println ("必须指定消息内容");
@@ -173,7 +177,7 @@ net_maclife_wechat_http_BotApp.logger.fine (GetName() + " 收到数据:\n" + net
 				{
 					case "":
 					case "text":
-						SendTextMessage (sTo, sMessage);
+						SendTextMessage (sTo, sMessage, bUseAppendBotNameConfig, bAppendBotName);
 						break;
 					case "voice":
 						out.println ("暂时不处理音频消息");
