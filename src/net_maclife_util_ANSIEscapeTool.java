@@ -303,16 +303,17 @@ public class net_maclife_util_ANSIEscapeTool
 
 	public static final int HEX_DUMP_BYTES_PER_LINE = 16;
 	public static final int HEX_DUMP_BYTES_PER_HALF_LINE = HEX_DUMP_BYTES_PER_LINE / 2;
-	public static void HexDump (String s)
+	public static void HexDump (byte[] buf, int nLength)
 	{
-//System.out.println (s);
 		StringBuilder sb = new StringBuilder ();
 		StringBuilder sb_ascii = new StringBuilder ();
-		byte[] lineBytes = s.getBytes();
 		int i=0;
-		for (byte b : lineBytes)
+		for (byte b : buf)
 		{
 			i++;
+			if (i > nLength)
+				break;
+
 			int b2 = b&0xFF;
 			sb.append (String.format("%02X ", b&0xFF));
 			if (b2 >= ' ' && b2<= '~')	// 0x20 - 0x7E
@@ -329,7 +330,7 @@ public class net_maclife_util_ANSIEscapeTool
 				sb.append (" ");
 				//sb_ascii.append (" ");
 			}
-			if (i%HEX_DUMP_BYTES_PER_LINE==0)
+			if (i%HEX_DUMP_BYTES_PER_LINE == 0)
 			{
 				sb.append (sb_ascii);
 				sb_ascii.setLength (0);
@@ -350,6 +351,16 @@ public class net_maclife_util_ANSIEscapeTool
 			//sb.append ("\n");
 		}
 		net_maclife_wechat_http_BotApp.logger.fine (sb.toString());
+	}
+	public static void HexDump (byte[] buf)
+	{
+		HexDump (buf, buf.length);
+	}
+	public static void HexDump (String s)
+	{
+//System.out.println (s);
+		byte[] lineBytes = s.getBytes();
+		HexDump (lineBytes);
 	}
 
 	/**

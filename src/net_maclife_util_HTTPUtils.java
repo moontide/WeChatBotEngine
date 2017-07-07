@@ -286,10 +286,19 @@ System.out.println (proxy);
 				else
 					is = http.getInputStream();
 
-				if (StringUtils.isEmpty (sContentCharset))
-					s = IOUtils.toString (is, UTF8_CHARSET);
+				if (iResponseCode == 0)	// 微信手机端看到对方“正在输入”时，会收到 'HTTP/1.1 0 - ' 的状态行，消息体不是文字
+				{
+					byte[] buf = new byte[1024];
+					int nRead = IOUtils.read (is, buf);
+					net_maclife_util_ANSIEscapeTool.HexDump (buf, nRead);
+				}
 				else
-					s = IOUtils.toString (is, sContentCharset);
+				{
+					if (StringUtils.isEmpty (sContentCharset))
+						s = IOUtils.toString (is, UTF8_CHARSET);
+					else
+						s = IOUtils.toString (is, sContentCharset);
+				}
 			}
 			catch (Exception e)
 			{
