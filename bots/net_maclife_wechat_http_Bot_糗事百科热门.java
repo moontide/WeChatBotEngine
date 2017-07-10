@@ -48,6 +48,7 @@ public class net_maclife_wechat_http_Bot_糗事百科热门 extends net_maclife_
 			Elements 好评量列表 = e.select ("a[id^=up-] > span");
 			Elements 差评量列表 = e.select ("a[id^=dn-] > span");
 			Elements 发帖人列表 = e.select ("div.author h2");
+			Element 热评 = e.select ("div.cmtMain").first ();
 			String s发帖人 = 发帖人列表.text ();
 			String sBlackListReason = GetBanReason (s发帖人);
 			if (sBlackListReason != null)
@@ -107,6 +108,13 @@ System.err.println ("【" + s发帖人 + "】 为黑名单用户，原因： " +
 			sb.append (差评量列表.text ());
 			sb.append ("  作者: ");
 			sb.append (发帖人列表.text ());
+			if (热评 != null)
+			{
+				sb.append ("\n\n");
+				//sb.append ("热评：");
+				sb.append ("  💬 ");	// 💬💭
+				sb.append (热评.text ());
+			}
 			sb.append ("\n\n");
 		}
 
