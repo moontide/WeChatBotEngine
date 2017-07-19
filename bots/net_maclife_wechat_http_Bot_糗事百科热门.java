@@ -113,7 +113,8 @@ System.err.println ("【" + s发帖人 + "】 为黑名单用户，原因： " +
 				sb.append ("\n\n");
 				//sb.append ("热评：");
 				sb.append ("  💬 ");	// 💬💭
-				sb.append (StringUtils.remove (热评.text (), '\u0001'));	// 剔除掉 0x01 字符，否则 jackson 报错： com.fasterxml.jackson.core.JsonParseException: Illegal unquoted character ((CTRL-CHAR, code 1)): has to be escaped using backslash to be included in string value 。貌似表情代码 (如 '[doge]') 的前面就是 0x01 字符
+				sb.append (热评.text ());
+				//sb.append (StringUtils.remove (热评.text (), '\u0001'));	// 剔除掉 0x01 字符，否则 jackson 报错： com.fasterxml.jackson.core.JsonParseException: Illegal unquoted character ((CTRL-CHAR, code 1)): has to be escaped using backslash to be included in string value 。貌似表情代码 (如 '[doge]') 的前面就是 0x01 字符
 			}
 			sb.append ("\n\n");
 		}

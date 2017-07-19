@@ -1,6 +1,8 @@
 import java.awt.image.*;
 import java.io.*;
+import java.math.*;
 import java.net.*;
+import java.nio.charset.*;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
@@ -11,6 +13,8 @@ import java.util.regex.*;
 import javax.imageio.*;
 import javax.script.*;
 
+//import org.apache.commons.codec.*;
+//import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.configuration2.*;
 import org.apache.commons.configuration2.builder.*;
 import org.apache.commons.configuration2.builder.fluent.*;
@@ -139,6 +143,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 
 		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);	// 允许用单引号把数值引起来
 		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);	// 允许数值前面带 0
+		jacksonObjectMapper_Loose.configure (JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);	// 允许不引起来的控制字符
 	}
 
 	static nu.xom.Builder xomBuilder = new nu.xom.Builder();
@@ -1715,22 +1720,58 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 		return IsRoomTextMessageMentionedThisOneFirst (sRoomTextMessage, sNickName, sDisplayName);
 	}
 
-	public static final String REGEXP_FindTransformedEmojiString = "<span class=\"emoji emoji(\\p{XDigit}+)\"></span>";
-	public static Pattern PATTERN_FindTransformedEmojiString = Pattern.compile (REGEXP_FindTransformedEmojiString, Pattern.CASE_INSENSITIVE);
+	public static final String REGEXP_FindTransformedEmojiHexString = "<span class=\"emoji emoji(\\p{XDigit}{4,})\"></span>";
+	public static final Pattern PATTERN_FindTransformedEmojiHexString = Pattern.compile (REGEXP_FindTransformedEmojiHexString, Pattern.CASE_INSENSITIVE);
 	public static String RestoreEmojiCharacters (String sContent)
 	{
 logger.finest ("原内容: " + sContent);
-		Matcher matcher = PATTERN_FindTransformedEmojiString.matcher (sContent);
+		Matcher matcher = PATTERN_FindTransformedEmojiHexString.matcher (sContent);
 		boolean bMatched = false;
 		StringBuffer sbReplace = new StringBuffer ();
 		while (matcher.find ())
 		{
 			bMatched = true;
 			String sEmojiHexString = matcher.group(1);
-			int nEmojiCode = Integer.parseInt (sEmojiHexString, 16);
-			//sbReplace.append (b)Character (nEmojiCode);
-			matcher.appendReplacement (sbReplace, String.valueOf (Character.toChars (nEmojiCode)));	// 直接剔除掉，然后再补上 emoji 字符。<del>（不直接替换的原因：appendReplacement 只接受 String 参数，而不接受 char[] 参数）</del>
-			//sbReplace.append (String.valueOf (Character.toChars (nEmojiCode)));
+
+			//Hex hex = new Hex (StandardCharsets.ISO_8859_1);
+			//try
+			//{
+				//if ((sEmojiHexString.length () & 1) == 1)	// apache common codec Hex 需要偶数长度
+				//{
+				//	sEmojiHexString = "0" + sEmojiHexString;
+				//}
+				//sEmojiHexString = StringUtils.replace (sEmojiHexString, "1f", "01f");	// 对于 “1f1e81f1f3” 这样的输入，其实，应该是两个字符“1f1e8”“1f1f3”，主要特征就是 unicode 的值都是 1f 开头的（未知后面的字节有没有可能也会带 1f，暂时认为不会带）。java.lang.NumberFormatException: For input string: "1f1e81f1f3"
+				StringBuilder sb = new StringBuilder ();
+				for (int i=0; i<sEmojiHexString.length ();)
+				{
+					String sStartString = StringUtils.substring (sEmojiHexString, i, i+2);
+					if (StringUtils.startsWithIgnoreCase (sStartString, "1f"))
+					{
+						sb.append ("0");
+						sb.append (StringUtils.substring (sEmojiHexString, i, i+5));
+						i += 5;
+					}
+					else
+					{
+						sb.append (StringUtils.substring (sEmojiHexString, i, i+4));
+						i += 4;
+					}
+
+				}
+				sEmojiHexString = sb.toString ();
+//System.out.println (sEmojiHexString);
+				BigInteger bi = new BigInteger (sEmojiHexString, 16);
+				byte[] arrayEmoji = bi.toByteArray (); // (byte[])hex.decode (sEmojiHexString);
+				String sEmoji = new String (arrayEmoji, StandardCharsets.UTF_16BE);
+				//sbReplace.append (b)Character (nEmojiCode);
+				matcher.appendReplacement (sbReplace, sEmoji);	// 直接剔除掉，然后再补上 emoji 字符。<del>（不直接替换的原因：appendReplacement 只接受 String 参数，而不接受 char[] 参数）</del>
+				//sbReplace.append (String.valueOf (Character.toChars (nEmojiCode)));
+			//}
+			//catch (DecoderException e)
+			//{
+//logger.warning (sEmojiHexString + " " + e.toString ());
+			//	e.printStackTrace();
+			//}
 		}
 		matcher.appendTail (sbReplace);
 //System.out.println (sbReplace);
