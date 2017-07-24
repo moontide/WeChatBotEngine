@@ -439,19 +439,54 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 	}
 
 	/**
-	 * 最简化的发图片消息。
+	 * 最简化的发媒体文件（图片、视频、语音、其他文档）消息。
 	 * @param sToAccount 接收人帐号
-	 * @param sMediaID 消息内容
-	 * @param bInsertExtraNewLineBeforeTimestamp
+	 * @param sMediaID 上传消息
 	 */
-	public void SendImageMessage (String sToAccount, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	void SendMediaMessage (String sToAccount, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 		File f = null;
 		// 先上传文件
-		net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (f);
+		net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, f);
 
 		// 再用上传返回的 MediaID 把图片消息（已不是图片本身）发出
 		net_maclife_wechat_http_BotApp.WebWeChatSendImageMessage (sUserID, sSessionID, sSessionKey, sPassTicket, this.sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
+	}
+
+	public void SendMediaFile (String sToAccount, File f) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		if (f==null || !f.exists ())
+			return;
+
+		// 先上传文件
+		JsonNode jsonUploadResult = net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, f);
+		if (jsonUploadResult == null)
+		{
+net_maclife_wechat_http_BotApp.logger.warning ("文件 " + f + " 上传失败");
+			return;
+		}
+		String sMediaID = net_maclife_wechat_http_BotApp.GetJSONText (jsonUploadResult, "MediaId");
+		String sWeChatMediaType = net_maclife_wechat_http_BotApp.GetJSONText (jsonUploadResult, "MediaType");	// MediaType 不是微信 API 返回的，而是本 BotEngine 自己判断的
+
+		// 再用上传返回的 MediaID 把文件消息（已不是文件本身）发出
+		if (StringUtils.equalsIgnoreCase (sWeChatMediaType, "pic"))
+			net_maclife_wechat_http_BotApp.WebWeChatSendImageMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
+		else if (StringUtils.equalsIgnoreCase (sWeChatMediaType, "video"))
+			net_maclife_wechat_http_BotApp.WebWeChatSendVideoMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
+		else if (StringUtils.equalsIgnoreCase (sWeChatMediaType, "doc"))
+		{
+			net_maclife_wechat_http_BotApp.WebWeChatSendApplicationMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, net_maclife_wechat_http_BotApp.MakeFullSendApplicationMessageRequestElement (sMediaID, f));
+		}
+		else
+		{
+net_maclife_wechat_http_BotApp.logger.warning ("发送文件时，遇到未知的媒体类型： " + sWeChatMediaType);
+		}
+	}
+
+	public void SendMediaFile (String sToAccount, String sFileName) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		File f = new File (sFileName);
+		SendMediaFile (sToAccount, f);
 	}
 
 	/**

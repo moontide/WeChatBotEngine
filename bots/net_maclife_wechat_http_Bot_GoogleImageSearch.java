@@ -156,19 +156,19 @@ System.out.println (doc);
 			else
 			{	// POST 方法访问
 				ByteArrayOutputStream baos = new ByteArrayOutputStream ();
-				//FillMultipartSimplely (baos, sMultipartBoundary, "image_url", "");
+				//net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "image_url", "");
 
 				String sImageContentType = Files.probeContentType (fMedia.toPath ());
-				FillMultipartSimplely (baos, sMultipartBoundary, "encoded_image", fMedia, sImageContentType);
+				net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "encoded_image", fMedia, sImageContentType);
 
 				//InputStream is = new FileInputStream (fMedia);
 				//byte[] arrayImg = IOUtils.toByteArray (is);
 				//is.close ();
-				//FillMultipartSimplely (baos, sMultipartBoundary, "image_content", Base64.encodeBase64String (arrayImg));
-				//FillMultipartSimplely (baos, sMultipartBoundary, "filename", fMedia.getName ());
+				//net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "image_content", Base64.encodeBase64String (arrayImg));
+				//net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "filename", fMedia.getName ());
 
-				FillMultipartSimplely (baos, sMultipartBoundary, "hl", "zh-CN");
-				baos.write (("--" + sMultipartBoundary + "--\r\n").getBytes ());
+				net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "hl", "zh-CN");
+				net_maclife_util_HTTPUtils.FillMultipartSimplelyEnd (baos, sMultipartBoundary);
 				baos.flush ();
 
 				ByteArrayOutputStream baos_multipart = null;
@@ -305,34 +305,6 @@ net_maclife_wechat_http_BotApp.logger.info (GetName() + " 找不到 ._gUb，也�
 				}
 		}
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-	}
-
-	public static void FillMultipartSimplely (OutputStream baos, String sBoundary, String name, String value) throws IOException
-	{
-		String line = null;
-		line = "--" + sBoundary + "\r\n";
-		baos.write (line.getBytes ());
-		line = "Content-Disposition: form-data; name=\"" + name + "\"\r\n\r\n" + value + "\r\n";
-		baos.write (line.getBytes ());
-	}
-
-	public static void FillMultipartSimplely (OutputStream baos, String sBoundary, String name, File f, String sFileContentType) throws IOException
-	{
-		String line = null;
-		line = "--" + sBoundary + "\r\n";
-		baos.write (line.getBytes ());
-		line = "Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + f.getName () + "\"\r\n";
-		baos.write (line.getBytes ());
-		if (StringUtils.isNotEmpty (sFileContentType))
-		{
-			line = "Content-Type: " + sFileContentType + "\r\n";
-			baos.write (line.getBytes ());
-		}
-		baos.write ("\r\n".getBytes ());
-		FileInputStream fis = new FileInputStream (f);
-		IOUtils.copy (fis, baos);
-		fis.close ();
-		baos.write ("\r\n".getBytes ());
 	}
 
 	@Override

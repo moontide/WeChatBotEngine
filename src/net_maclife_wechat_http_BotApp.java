@@ -3,6 +3,7 @@ import java.io.*;
 import java.math.*;
 import java.net.*;
 import java.nio.charset.*;
+import java.nio.file.*;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
@@ -13,8 +14,9 @@ import java.util.regex.*;
 import javax.imageio.*;
 import javax.script.*;
 
-//import org.apache.commons.codec.*;
-//import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.*;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.*;
 import org.apache.commons.configuration2.*;
 import org.apache.commons.configuration2.builder.*;
 import org.apache.commons.configuration2.builder.fluent.*;
@@ -42,6 +44,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 	public static final ExecutorService executor = Executors.newCachedThreadPool ();	// .newFixedThreadPool (5);
 
 	public static final String utf8 = "UTF-8";
+	public static final Charset UTF_32BE = Charset.forName ("UTF-32BE");
 
 	public static final Random random = new SecureRandom ();
 
@@ -50,6 +53,8 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Public = 0x08;	// 公众号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Subscriber = 0x10;	// 订阅号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__WeChatTeam = 0x20;	// 微信团队自己的公众号
+
+	static final String sMultipartBoundary = "JsoupDoesNotSupportFormDataWell, and, ApacheHCDoesNotSupportSOCKSProxy";
 
 	private static final String configFileName = "src" + File.separator + "config.properties";
 	private static Parameters configParameters = null;
@@ -1472,6 +1477,46 @@ logger.info ("发视频消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG, sMediaID);
 	}
 
+	public static Element MakeFullSendApplicationMessageRequestElement (String sMediaID, File f)
+	{
+		// 	"Content":"<appmsg appid='wxeb7ec651dd0aefa9' sdkver=''><title>乘法表.html</title><des></des><action></action><type>6</type><content></content><url></url><lowurl></lowurl><appattach><totallen>2450</totallen><attachid>@crypt_31cbb6a9_6b3d4a70ef9dfb160caaa0248f4b35555af79d7cde554bc49cfae602ba2e405bfc7c1b3b2ba8374747f769ef74d90512d4c2e8bcdf41628ebfa9fab04f9a1758018c4efe47195287bf738797da768e7c</attachid><fileext>html</fileext></appattach><extinfo></extinfo></appmsg>",
+
+		Element eAppMsg = new Element ("appmsg");
+		eAppMsg.addAttribute (new Attribute ("appid", "wxeb7ec651dd0aefa9"));
+		eAppMsg.addAttribute (new Attribute ("sdkver", ""));
+			Element eTitle = new Element ("title");
+				eTitle.appendChild (f.getName ());
+			Element eDescription = new Element ("des");
+			Element eAction = new Element ("action");
+			Element eType = new Element ("type");
+				eType.appendChild (String.valueOf (net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP));
+			Element eContent = new Element ("content");
+			Element eURL = new Element ("url");
+			Element eLowURL = new Element ("lowurl");
+			Element eAppAttach = new Element ("appattach");
+				Element eFileSize = new Element ("totallen");
+				eFileSize.appendChild ("" + f.length ());
+				Element eMediaID = new Element ("attachid");
+				eMediaID.appendChild (sMediaID);
+				Element eFileExtensionName = new Element ("fileext");
+				eFileExtensionName.appendChild (FilenameUtils.getExtension (f.getName ()));
+				eAppAttach.appendChild (eFileSize);
+				eAppAttach.appendChild (eMediaID);
+				eAppAttach.appendChild (eFileExtensionName);
+			Element eExtInfo = new Element ("extinfo");
+
+		eAppMsg.appendChild (eTitle);
+		eAppMsg.appendChild (eDescription);
+		eAppMsg.appendChild (eAction);
+		eAppMsg.appendChild (eType);
+		eAppMsg.appendChild (eContent);
+		eAppMsg.appendChild (eURL);
+		eAppMsg.appendChild (eLowURL);
+		eAppMsg.appendChild (eAppAttach);
+		eAppMsg.appendChild (eExtInfo);
+
+		return eAppMsg;
+	}
 	public static JsonNode MakeFullSendApplicationMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, Element eXML)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
@@ -1485,16 +1530,55 @@ logger.info ("发视频消息: " + sMediaID);
 			msg.put ("LocalID", nLocalMessageID);
 			msg.put ("ClientMsgId", nLocalMessageID);
 		on.set ("Msg", msg);
+		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendApplicationMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendApplicationMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, Element eXML) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
-logger.info ("发应用程序 (如：上传文件) 消息，媒体 ID: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, sMediaID);
+logger.info ("发应用程序 (如：上传文件) 消息，XML: " + eXML.toXML ());
+		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, eXML);
 	}
 
-	public static JsonNode WebWeChatUploadMedia (File f)
+	public static JsonNode MakeFullUploadMediaRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom_Account, String sTo_Account, File f)
 	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.put ("UploadType", 2);
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.put ("ClientMediaId", GenerateLocalMessageID ());
+		on.put ("TotalLen", f.length ());
+		on.put ("StartPos", 0);
+		on.put ("DataLen", f.length ());
+		on.put ("MediaType", 4);
+		on.put ("FromUserName", sFrom_Account);
+		on.put ("ToUserName", sTo_Account);
+		try
+		{
+			FileInputStream fis = new FileInputStream(f);
+			String sFileMD5Sum = DigestUtils.md5Hex (fis);
+			fis.close ();
+			on.put ("FileMd5", sFileMD5Sum);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+		return on;
+	}
+
+	public static String GetCookieValue (List<HttpCookie> listCookies, String sCookieName)
+	{
+		for (HttpCookie cookie : listCookies)
+		{
+			if (StringUtils.equals (cookie.getName (), sCookieName))
+				return cookie.getValue ();
+		}
+		return null;
+	}
+
+	public static JsonNode WebWeChatUploadMedia (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, File f) throws IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, URISyntaxException
+	{
+		if (f!=null && !f.exists ())
+			return null;
 logger.info ("上传媒体/上传文件: " + f);
 		String sURL = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json";
 
@@ -1505,6 +1589,77 @@ logger.info ("上传媒体/上传文件: " + f);
 		// Content-Type: "multipart/form-data; boundary=---------------------------18419982551043833290966102030"
 		// 消息体： 包含
 		//
+
+		// 自己构造 multipart/form-data 消息体
+		//*
+		OutputStream os = null;
+		byte[] arrayPostData = null;
+		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
+		//mapRequestHeaders.put ("Content-Type", "");	// Java HttpURLConnection 你妈的能不能彻底删除 Content-Type 消息头啊
+		//mapRequestHeaders.put ("Content-Length", "");	// Java HttpURLConnection 你妈的能不能彻底删除 Content-Length 消息头啊
+		mapRequestHeaders.put ("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/1234 Firefox is versioning emperor #2, Chrome is versioning emperor #1!!!");	// 经过多次测试，User-Agent 和/或 Accept-Language 头是必须要的，否则返回不了正确响应
+		mapRequestHeaders.put ("Accept-Language", "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3");
+		// POST 方法访问
+		ByteArrayOutputStream baos = new ByteArrayOutputStream ();
+		//FillMultipartSimplely (baos, sMultipartBoundary, "image_url", "");
+
+		String sImageContentType = Files.probeContentType (f.toPath ());
+		String sMediaTypeForWeChat = StringUtils.startsWithIgnoreCase (sImageContentType, "video/") ? "video" : (StringUtils.startsWithIgnoreCase (sImageContentType, "image/") ? "pic" : "doc");
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "id", "WU_FILE_1");	// 每次只上传一个，所以，固定 id 即可
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "name", f.getName ());
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "type", sImageContentType);
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "lastModifiedDate", new Date (f.lastModified ()).toGMTString ());
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "size", String.valueOf (f.length ()));
+		//net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "chunks", "1");	// 一次性发送完，不分段处理（web 端分段可能只是为了显示上传进度？）
+		//net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "chunk", "0");	// chunk 是索引（从 0 开始），不是序号
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "mediatype", sMediaTypeForWeChat);
+
+		// {"UploadType":2,"BaseRequest":{"Uin":2100343515,"Sid":"4jLhehGMAlOrWmf3","Skey":"@crypt_1df7c02d_37e815cc9f64301caac3bb34bfa582a5","DeviceID":"e946852220005919"},"ClientMediaId":1483416567527,"TotalLen":2703813,"StartPos":0,"DataLen":2703813,"MediaType":4,"FromUserName":"@310be1aaf2953c82ea2a4482fd6be8c1ce3d123d6e37a3382cbfd5e629e01d84","ToUserName":"@5c9e12b6d0f2e6eafa6f9d061df8e53cf6922ed853b55642ba9b0989c6ecccdb","FileMd5":"8adb013061367e26b17730d06b77b3fb"}
+		JsonNode onUploadMediaRequest = MakeFullUploadMediaRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID(), sFrom_Account, sTo_Account, f);
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "uploadmediarequest", jacksonObjectMapper_Strict.writeValueAsString (onUploadMediaRequest));
+		CookieStore cookieStore = cookieManager.getCookieStore ();
+		List<HttpCookie> listCookies = cookieStore.get (new URI(sURL));
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "webwx_data_ticket", GetCookieValue (listCookies, "webwx_data_ticket"));
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "pass_ticket", sPassTicket);
+		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "filename", f, "application/octet-stream");
+		net_maclife_util_HTTPUtils.FillMultipartSimplelyEnd (baos, sMultipartBoundary);
+		baos.flush ();
+
+		ByteArrayOutputStream baos_multipart = null;
+		mapRequestHeaders.put ("Content-Type", "multipart/form-data; boundary=" + sMultipartBoundary);
+		mapRequestHeaders.put ("Content-Length", String.valueOf (baos.size ()));
+		baos_multipart = baos;
+
+		arrayPostData = baos_multipart.toByteArray ();
+
+		URLConnection http = null;
+		//sResponseBody = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, arrayPostData);
+		http = (URLConnection) net_maclife_util_HTTPUtils.CURL
+				("POST", sURL, mapRequestHeaders, arrayPostData, true, true, null, false /* 不跟随重定向 */, 0, 0,
+					null, null, 0,
+					true, true, null, null, null, null, null, null
+				);
+
+		if (http != null)
+		{
+			int iResponseCode = ((HttpURLConnection)http).getResponseCode();
+			String sStatusLine = http.getHeaderField (0);	// HTTP/1.1 200 OK、HTTP/1.1 404 Not Found
+
+			int iMainResponseCode = iResponseCode/100;
+			if (iMainResponseCode == 2)
+			{
+				InputStream is = http.getInputStream ();
+				JsonNode node = jacksonObjectMapper_Loose.readTree (is);
+				is.close ();
+System.out.println (jacksonObjectMapper_Loose.writerWithDefaultPrettyPrinter ().writeValueAsString (node));
+				ProcessBaseResponse (node, "WebWeChatUploadMedia");
+
+				// 把 MediaType 附加上
+				((ObjectNode)node).put ("MediaType", sMediaTypeForWeChat);
+				return node;
+			}
+		}
+
 		// Response (JSON): BaseResponse: xxx , MediaId: "@crypt_169个英文字符", StartPos: 文件大小, CDNThumbImgHeight: 0, CDNThumbImgWidth: 0
 		return null;
 	}
@@ -1733,45 +1888,43 @@ logger.finest ("原内容: " + sContent);
 			bMatched = true;
 			String sEmojiHexString = matcher.group(1);
 
-			//Hex hex = new Hex (StandardCharsets.ISO_8859_1);
-			//try
-			//{
-				//if ((sEmojiHexString.length () & 1) == 1)	// apache common codec Hex 需要偶数长度
-				//{
-				//	sEmojiHexString = "0" + sEmojiHexString;
-				//}
-				//sEmojiHexString = StringUtils.replace (sEmojiHexString, "1f", "01f");	// 对于 “1f1e81f1f3” 这样的输入，其实，应该是两个字符“1f1e8”“1f1f3”，主要特征就是 unicode 的值都是 1f 开头的（未知后面的字节有没有可能也会带 1f，暂时认为不会带）。java.lang.NumberFormatException: For input string: "1f1e81f1f3"
-				StringBuilder sb = new StringBuilder ();
+			Hex hex = new Hex (StandardCharsets.ISO_8859_1);
+			try
+			{
 				for (int i=0; i<sEmojiHexString.length ();)
 				{
+					String sEmoji = null;
+					Charset charset = null;
+					String sSingleEmojiGlyphHexString = null;
 					String sStartString = StringUtils.substring (sEmojiHexString, i, i+2);
 					if (StringUtils.startsWithIgnoreCase (sStartString, "1f"))
 					{
-						sb.append ("0");
-						sb.append (StringUtils.substring (sEmojiHexString, i, i+5));
+						sSingleEmojiGlyphHexString = "000" + StringUtils.substring (sEmojiHexString, i, i+5);
 						i += 5;
+						charset = UTF_32BE;
 					}
 					else
 					{
-						sb.append (StringUtils.substring (sEmojiHexString, i, i+4));
+						sSingleEmojiGlyphHexString = StringUtils.substring (sEmojiHexString, i, i+4);
 						i += 4;
+						charset = StandardCharsets.UTF_16BE;
 					}
-
+//System.out.println (sSingleEmojiGlyphHexString);
+					//BigInteger bi = new BigInteger (sEmojiHexString, 16);
+					byte[] arrayEmoji = null;
+					//arrayEmoji = bi.toByteArray ();
+					arrayEmoji = (byte[])hex.decode (sSingleEmojiGlyphHexString);
+//System.out.println (Arrays.toString (arrayEmoji));
+					sEmoji = new String (arrayEmoji, charset);
+					//sbReplace.append (b)Character (nEmojiCode);
+					matcher.appendReplacement (sbReplace, sEmoji);	// 直接剔除掉，然后再补上 emoji 字符。<del>（不直接替换的原因：appendReplacement 只接受 String 参数，而不接受 char[] 参数）</del>
 				}
-				sEmojiHexString = sb.toString ();
-//System.out.println (sEmojiHexString);
-				BigInteger bi = new BigInteger (sEmojiHexString, 16);
-				byte[] arrayEmoji = bi.toByteArray (); // (byte[])hex.decode (sEmojiHexString);
-				String sEmoji = new String (arrayEmoji, StandardCharsets.UTF_16BE);
-				//sbReplace.append (b)Character (nEmojiCode);
-				matcher.appendReplacement (sbReplace, sEmoji);	// 直接剔除掉，然后再补上 emoji 字符。<del>（不直接替换的原因：appendReplacement 只接受 String 参数，而不接受 char[] 参数）</del>
-				//sbReplace.append (String.valueOf (Character.toChars (nEmojiCode)));
-			//}
-			//catch (DecoderException e)
-			//{
-//logger.warning (sEmojiHexString + " " + e.toString ());
-			//	e.printStackTrace();
-			//}
+			}
+			catch (DecoderException e)
+			{
+logger.warning (sEmojiHexString + " " + e.toString ());
+				e.printStackTrace();
+			}
 		}
 		matcher.appendTail (sbReplace);
 //System.out.println (sbReplace);
@@ -1923,7 +2076,7 @@ logger.warning ("必须输入回复的消息内容");
 						String sMessage = StringEscapeUtils.unescapeJava (sParam);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
 						engine.ReplyTextMessage (sMessage);
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "msg") || StringUtils.equalsIgnoreCase (sCommand, "send"))	// msg 命令 - 仿 IRC 频道的 msg 命令
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "msg", "send", "text"))	// msg 命令 - 仿 IRC 频道的 msg 命令
 					{
 						if (StringUtils.isEmpty (sParam))
 						{
@@ -1951,18 +2104,20 @@ logger.warning ("必须输入消息内容");
 						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
 						engine.SendTextMessage (sToAccount, sMessage);
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "msgToAlias") || StringUtils.equalsIgnoreCase (sCommand, "sendToAlias")	// 根据用户的微信号来发消息
-							|| StringUtils.equalsIgnoreCase (sCommand, "msgToRemarkName") || StringUtils.equalsIgnoreCase (sCommand, "sendToRemarkName")	// 根据自己给用户做的备注名来发消息
-							|| StringUtils.equalsIgnoreCase (sCommand, "msgToNickName") || StringUtils.equalsIgnoreCase (sCommand, "sendToNickName")	// 根据用户的昵称来发消息
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "msgToAlias", "sendToAlias", "textToAlias",	// 根据用户的微信号来发文字消息
+							"msgToRemarkName", "sendToRemarkName", "textToRemarkName",	// 根据自己给用户做的备注名来发文字消息
+							"msgToNickName", "sendToNickName", "textToNickName",	// 根据用户的昵称来发文字消息
+							"msgToMe", "sendToMe", "textToMe", "msgToSelf", "sendToSelf", "textToSelf", "msgToMyself", "sendToMyself", "textToMyself"	// 发送给自己（到手机端）
+							)
 					)
 					{
 						String sSearchBy = "";
-						String sSearchByName = "";
+						String sNameOfSearchBy = "";
 						if (StringUtils.startsWithIgnoreCase (sCommand, "msgTo"))
 						{
 							sSearchBy = StringUtils.substring (sCommand, 5);
 						}
-						else if (StringUtils.startsWithIgnoreCase (sCommand, "sendTo"))
+						else if (StringUtils.startsWithIgnoreCase (sCommand, "sendTo") || StringUtils.startsWithIgnoreCase (sCommand, "textTo"))
 						{
 							sSearchBy = StringUtils.substring (sCommand, 6);
 						}
@@ -1971,29 +2126,48 @@ logger.warning ("必须输入消息内容");
 							continue;
 						}
 
-						if (StringUtils.equalsIgnoreCase (sSearchBy, "Alias"))
-							sSearchByName = "微信号";
+						if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "me", "myself", "self"))
+							sNameOfSearchBy = "自己";
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "Alias"))
+							sNameOfSearchBy = "微信号";
 						else if (StringUtils.equalsIgnoreCase (sSearchBy, "RemarkName"))
-							sSearchByName = "备注名";
+							sNameOfSearchBy = "备注名";
 						else if (StringUtils.equalsIgnoreCase (sSearchBy, "NickName"))
-							sSearchByName = "昵称";
+							sNameOfSearchBy = "昵称";
+						else
+						{
+logger.warning ("不知道你要根据什么发消息… sSearchByName = " + sNameOfSearchBy);
+							continue;
+						}
 
 						if (StringUtils.isEmpty (sParam))
 						{
-logger.warning (sCommand + " <接收人的" + sSearchByName + "> <消息内容>");
+							if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "自己"))
+logger.warning (sCommand + " <发给自己的消息内容>");
+							else
+logger.warning (sCommand + " <接收人的" + sNameOfSearchBy + "> <消息内容>");
 							continue;
 						}
-						String[] arraySendMessage = sParam.split (" +", 2);
+
 						String sToTarget = null;
 						String sMessage = null;
-						if (arraySendMessage.length > 0)
-							sToTarget = arraySendMessage[0];
-						if (arraySendMessage.length > 1)
-							sMessage = arraySendMessage[1];
+						if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "自己"))
+						{
+							sToTarget = engine.sMyEncryptedAccountInThisSession;
+							sMessage = sParam;
+						}
+						else
+						{
+							String[] arraySendMessage = sParam.split (" +", 2);
+							if (arraySendMessage.length > 0)
+								sToTarget = arraySendMessage[0];
+							if (arraySendMessage.length > 1)
+								sMessage = arraySendMessage[1];
+						}
 
 						if (StringUtils.isEmpty (sToTarget))
 						{
-logger.warning ("必须输入接收人的" + sSearchByName + "。");
+logger.warning ("必须输入接收人的" + sNameOfSearchBy + "。");
 							continue;
 						}
 						if (StringUtils.isEmpty (sMessage))
@@ -2003,27 +2177,163 @@ logger.warning ("必须输入消息内容");
 						}
 
 						List<JsonNode> listContacts = null;
-						if (StringUtils.equalsIgnoreCase (sSearchBy, "Alias"))
+						if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "自己"))
+							listContacts = engine.SearchForContacts (sToTarget, null, null, null);
+						else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "微信号"))
 							listContacts = engine.SearchForContacts (null, sToTarget, null, null);
-						else if (StringUtils.equalsIgnoreCase (sSearchBy, "RemarkName"))
+						else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "备注名"))
 							listContacts = engine.SearchForContacts (null, null, sToTarget, null);
-						else if (StringUtils.equalsIgnoreCase (sSearchBy, "NickName"))
+						else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "昵称"))
 							listContacts = engine.SearchForContacts (null, null, null, sToTarget);
 						if (listContacts.size () != 1)
 						{
 							if (listContacts.size () == 0)
 							{
-logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sSearchByName + "【" + sToTarget + "】未搜到联系人。注意：只从微信通信录中搜索，群聊如果没有加到微信通信录，是搜不到的（联系人里没有）。"));
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearchBy + "【" + sToTarget + "】未搜到联系人。注意：只从微信通信录中搜索，群聊如果没有加到微信通信录，是搜不到的（联系人里没有）。"));
 							}
 							else
 							{
-logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sSearchByName + "【" + sToTarget + "】搜索到的联系人不是 1 个，而是 " + listContacts.size () + " 个。"));
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearchBy + "【" + sToTarget + "】搜索到的联系人不是 1 个，而是 " + listContacts.size () + " 个。"));
 							}
 							continue;
 						}
 						JsonNode jsonContact = listContacts.get (0);
 						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
 						engine.SendTextMessage (GetJSONText (jsonContact, "UserName"), sMessage);
+					}
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "SendFile", "SendImage", "SendAudio", "SendVideo"))	// 发送图片、视频、其他文件
+					{
+						if (StringUtils.isEmpty (sParam))
+						{
+logger.warning (sCommand + " <接收人帐号> <本地文件名>");
+							continue;
+						}
+						String[] arraySendFile = sParam.split (" +", 2);
+						String sToAccount = null;
+						String sFileName = null;
+						if (arraySendFile.length > 0)
+							sToAccount = arraySendFile[0];
+						if (arraySendFile.length > 1)
+							sFileName = arraySendFile[1];
+
+						if (StringUtils.isEmpty (sToAccount))
+						{
+logger.warning ("必须输入接收人的帐号。接收人帐号可以是加密过的形式，如： @XXXX @@XXXX 或未加密过的形式，如：wxid_XXXX filehelper gh_XXXX");
+							continue;
+						}
+						if (StringUtils.isEmpty (sFileName))
+						{
+logger.warning ("必须输入文件名");
+							continue;
+						}
+						File f = new File (sFileName);
+						if (! f.exists ())
+						{
+logger.warning ("文件 " + sFileName + " 不存在！");
+							continue;
+						}
+						engine.SendMediaFile (sToAccount, f);
+					}
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "fileToAlias", "imageToAlias", "audioToAlias", "videoToAlias",	// 根据用户的微信号来发文件
+							"fileToRemarkName", "imageToRemarkName", "audioToRemarkName", "videoToRemarkName",	// 根据自己给用户做的备注名来发文件
+							"fileToNickName", "imageToNickName", "audioToNickName", "videoToNickName",	// 根据用户的昵称来发文件
+							"fileToMe", "imageToMe", "audioToMe", "videoToMe", "fileToSelf", "imageToSelf", "audioToSelf", "videoToSelf", "fileToMyself", "imageToMyself", "audioToMyself", "videoToMyself"	// 发送给自己（到手机端）
+							)
+					)
+					{
+						String sSearchBy = "";
+						String sNameOfSearchBy = "";
+						if (StringUtils.startsWithIgnoreCase (sCommand, "fileTo"))
+						{
+							sSearchBy = StringUtils.substring (sCommand, 6);
+						}
+						else if (StringUtils.startsWithIgnoreCase (sCommand, "imageTo") || StringUtils.startsWithIgnoreCase (sCommand, "audioTo") || StringUtils.startsWithIgnoreCase (sCommand, "videoTo"))
+						{
+							sSearchBy = StringUtils.substring (sCommand, 7);
+						}
+						else
+						{
+							continue;
+						}
+
+						if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "me", "myself", "self"))
+							sNameOfSearchBy = "自己";
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "Alias"))
+							sNameOfSearchBy = "微信号";
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "RemarkName"))
+							sNameOfSearchBy = "备注名";
+						else if (StringUtils.equalsIgnoreCase (sSearchBy, "NickName"))
+							sNameOfSearchBy = "昵称";
+						else
+						{
+logger.warning ("不知道你要根据什么发消息… sSearchByName = " + sNameOfSearchBy);
+							continue;
+						}
+
+						if (StringUtils.isEmpty (sParam))
+						{
+							if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "自己"))
+logger.warning (sCommand + " <发给自己的本地文件名>");
+							else
+logger.warning (sCommand + " <接收人的" + sNameOfSearchBy + "> <本地文件名>");
+							continue;
+						}
+						String sToTarget = null;
+						String sFileName = null;
+						if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "自己"))
+						{
+							sToTarget = engine.sMyEncryptedAccountInThisSession;
+							sFileName = sParam;
+						}
+						else
+						{
+							String[] arraySendFile = sParam.split (" +", 2);
+							if (arraySendFile.length > 0)
+								sToTarget = arraySendFile[0];
+							if (arraySendFile.length > 1)
+								sFileName = arraySendFile[1];
+						}
+
+						if (StringUtils.isEmpty (sToTarget))
+						{
+logger.warning ("必须输入接收人的" + sNameOfSearchBy + "。");
+							continue;
+						}
+						if (StringUtils.isEmpty (sFileName))
+						{
+logger.warning ("必须输入文件名");
+							continue;
+						}
+						File f = new File (sFileName);
+						if (! f.exists ())
+						{
+logger.warning ("文件 " + sFileName + " 不存在！");
+							continue;
+						}
+
+						List<JsonNode> listContacts = null;
+						if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "自己"))
+							listContacts = engine.SearchForContacts (sToTarget, null, null, null);
+						else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "微信号"))
+							listContacts = engine.SearchForContacts (null, sToTarget, null, null);
+						else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "备注名"))
+							listContacts = engine.SearchForContacts (null, null, sToTarget, null);
+						else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "昵称"))
+							listContacts = engine.SearchForContacts (null, null, null, sToTarget);
+						if (listContacts.size () != 1)
+						{
+							if (listContacts.size () == 0)
+							{
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearchBy + "【" + sToTarget + "】未搜到联系人。注意：只从微信通信录中搜索，群聊如果没有加到微信通信录，是搜不到的（联系人里没有）。"));
+							}
+							else
+							{
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearchBy + "【" + sToTarget + "】搜索到的联系人不是 1 个，而是 " + listContacts.size () + " 个。"));
+							}
+							continue;
+						}
+						JsonNode jsonContact = listContacts.get (0);
+						engine.SendMediaFile (GetJSONText (jsonContact, "UserName"), f);
 					}
 					else if (StringUtils.equalsIgnoreCase (sCommand, "StatReport") || StringUtils.equalsIgnoreCase (sCommand, "EmptyStatReport"))
 					{

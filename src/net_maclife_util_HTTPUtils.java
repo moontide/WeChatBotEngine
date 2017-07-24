@@ -626,4 +626,37 @@ System.out.println (proxy);
 		}
 		return sDefaultCharset;
 	}
+
+	public static void FillMultipartSimplely (OutputStream baos, String sBoundary, String name, String value) throws IOException
+	{
+		String line = null;
+		line = "--" + sBoundary + "\r\n";
+		baos.write (line.getBytes ());
+		line = "Content-Disposition: form-data; name=\"" + name + "\"\r\n\r\n" + value + "\r\n";
+		baos.write (line.getBytes ());
+	}
+
+	public static void FillMultipartSimplely (OutputStream baos, String sBoundary, String name, File f, String sFileContentType) throws IOException
+	{
+		String line = null;
+		line = "--" + sBoundary + "\r\n";
+		baos.write (line.getBytes ());
+		line = "Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + f.getName () + "\"\r\n";
+		baos.write (line.getBytes ());
+		if (StringUtils.isNotEmpty (sFileContentType))
+		{
+			line = "Content-Type: " + sFileContentType + "\r\n";
+			baos.write (line.getBytes ());
+		}
+		baos.write ("\r\n".getBytes ());
+		FileInputStream fis = new FileInputStream (f);
+		IOUtils.copy (fis, baos);
+		fis.close ();
+		baos.write ("\r\n".getBytes ());
+	}
+
+	public static void FillMultipartSimplelyEnd (OutputStream baos, String sBoundary) throws IOException
+	{
+		baos.write (("--" + sBoundary + "--\r\n").getBytes ());
+	}
 }
