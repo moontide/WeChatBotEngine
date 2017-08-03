@@ -13,6 +13,7 @@ import java.util.regex.*;
 
 import javax.imageio.*;
 import javax.script.*;
+import javax.sound.sampled.*;
 
 import org.apache.commons.codec.*;
 import org.apache.commons.codec.binary.Hex;
@@ -565,7 +566,7 @@ logger.fine ("	[" + eXML.toXML() + "]");
 	{
 logger.info ("初始化 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=1703974212&lang=zh_CN&pass_ticket=ZfvpI6wcO7N5PTkacmWK9zUTXpUOB3kqre%2BrkQ8IAtHDAIP2mc2psB5eDH8cwzsp
-		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
 logger.fine ("WebWeChatInit 的 URL:");
 logger.fine ("	" + sURL);
 
@@ -721,7 +722,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 	public static JsonNode WebWeChatStatusNotify (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("开启状态通知 …");
-		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify?lang=zh_CN&pass_ticket=" + sPassTicket;
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify?lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
 logger.fine ("WebWeChatStatusNotify 的 URL:");
 logger.fine ("	" + sURL);
 
@@ -764,7 +765,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 	public static JsonNode WebWeChatGetContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("获取联系人 …");
-		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
 logger.fine ("WebWeChatGetContacts 的 URL:");
 logger.fine ("	" + sURL);
 
@@ -860,7 +861,7 @@ logger.info (sb.toString ());
 	public static JsonNode WebWeChatGetRoomsContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomAccounts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("获取 " + listRoomAccounts.size () + " 个聊天室的联系人 …");
-		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
 logger.fine ("WebWeChatGetRoomContacts 的 URL:");
 logger.fine ("	" + sURL);
 
@@ -1333,23 +1334,27 @@ logger.fine ("发消息 WebWeChatSendMessage …");
 		switch (nMessageType)
 		{
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT:
-				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
 				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendTextMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE:
-				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
 				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendImageMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				break;
+			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE:
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvoicemsg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendVoiceMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG:
-				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendImageMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendVideoMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP:
-				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
 				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendApplicationMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (Element)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION:
-				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket=" + sPassTicket;
+				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
 				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendEmotionMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			default:
@@ -1453,6 +1458,50 @@ logger.info ("发图片消息: " + sMediaID);
 	{
 logger.info ("发表情图消息: " + sMediaID);
 		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
+	}
+
+	public static Element MakeFullSendVoiceMessageRequestElement (String sMediaID, File f) throws UnsupportedAudioFileException, IOException
+	{
+		// 	<msg><voicemsg endflag="1" cancelflag="0" forwardflag="0" voiceformat="4" voicelength="3646" length="5552" bufid="434305989364023680" clientmsgid="41623332313162653763633237366500381057072517d00d3382b0e100" fromusername="wxid_ghgw5py0s3g922" /></msg>
+		AudioInputStream audioInputStream = AudioSystem.getAudioInputStream (f);
+		AudioFormat format = audioInputStream.getFormat ();
+		long nFrames = audioInputStream.getFrameLength ();
+		float fFrameRate = format.getFrameRate();
+		long nDurationInMilliSeconds = (long)(nFrames * 1000 / fFrameRate);
+
+		Element eVoiceMsg = new Element ("voicemsg");
+		eVoiceMsg.addAttribute (new Attribute ("endflag", "1"));
+		eVoiceMsg.addAttribute (new Attribute ("cancelflag", "0"));
+		eVoiceMsg.addAttribute (new Attribute ("forwardflag", "0"));
+		eVoiceMsg.addAttribute (new Attribute ("voiceformat", "4"));
+		eVoiceMsg.addAttribute (new Attribute ("voicelength", String.valueOf (nDurationInMilliSeconds)));
+		eVoiceMsg.addAttribute (new Attribute ("length", String.valueOf (f.length ())));
+		//eVoiceMsg.addAttribute (new Attribute ("bufid", ？？？));
+		//eVoiceMsg.addAttribute (new Attribute ("clientmsgid", ？？？));
+		//eVoiceMsg.addAttribute (new Attribute ("fromusername", ？？？));	// wxid_ghgw5py0s3g922
+
+		return eVoiceMsg;
+	}
+	public static JsonNode MakeFullSendVoiceMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	{
+		long nLocalMessageID = GenerateLocalMessageID ();
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
+			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE);
+			msg.put ("MediaId", sMediaID);
+			msg.put ("FromUserName", sFrom);
+			msg.put ("ToUserName", sTo);
+			msg.put ("LocalID", nLocalMessageID);
+			msg.put ("ClientMsgId", nLocalMessageID);
+		on.set ("Msg", msg);
+		on.put ("Scene", 0);
+		return on;
+	}
+	public static JsonNode WebWeChatSendVoiceMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+logger.info ("发语音消息: " + sMediaID);
+		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE, sMediaID);
 	}
 
 	public static JsonNode MakeFullSendVideoMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
@@ -1781,6 +1830,96 @@ logger.finer ("	" + mapRequestHeaders);
 logger.fine ("获取 WebWeChatGetMedia 的 http 响应消息体 (保存到文件)");
 logger.fine ("	" + fMediaFile);
 		return fMediaFile;
+	}
+
+	public static JsonNode MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sContent)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.put ("Opcode", bRequestOrResponse ? 2 : 3);
+		on.put ("VerifyUserListSize", 1);	// 暂时，固定每次只处理一个
+		ArrayNode anUserList = jacksonObjectMapper_Strict.createArrayNode ();
+			ObjectNode onUser = jacksonObjectMapper_Strict.createObjectNode ();
+			onUser.put ("Value", sTo_Account);
+			onUser.put ("VerifyUserTicket", bRequestOrResponse ? "" : sMakeFriendRequestTicketFromPeer);
+			anUserList.add (onUser);
+		on.set ("VerifyUserList", anUserList);
+		on.put ("VerifyContent", sContent);
+		on.put ("SceneListCount", 1);
+		ArrayNode anSceneList = jacksonObjectMapper_Strict.createArrayNode ();
+			anSceneList.add (33);
+		on.set ("SceneList", anSceneList);
+		on.put ("skey", sSessionKey);
+		return on;
+	}
+
+	public static JsonNode MakeFullJsonNode_SendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_Account, String sContent)
+	{
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, true, null, sTo_Account, sContent);
+	}
+
+	public static JsonNode MakeFullJsonNode_AcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sContent)
+	{
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, sTo_Account, sContent);
+	}
+
+	private static void WebWeChatSendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+logger.info ("添加朋友 或 接收添加朋友的请求 …");
+		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxverifyuser?r=***&pass_ticket=***	// 加上 JSON 格式的消息体，POST
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxverifyuser?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
+logger.fine ("WebWeChatSendOrAcceptRequestToMakeFriend 的 URL:");
+logger.fine ("	" + sURL);
+
+		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
+		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
+		CookieStore cookieStore = cookieManager.getCookieStore ();
+		List<HttpCookie> listCookies = cookieStore.get (new URI(sURL));
+		String sCookieValue = "";
+		sCookieValue = MakeCookieValue (listCookies);
+		mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 1100 1102 代码？
+logger.finer ("发送 WebWeChatSendOrAcceptRequestToMakeFriend 的 http 请求消息头:");
+logger.finer ("	" + mapRequestHeaders);
+
+		JsonNode jsonRequestBody = null;
+		if (bRequestOrResponse)
+			jsonRequestBody = MakeFullJsonNode_SendRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_Account, sIdentityContent);
+		else
+			jsonRequestBody = MakeFullJsonNode_AcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMakeFriendRequestTicketFromPeer, sTo_Account, sIdentityContent);
+		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
+logger.finer ("发送 WebWeChatSendOrAcceptRequestToMakeFriend 的 http 请求消息体:");
+logger.finer ("	" + sRequestBody);
+
+		String sContent = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				sContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, sRequestBody.getBytes ());
+logger.fine ("获取 WebWeChatSendOrAcceptRequestToMakeFriend 的 http 响应消息体:");
+logger.fine ("\n" + sContent);
+
+				JsonNode node = jacksonObjectMapper_Loose.readTree (sContent);
+				ProcessBaseResponse (node, "WebWeChatSendOrAcceptRequestToMakeFriend (webwxverifyuser)");
+				break;
+			}
+			//catch (UnknownHostException | SocketTimeoutException e)
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
+	}
+	public static void WebWeChatSendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, sTo_Account, sIdentityContent);
+	}
+	public static void WebWeChatAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, sTo_Account, sIdentityContent);
 	}
 
 	public static void ProcessBaseResponse (JsonNode node, String sAPIName)
@@ -2234,10 +2373,12 @@ logger.warning ("文件 " + sFileName + " 不存在！");
 						}
 						engine.SendMediaFile (sToAccount, f);
 					}
-					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "fileToAlias", "imageToAlias", "audioToAlias", "videoToAlias",	// 根据用户的微信号来发文件
-							"fileToRemarkName", "imageToRemarkName", "audioToRemarkName", "videoToRemarkName",	// 根据自己给用户做的备注名来发文件
-							"fileToNickName", "imageToNickName", "audioToNickName", "videoToNickName",	// 根据用户的昵称来发文件
-							"fileToMe", "imageToMe", "audioToMe", "videoToMe", "fileToSelf", "imageToSelf", "audioToSelf", "videoToSelf", "fileToMyself", "imageToMyself", "audioToMyself", "videoToMyself"	// 发送给自己（到手机端）
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "fileToAlias", "imageToAlias", "audioToAlias", "voiceToAlias", "videoToAlias",	// 根据用户的微信号来发文件
+							"fileToRemarkName", "imageToRemarkName", "audioToRemarkName", "voiceToRemarkName", "videoToRemarkName",	// 根据自己给用户做的备注名来发文件
+							"fileToNickName", "imageToNickName", "audioToNickName", "voiceToNickName", "videoToNickName",	// 根据用户的昵称来发文件
+							"fileToMe", "imageToMe", "audioToMe", "voiceToMe", "videoToMe",
+							"fileToSelf", "imageToSelf", "audioToSelf", "voiceToSelf", "videoToSelf",
+							"fileToMyself", "imageToMyself", "audioToMyself", "voiceToMyself", "videoToMyself"	// 发送给自己（到手机端）
 							)
 					)
 					{
@@ -2247,7 +2388,7 @@ logger.warning ("文件 " + sFileName + " 不存在！");
 						{
 							sSearchBy = StringUtils.substring (sCommand, 6);
 						}
-						else if (StringUtils.startsWithIgnoreCase (sCommand, "imageTo") || StringUtils.startsWithIgnoreCase (sCommand, "audioTo") || StringUtils.startsWithIgnoreCase (sCommand, "videoTo"))
+						else if (StringUtils.startsWithIgnoreCase (sCommand, "imageTo") || StringUtils.startsWithIgnoreCase (sCommand, "audioTo") || StringUtils.startsWithIgnoreCase (sCommand, "voiceTo") || StringUtils.startsWithIgnoreCase (sCommand, "videoTo"))
 						{
 							sSearchBy = StringUtils.substring (sCommand, 7);
 						}
@@ -2335,7 +2476,34 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearch
 						JsonNode jsonContact = listContacts.get (0);
 						engine.SendMediaFile (GetJSONText (jsonContact, "UserName"), f);
 					}
-					else if (StringUtils.equalsIgnoreCase (sCommand, "StatReport") || StringUtils.equalsIgnoreCase (sCommand, "EmptyStatReport"))
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "AddFriend", "AddContact", "MakeFriend"))
+					{
+						if (StringUtils.isEmpty (sParam))
+						{
+logger.warning (sCommand + " <对方帐号（明文或密文）、微信号、手机号码、QQ 号码> <附加消息内容>");
+							continue;
+						}
+						String[] arrayMakeFriend = sParam.split (" +", 2);
+						String sTo = null;
+						String sIdentityMessage = null;
+						if (arrayMakeFriend.length > 0)
+							sTo = arrayMakeFriend[0];
+						if (arrayMakeFriend.length > 1)
+							sIdentityMessage = arrayMakeFriend[1];
+
+						if (StringUtils.isEmpty (sTo))
+						{
+logger.warning ("必须输入对方帐号。对方帐号可以是加密过的形式，如： @XXXX @@XXXX 或未加密过的形式，如：wxid_XXXX filehelper gh_XXXX");
+							continue;
+						}
+						if (StringUtils.isEmpty (sIdentityMessage))
+						{
+logger.warning ("必须输入附加消息内容");
+							continue;
+						}
+						engine.SendRequestToMakeFriend (sTo, sIdentityMessage);
+					}
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "StatReport", "EmptyStatReport"))
 					{
 						engine.EmptyStatisticsReport ();
 					}

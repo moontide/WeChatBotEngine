@@ -538,6 +538,12 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		SendTextMessage (sLastFromAccount, sMessage);
 	}
 
+
+	public void SendRequestToMakeFriend (String sTo, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		net_maclife_wechat_http_BotApp.WebWeChatSendRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, sTo, sIdentityContent);
+	}
+
 	// -------------------------------------------------------------------------
 	// 联系人（包括群联系人）、群成员 搜索、维护（增删改）
 	// -------------------------------------------------------------------------
@@ -1699,6 +1705,9 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 					break;
 				case 5:
 					s应用程序消息类型名称 = "网址";
+					break;
+				case 6:
+					s应用程序消息类型名称 = "文件";
 					break;
 				case 7:
 					s应用程序消息类型名称 = "微博";
