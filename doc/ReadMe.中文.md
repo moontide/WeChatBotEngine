@@ -48,6 +48,13 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book.png'/>
 	</dd>
+	<dt><strong>MakeFriend</strong>: 加好友代理 机器人</dt>
+	<dd>在群聊中，用 <code>addme</code> 命令向命令执行者发送加好友的请求。
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-make-friend-addme.png'/>
+		<br/>
+		当收到别人发来的请求加好友消息时，根据设定的“暗号”，自动通过好友请求。
+	</dd>
 	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
 	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。
 		<br/>

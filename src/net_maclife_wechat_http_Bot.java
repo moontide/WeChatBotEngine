@@ -343,7 +343,7 @@ public abstract class net_maclife_wechat_http_Bot
 	 * @param xmlMsg sContent 解析为 xml 后的 <code>msg</code> Element
 	 * @return
 	 */
-	public int OnRequestToAddFriendMessageReceived
+	public int OnRequestToMakeFriendMessageReceived
 		(
 			JsonNode jsonMessage,
 			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,

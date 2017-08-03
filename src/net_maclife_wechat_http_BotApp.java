@@ -1863,7 +1863,7 @@ logger.fine ("	" + fMediaFile);
 		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, sTo_Account, sContent);
 	}
 
-	private static void WebWeChatSendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	private static JsonNode WebWeChatSendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("添加朋友 或 接收添加朋友的请求 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxverifyuser?r=***&pass_ticket=***	// 加上 JSON 格式的消息体，POST
@@ -1902,7 +1902,8 @@ logger.fine ("\n" + sContent);
 
 				JsonNode node = jacksonObjectMapper_Loose.readTree (sContent);
 				ProcessBaseResponse (node, "WebWeChatSendOrAcceptRequestToMakeFriend (webwxverifyuser)");
-				break;
+				return node;
+				//break;
 			}
 			//catch (UnknownHostException | SocketTimeoutException e)
 			catch (IOException e)
@@ -1912,14 +1913,15 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 				continue;
 			}
 		}
+		return null;
 	}
-	public static void WebWeChatSendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatSendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, sTo_Account, sIdentityContent);
 	}
-	public static void WebWeChatAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, sTo_Account, sIdentityContent);
 	}
 
 	public static void ProcessBaseResponse (JsonNode node, String sAPIName)

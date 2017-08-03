@@ -48,6 +48,13 @@ Those bot applets are:
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-shell-command.png'/>
 	</dd>
+	<dt><strong>MakeFriend</strong>: A MakeFriend agent bot</dt>
+	<dd>In chat room, use <code>addme</code> command to send a request of MakeFriend to the command issuer.
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-make-friend-addme.png'/>
+		<br/>
+		When a request of MakeFriend message is received, automatically accept the request according a keyword/password.
+	</dd>
 	<dt><strong>SimpleAddressBook</strong>: A simple address book bot for WeChat group chat</dt>
 	<dd>
 		This is a simple address book bot for WeChat [group chat / chat room] relied on MySQL database. It will query the database according the group nickname and return the contact information of the specified contact name. Example: send <code>sab Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.
