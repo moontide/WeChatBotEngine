@@ -69,7 +69,11 @@ System.err.println ("【" + s发帖人 + "】 为黑名单用户，原因： " +
 			if (图片列表.size () > 0)
 			{
 				sb.append ("\n");
-				sb.append (图片列表.attr ("src"));
+				String sImageURL = 图片列表.attr ("src");
+				if (StringUtils.startsWithIgnoreCase (sImageURL, "http:"))
+					sb.append (sImageURL);
+				else
+					sb.append ("http:" + sImageURL);
 			}
 
 			// 视频目前已取不到，需要通过单独的 http 请求获取 json 数据获取
