@@ -107,7 +107,7 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	////////////////////////////////
-	// 登出事件
+	// 注销事件
 	////////////////////////////////
 	public int OnLoggedOut ()
 	{
@@ -115,7 +115,7 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	////////////////////////////////
-	// 登出事件
+	// 关闭事件
 	////////////////////////////////
 	public int OnShutdown ()
 	{

@@ -58,6 +58,15 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	public static final int WECHAT_MSG_TYPE__SYSTEM                = 10000;
 	public static final int WECHAT_MSG_TYPE__MSG_REVOKED           = 10002;
 
+
+	//
+	// 好友来源
+	//
+	public static final int WECHAT_SCENE_这是啥 = 0;	// ？？？
+	public static final int WECHAT_SCENE_RoomMemberList   = 14;	// 从群成员列表中添加
+	public static final int WECHAT_SCENE_QRCode = 30;	// 通过扫一扫添加（扫描个人二维码）
+	public static final int WECHAT_SCENE_RoomMemberList2 = 33;	// 从群成员列表中添加（网页版抓到的加别人为好友的 Scene 数值是这个，但收到别人从群成员列表添加好友时，却是 14）
+
 	/*
 	public enum WeChatMsgType
 	{
@@ -178,7 +187,7 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 						newBot.SetEngine (this);
 						newBot.Start ();
 						listBots.add (newBot);
-net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Green (newBot.GetName () + " 机器人已创建并加载"));
+net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Green (newBot.GetName () + " 机器人已成功创建并加载"));
 				}
 			}
 			//
@@ -259,7 +268,7 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 
 	public void ListBots ()
 	{
-		for (int i=listBots.size ()-1; i>=0; i--)
+		for (int i=0; i<listBots.size (); i++)
 		{
 			net_maclife_wechat_http_Bot bot = listBots.get (i);
 			//UnloadBot (bot);
@@ -2259,7 +2268,23 @@ net_maclife_wechat_http_BotApp.logger.warning ("因为配置匹配的原因，�
 
 		//
 		int rc = 0;
-		for (final net_maclife_wechat_http_Bot bot : listBots)
+		//for (final net_maclife_wechat_http_Bot bot : listBots)	// 2017-08-04 增加了【远程管理】机器人后，用【远程管理】机器人卸载机器人时，会报 ConcurrentModificationException 异常：
+		//	java.util.ConcurrentModificationException
+        //	at java.util.ArrayList$Itr.checkForComodification(ArrayList.java:901)
+        //	at java.util.ArrayList$Itr.next(ArrayList.java:851)
+        //	at net_maclife_wechat_http_BotEngine.DispatchEvent_WithMultithreadSwitch(net_maclife_wechat_http_BotEngine.java:2271)
+        //	at net_maclife_wechat_http_BotEngine.DispatchEvent(net_maclife_wechat_http_BotEngine.java:2325)
+        //	at net_maclife_wechat_http_BotEngine.OnTextMessageReceived(net_maclife_wechat_http_BotEngine.java:1539)
+        //	at net_maclife_wechat_http_BotEngine.OnMessagePackageReceived(net_maclife_wechat_http_BotEngine.java:1364)
+        //	at net_maclife_wechat_http_BotEngine.run(net_maclife_wechat_http_BotEngine.java:1093)
+        //	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+        //	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+        //	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+        //	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+        //	at java.lang.Thread.run(Thread.java:748)
+		// 所以，改用新复制一个列表来执行调度
+		List<net_maclife_wechat_http_Bot> listTemp = new ArrayList<net_maclife_wechat_http_Bot> (listBots);
+		for (final net_maclife_wechat_http_Bot bot : listTemp)
 		{
 			if (! bMultithread)
 			{	// 单线程或共享 Engine 线程时，才会有 Bot 链的处理机制。

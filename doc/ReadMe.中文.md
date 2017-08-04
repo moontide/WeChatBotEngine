@@ -48,12 +48,17 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book.png'/>
 	</dd>
-	<dt><strong>MakeFriend</strong>: 加好友代理 机器人</dt>
+	<dt><strong>MakeFriend</strong>: 加好友 机器人</dt>
 	<dd>在群聊中，用 <code>addme</code> 命令向命令执行者发送加好友的请求。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-make-friend-addme.png'/>
 		<br/>
 		当收到别人发来的请求加好友消息时，根据设定的“暗号”，自动通过好友请求。
+	</dd>
+	<dt><strong>Manager</strong>: 远程管理 机器人</dt>
+	<dd>将控制台里的一些管理命令用远程管理机器人再次实现，以达到不在电脑跟前时，对引擎进行管理的目的。目前只实现了 加载机器人(LoadBot)、卸载机器人(UnloadBot)、列出机器人(ListBots, 所有人都可执行该命令)、查看设置日志级别(LogLevel)。
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-manager.png'/>
 	</dd>
 	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
 	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。

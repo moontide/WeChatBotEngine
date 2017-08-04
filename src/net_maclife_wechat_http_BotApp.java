@@ -1218,7 +1218,7 @@ logger.info ("\n--------------------------------------------------");
 								{
 									if (StringUtils.equalsIgnoreCase (sHeaderName, "Set-Cookie"))
 									{
-logger.finer (net_maclife_util_ANSIEscapeTool.LightGreen ("获取 WebWeChatGetMessagePackage 中 webwxsync 设置的新 Cookie （保持会话不过期就指望它了）:"));
+logger.finer ("获取 WebWeChatGetMessagePackage 中 webwxsync 设置的新 Cookie （保持会话不过期就指望它了）:");
 										List<String> listCookieStrings = mapHeaders.get (sHeaderName);
 logger.finer ("	" + listCookieStrings);
 									}
@@ -1847,7 +1847,7 @@ logger.fine ("	" + fMediaFile);
 		on.put ("VerifyContent", sContent);
 		on.put ("SceneListCount", 1);
 		ArrayNode anSceneList = jacksonObjectMapper_Strict.createArrayNode ();
-			anSceneList.add (33);
+			anSceneList.add (net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2);
 		on.set ("SceneList", anSceneList);
 		on.put ("skey", sSessionKey);
 		return on;
@@ -2168,8 +2168,8 @@ System.out.println ("日志级别已改为: " + logger.getLevel ());
 						}
 						catch (IllegalArgumentException e)
 						{
-System.out.println ("非法日志级别: " + sParam + ", 请换有效的日志级别名称，比如 all finest finer fine info warning severe 1000 0 1 ...");
 							e.printStackTrace ();
+System.out.println ("非法日志级别: " + sParam + ", 请换有效的日志级别名称，比如 all finest finer fine info warning severe 1000 0 1 ...");
 						}
 					}
 					else if (StringUtils.equalsIgnoreCase (sCommand, "LoadBot"))
