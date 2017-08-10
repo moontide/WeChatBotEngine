@@ -185,7 +185,7 @@ public class net_maclife_wechat_http_Bot_MakeFriend extends net_maclife_wechat_h
 
 				if (bMatched)
 				{
-					JsonNode jsonResult = engine.AcceptRequestToMakeFriend (sMakeFriendTicket, /*sReplyToAccount_RoomMember*/s微信ID, "暗号已对上，自动通过");
+					JsonNode jsonResult = engine.AcceptRequestToMakeFriend (sMakeFriendTicket, nScene, /*sReplyToAccount_RoomMember*/s微信ID, "暗号已对上，自动通过");
 					if (StringUtils.isNotEmpty (sAutoReplyMessage))
 					{
 						SendTextMessage (sReplyToAccount_Person, sReplyToName_Person, sAutoReplyMessage);

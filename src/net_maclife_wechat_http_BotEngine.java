@@ -66,6 +66,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	public static final int WECHAT_SCENE_RoomMemberList   = 14;	// 从群成员列表中添加
 	public static final int WECHAT_SCENE_QRCode = 30;	// 通过扫一扫添加（扫描个人二维码）
 	public static final int WECHAT_SCENE_RoomMemberList2 = 33;	// 从群成员列表中添加（网页版抓到的加别人为好友的 Scene 数值是这个，但收到别人从群成员列表添加好友时，却是 14）
+	public static final int WECHAT_SCENE_Radar = 48;	// 雷达加好友？
 
 	/*
 	public enum WeChatMsgType
@@ -551,6 +552,10 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 	public JsonNode SendRequestToMakeFriend (String sTo, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 		return net_maclife_wechat_http_BotApp.WebWeChatSendRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, sTo, sIdentityContent);
+	}
+	public JsonNode AcceptRequestToMakeFriend (String sMakeFriendTicket, int nScene, String sTo, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		return net_maclife_wechat_http_BotApp.WebWeChatAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, sMakeFriendTicket, nScene, sTo, sIdentityContent);
 	}
 	public JsonNode AcceptRequestToMakeFriend (String sMakeFriendTicket, String sTo, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{

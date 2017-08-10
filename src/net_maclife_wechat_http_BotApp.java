@@ -51,6 +51,11 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 
 	public static final int DEFAULT_NET_TRY_TIMES = 3;
 
+	/**
+	 * 执行 Bot 命令时，Bot 命令和选项之间的分隔符。如： <code>cmd.10.stderr</code>，<code>cmd</code> 就是命令，后面的小数点就是选项分隔符，<code>10</code> 和 <code>stderr</code> 是选项
+	 */
+	public static final String COMMAND_OPTION_SEPARATOR = ".";
+
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Public = 0x08;	// 公众号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__Subscriber = 0x10;	// 订阅号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__WeChatTeam = 0x20;	// 微信团队自己的公众号
@@ -1832,7 +1837,7 @@ logger.fine ("	" + fMediaFile);
 		return fMediaFile;
 	}
 
-	public static JsonNode MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sContent)
+	public static JsonNode MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sContent)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
 		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
@@ -1847,23 +1852,31 @@ logger.fine ("	" + fMediaFile);
 		on.put ("VerifyContent", sContent);
 		on.put ("SceneListCount", 1);
 		ArrayNode anSceneList = jacksonObjectMapper_Strict.createArrayNode ();
-			anSceneList.add (net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2);
+			anSceneList.add (nScene);
 		on.set ("SceneList", anSceneList);
 		on.put ("skey", sSessionKey);
 		return on;
 	}
 
+	public static JsonNode MakeFullJsonNode_SendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, int nScene, String sTo_Account, String sContent)
+	{
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, true, null, nScene, sTo_Account, sContent);
+	}
 	public static JsonNode MakeFullJsonNode_SendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_Account, String sContent)
 	{
-		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, true, null, sTo_Account, sContent);
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, true, null, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sContent);
 	}
 
+	public static JsonNode MakeFullJsonNode_AcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sContent)
+	{
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sContent);
+	}
 	public static JsonNode MakeFullJsonNode_AcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sContent)
 	{
-		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, sTo_Account, sContent);
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sContent);
 	}
 
-	private static JsonNode WebWeChatSendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	private static JsonNode WebWeChatSendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("添加朋友 或 接收添加朋友的请求 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxverifyuser?r=***&pass_ticket=***	// 加上 JSON 格式的消息体，POST
@@ -1883,9 +1896,9 @@ logger.finer ("	" + mapRequestHeaders);
 
 		JsonNode jsonRequestBody = null;
 		if (bRequestOrResponse)
-			jsonRequestBody = MakeFullJsonNode_SendRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_Account, sIdentityContent);
+			jsonRequestBody = MakeFullJsonNode_SendRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), nScene, sTo_Account, sIdentityContent);
 		else
-			jsonRequestBody = MakeFullJsonNode_AcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMakeFriendRequestTicketFromPeer, sTo_Account, sIdentityContent);
+			jsonRequestBody = MakeFullJsonNode_AcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sIdentityContent);
 		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
 logger.finer ("发送 WebWeChatSendOrAcceptRequestToMakeFriend 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody);
@@ -1915,13 +1928,21 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		}
 		return null;
 	}
+	public static JsonNode WebWeChatSendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, nScene, sTo_Account, sIdentityContent);
+	}
 	public static JsonNode WebWeChatSendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sIdentityContent);
+	}
+	public static JsonNode WebWeChatAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sIdentityContent);
 	}
 	public static JsonNode WebWeChatAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sIdentityContent);
 	}
 
 	public static void ProcessBaseResponse (JsonNode node, String sAPIName)
