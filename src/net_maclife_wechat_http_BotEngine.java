@@ -562,6 +562,22 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		return net_maclife_wechat_http_BotApp.WebWeChatAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, sMakeFriendTicket, sTo, sIdentityContent);
 	}
 
+
+	public JsonNode InviteFriendsToRoom (String sRoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatInviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sFriendsAccounts_CommaSeparated);
+		//net_maclife_wechat_http_BotApp.GetJSONInt (jsonResult, "MemberCount");
+		//jsonResult.get ("MemberList");
+		return jsonResult;
+	}
+	public JsonNode KickMemberFromRoom (String sRoomAccount, String sMembersAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatKickMemberFromRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sMembersAccounts_CommaSeparated);
+		//net_maclife_wechat_http_BotApp.GetJSONInt (jsonResult, "MemberCount");
+		//jsonResult.get ("MemberList");
+		return jsonResult;
+	}
+
 	// -------------------------------------------------------------------------
 	// 联系人（包括群联系人）、群成员 搜索、维护（增删改）
 	// -------------------------------------------------------------------------

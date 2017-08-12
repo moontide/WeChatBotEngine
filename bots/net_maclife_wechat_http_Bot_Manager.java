@@ -1,3 +1,5 @@
+import java.io.*;
+import java.util.*;
 import java.util.logging.*;
 
 import org.apache.commons.lang3.*;
@@ -39,7 +41,7 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 				}
 				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sb.toString ());
 			}
-			else if (isFromMe)
+			else if (isFromMe)	// 只允许自己操作的命令
 			{
 				String[] arrayMessages = sContent.split ("\\s+", 2);
 				if (arrayMessages==null || arrayMessages.length<1)
@@ -50,7 +52,7 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 				if (arrayMessages.length >= 2)
 					sCommandParametersInputed = arrayMessages[1];
 
-				String[] arrayCommandOptions = sCommandInputed.split ("\\.+", 2);
+				String[] arrayCommandOptions = sCommandInputed.split ("\\" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "+", 2);
 				sCommandInputed = arrayCommandOptions[0];
 				String sCommandOptionsInputed = null;
 				if (arrayCommandOptions.length >= 2)
@@ -91,8 +93,11 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 						}
 					}
 				}
-
-				//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sContent);
+				else if (StringUtils.equalsAnyIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite"), net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.kick"))
+					)
+				{
+					InviteContactsToOrKickContactsFromRoom (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandInputed, sCommandOptionsInputed, sCommandParametersInputed);
+				}
 			}
 		}
 		catch (Exception e)
@@ -192,6 +197,94 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 			{
 				e1.printStackTrace();
 			}
+		}
+	}
+
+	public void InviteContactsToOrKickContactsFromRoom (String sReplyToAccount, String sReplyToName, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			String sCommandInputed, String sCommandOptionsInputed, String sCommandParametersInputed
+			) throws Exception
+	{
+		if (StringUtils.isEmpty (sCommandParametersInputed))
+		{
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandInputed + "[" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "帐号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "微信号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "备注名|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "昵称] <群帐号> <朋友帐号/微信号/备注名/昵称>");
+			return;
+		}
+
+		String sSearchBy = sCommandOptionsInputed;
+		String sNameOfSearchBy = "";
+
+		if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "Account", "帐号"))
+			sNameOfSearchBy = "帐号";
+		else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "Alias", "微信号"))
+			sNameOfSearchBy = "微信号";
+		else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "RemarkName", "备注名"))
+			sNameOfSearchBy = "备注名";
+		else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "NickName", "昵称") || StringUtils.isEmpty (sSearchBy))
+			sNameOfSearchBy = "昵称";
+		else
+		{
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "不知道你要根据什么发消息… sSearchByName = " + sNameOfSearchBy);
+			return;
+		}
+
+		if (StringUtils.isEmpty (sCommandParametersInputed))
+		{
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "必须输入至少一个联系人帐号/微信号/备注名/昵称");
+			return;
+		}
+
+		boolean bInviteOrKick = StringUtils.equalsIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite"));
+
+		List<String> listFriends = net_maclife_wechat_http_BotApp.SplitCommandLine (sCommandParametersInputed);	// 鉴于用户昵称可能包含空格或特殊字符的情况，这里必须用 SplitCommandLine 函数处理，不能简单的 .split (" ")
+		StringBuilder sbFriendsAccounts = new StringBuilder ();
+		for (int i=0; i<listFriends.size (); i++)
+		{
+			String sFriend = listFriends.get (i);
+			JsonNode jsonContact = null;
+			if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "帐号"))
+				jsonContact = engine.SearchForSingleContact (sFriend, null, null, null);
+			else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "微信号"))
+				jsonContact = engine.SearchForSingleContact (null, sFriend, null, null);
+			else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "备注名"))
+				jsonContact = engine.SearchForSingleContact (null, null, sFriend, null);
+			else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "昵称"))
+				jsonContact = engine.SearchForSingleContact (null, null, null, sFriend);
+
+			if (jsonContact==null)
+			{
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "根据【" + sNameOfSearchBy + "】搜索【" + sFriend + "】，未搜索到联系人");
+				return;
+			}
+
+			if (sbFriendsAccounts.length () != 0)
+				sbFriendsAccounts.append (',');
+
+			sbFriendsAccounts.append (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
+		}
+
+		if (sbFriendsAccounts.length () == 0)
+		{
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "根据【" + sNameOfSearchBy + "】搜索 " + sCommandParametersInputed + "，未搜索到任何联系人");
+			return;
+		}
+
+		JsonNode jsonResult = null;
+		if (bInviteOrKick)
+			jsonResult = engine.InviteFriendsToRoom (sReplyToAccount, sbFriendsAccounts.toString ());
+		else
+			jsonResult = engine.KickMemberFromRoom (sReplyToAccount, sbFriendsAccounts.toString ());
+
+		if (jsonResult == null)
+			return;
+
+		JsonNode jsonBaseResponse = jsonResult.get ("BaseResponse");
+		if (jsonBaseResponse == null)
+			return;
+
+		int nRet = net_maclife_wechat_http_BotApp.GetJSONInt (jsonBaseResponse, "Ret");
+		if (nRet != 0)
+		{
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (bInviteOrKick ? "邀请成员入群" : "将成员踢出群" ) + " 操作失败，代码：" + nRet);
 		}
 	}
 }

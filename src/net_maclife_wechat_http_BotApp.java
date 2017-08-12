@@ -1251,8 +1251,8 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 					ProcessBaseResponse (node, "WebWeChatGetMessagePackage 中 webwxsync");
 
 					break;
-				//case "6":	// 这个是啥？昨天晚上遇到过了，貌似是别人请求添加好友时遇到的，然后就一直返回 6，死循环出不来了
-//logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 6 -- 别人请求添加好友？");
+				//case "6":	// 这个是啥？昨天晚上遇到过了，貌似是别人请求添加联系人时遇到的，然后就一直返回 6，死循环出不来了
+//logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 6 -- 别人请求添加联系人？");
 				//	break;
 				//case "7":	// 进入离开聊天页面？
 //logger.fine ("WebWeChatGetMessagePackage 中 synccheck 返回 selector 7 -- 进入/离开聊天页面？");
@@ -1918,7 +1918,6 @@ logger.fine ("\n" + sContent);
 				return node;
 				//break;
 			}
-			//catch (UnknownHostException | SocketTimeoutException e)
 			catch (IOException e)
 			{
 				e.printStackTrace ();
@@ -1945,6 +1944,104 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sIdentityContent);
 	}
 
+
+
+
+	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated, boolean bInviteOrKick)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.put ("ChatRoomName", sTo_RoomAccount);
+		on.put (bInviteOrKick ? "AddMemberList" : "DelMemberList", sFriendsAccounts_CommaSeparated);
+		return on;
+	}
+	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts, boolean bInviteOrKick)
+	{
+		StringBuilder sb = new StringBuilder ();
+		for (int i=0; i<listFriendsAccounts.size (); i++)
+		{
+			if (i!=0)
+				sb.append (',');
+			String sAccount = listFriendsAccounts.get (i);
+			sb.append (sAccount);
+		}
+		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sb.toString (), bInviteOrKick);
+	}
+	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
+	{
+		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, true);
+	}
+	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
+	{
+		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, true);
+	}
+	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
+	{
+		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, false);
+	}
+	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
+	{
+		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, false);
+	}
+	private static JsonNode WebWeChatInviteOrKick (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated, boolean bInviteOrKick) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+logger.info ((bInviteOrKick ? "邀请联系人到群聊" : "从群中踢出联系人") + " …");
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxupdatechatroom?fun=" + (bInviteOrKick ? "addmember" : "delmember") + "&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
+logger.fine ("WebWeChatInviteOrKick 的 URL:");
+logger.fine ("	" + sURL);
+
+		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
+		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
+		CookieStore cookieStore = cookieManager.getCookieStore ();
+		List<HttpCookie> listCookies = cookieStore.get (new URI(sURL));
+		String sCookieValue = "";
+		sCookieValue = MakeCookieValue (listCookies);
+		mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 1100 1102 代码？
+logger.finer ("发送 WebWeChatInviteOrKick 的 http 请求消息头:");
+logger.finer ("	" + mapRequestHeaders);
+
+		JsonNode jsonRequestBody = null;
+		if (bInviteOrKick)
+			jsonRequestBody = MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sFriendsAccounts_CommaSeparated);
+		else
+			jsonRequestBody = MakeFullJsonNode_KickMemberFromRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sFriendsAccounts_CommaSeparated);
+		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
+logger.finer ("发送 WebWeChatInviteOrKick 的 http 请求消息体:");
+logger.finer ("	" + sRequestBody);
+
+		String sContent = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				sContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, sRequestBody.getBytes ());
+logger.fine ("获取 WebWeChatInviteOrKick 的 http 响应消息体:");
+logger.fine ("\n" + sContent);
+
+				JsonNode node = jacksonObjectMapper_Loose.readTree (sContent);
+				ProcessBaseResponse (node, "WebWeChatInviteFriendsToRoom (webwxupdatechatroom?fun=" + (bInviteOrKick ? "addmember" : "delmember") + ")");
+				return node;
+				//break;
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
+		return null;
+	}
+	public static JsonNode WebWeChatInviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		return WebWeChatInviteOrKick (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, true);
+	}
+	public static JsonNode WebWeChatKickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		return WebWeChatInviteOrKick (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, false);
+	}
+
 	public static void ProcessBaseResponse (JsonNode node, String sAPIName)
 	{
 		if (node == null)
@@ -1962,13 +2059,13 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 	}
 
 	/**
-	 * 根据加密的帐号来判断是否是聊天室帐号
-	 * @param sEncryptedAccount 加密的帐号
+	 * 根据帐号来判断是否是聊天室帐号
+	 * @param sAccount 帐号，可以是加密过的帐号（以 "@@" 开头）、或者未加密过的帐号（\d+@chatroom）
 	 * @return 如果帐号以 <code>@@</code> 开头，则返回 <code>true</code>，否则返回 <code>false</code>
 	 */
-	public static boolean IsRoomAccount (String sEncryptedAccount)
+	public static boolean IsRoomAccount (String sAccount)
 	{
-		return StringUtils.startsWith (sEncryptedAccount, "@@");
+		return StringUtils.startsWith (sAccount, "@@") || (StringUtils.isNotEmpty (sAccount) && sAccount.matches ("^\\d+@chatroom$"));
 	}
 
 	/**
@@ -2053,9 +2150,9 @@ logger.finest ("原内容: " + sContent);
 			Hex hex = new Hex (StandardCharsets.ISO_8859_1);
 			try
 			{
+				String sEmoji = "";
 				for (int i=0; i<sEmojiHexString.length ();)
 				{
-					String sEmoji = null;
 					Charset charset = null;
 					String sSingleEmojiGlyphHexString = null;
 					String sStartString = StringUtils.substring (sEmojiHexString, i, i+2);
@@ -2073,14 +2170,14 @@ logger.finest ("原内容: " + sContent);
 					}
 //System.out.println (sSingleEmojiGlyphHexString);
 					//BigInteger bi = new BigInteger (sEmojiHexString, 16);
-					byte[] arrayEmoji = null;
+					byte[] arraySingleEmoji = null;
 					//arrayEmoji = bi.toByteArray ();
-					arrayEmoji = (byte[])hex.decode (sSingleEmojiGlyphHexString);
+					arraySingleEmoji = (byte[])hex.decode (sSingleEmojiGlyphHexString);
 //System.out.println (Arrays.toString (arrayEmoji));
-					sEmoji = new String (arrayEmoji, charset);
+					sEmoji = sEmoji + new String (arraySingleEmoji, charset);
 					//sbReplace.append (b)Character (nEmojiCode);
-					matcher.appendReplacement (sbReplace, sEmoji);	// 直接剔除掉，然后再补上 emoji 字符。<del>（不直接替换的原因：appendReplacement 只接受 String 参数，而不接受 char[] 参数）</del>
 				}
+				matcher.appendReplacement (sbReplace, sEmoji);	// 直接剔除掉，然后再补上 emoji 字符。<del>（不直接替换的原因：appendReplacement 只接受 String 参数，而不接受 char[] 参数）</del>
 			}
 			catch (DecoderException e)
 			{
@@ -2506,6 +2603,7 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearch
 logger.warning (sCommand + " <对方帐号（明文或密文）、微信号、手机号码、QQ 号码> <附加消息内容>");
 							continue;
 						}
+
 						String[] arrayMakeFriend = sParam.split (" +", 2);
 						String sTo = null;
 						String sIdentityMessage = null;
@@ -2525,6 +2623,106 @@ logger.warning ("必须输入附加消息内容");
 							continue;
 						}
 						engine.SendRequestToMakeFriend (sTo, sIdentityMessage);
+					}
+
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "Invite", "邀请", "InviteByAlias", "按微信号邀请", "InviteByRemarkName", "按备注名邀请", "InviteByNickName", "按昵称邀请"))
+					{	// 一般，建议使用 Manager Bot 提供的 invite 功能，因为 bot 的 invite 命令必须在群中执行，所以那样可以省略“群帐号”参数
+						if (StringUtils.isEmpty (sParam))
+						{
+logger.warning (sCommand + " <群帐号> <联系人帐号/微信号/备注名/昵称>");
+							continue;
+						}
+
+						String sSearchBy = "";
+						String sNameOfSearchBy = "";
+						if (StringUtils.startsWithIgnoreCase (sCommand, "Invite") || StringUtils.startsWithIgnoreCase (sCommand, "邀请"))
+						{
+							sSearchBy = "Account";
+						}
+						else if (StringUtils.startsWithIgnoreCase (sCommand, "InviteBy"))
+						{
+							sSearchBy = StringUtils.substring (sCommand, "InviteBy".length ());
+						}
+						else if (StringUtils.startsWithIgnoreCase (sCommand, "按") && StringUtils.endsWithIgnoreCase (sCommand, "邀请"))
+						{
+							sSearchBy = StringUtils.substring (sCommand, 1, sCommand.length () - 2);
+						}
+						else
+						{
+							continue;
+						}
+
+						if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "Account", "帐号"))
+							sNameOfSearchBy = "帐号";
+						else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "Alias", "微信号"))
+							sNameOfSearchBy = "微信号";
+						else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "RemarkName", "备注名"))
+							sNameOfSearchBy = "备注名";
+						else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "NickName", "昵称"))
+							sNameOfSearchBy = "昵称";
+						else
+						{
+logger.warning ("不知道你要根据什么发消息… sSearchByName = " + sNameOfSearchBy);
+							continue;
+						}
+
+						String[] arrayInviteFriendsToRoom = sParam.split (" +", 2);
+						String sToRoomAccount = null;
+						String sFriends = null;
+						if (arrayInviteFriendsToRoom.length > 0)
+							sToRoomAccount = arrayInviteFriendsToRoom[0];
+						if (arrayInviteFriendsToRoom.length > 1)
+							sFriends = arrayInviteFriendsToRoom[1];
+
+						if (StringUtils.isEmpty (sToRoomAccount))
+						{
+logger.warning ("必须输入群的帐号。群帐号可以是加密过的形式（如：@@XXXX）或者未加密过的形式（如：100000@chatroom）");
+							continue;
+						}
+						else if (! IsRoomAccount(sToRoomAccount))
+						{
+logger.warning ("输入的群帐号不是有效的群帐号。群帐号可以是加密过的形式（如：@@XXXX）或者未加密过的形式（如：100000@chatroom）");
+						}
+						if (StringUtils.isEmpty (sFriends))
+						{
+logger.warning ("必须输入一个联系人帐号/微信号/备注名/昵称");
+							continue;
+						}
+
+						List<String> listFriends = SplitCommandLine (sFriends);	// 鉴于用户昵称可能包含空格或特殊字符的情况，这里必须用 SplitCommandLine 函数处理，不能简单的 .split (" ")
+						StringBuilder sbFriendsAccounts = new StringBuilder ();
+						for (int i=0; i<listFriends.size (); i++)
+						{
+							String sFriend = listFriends.get (i);
+							JsonNode jsonContact = null;
+							if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "帐号"))
+								jsonContact = engine.SearchForSingleContact (sFriend, null, null, null);
+							else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "微信号"))
+								jsonContact = engine.SearchForSingleContact (null, sFriend, null, null);
+							else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "备注名"))
+								jsonContact = engine.SearchForSingleContact (null, null, sFriend, null);
+							else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "昵称"))
+								jsonContact = engine.SearchForSingleContact (null, null, null, sFriend);
+
+							if (jsonContact==null)
+							{
+logger.warning ("根据【" + sNameOfSearchBy + "】搜索【" + sFriend + "】，未搜索到联系人");
+								continue;
+							}
+
+							if (sbFriendsAccounts.length () != 0)
+								sbFriendsAccounts.append (',');
+
+							sbFriendsAccounts.append (GetJSONText (jsonContact, "UserName"));
+						}
+
+						if (sbFriendsAccounts.length () == 0)
+						{
+logger.warning ("根据【" + sNameOfSearchBy + "】搜索 " + sFriends + "，未搜索到任何联系人");
+							continue;
+						}
+
+						engine.InviteFriendsToRoom (sToRoomAccount, sbFriendsAccounts.toString ());
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "StatReport", "EmptyStatReport"))
 					{
