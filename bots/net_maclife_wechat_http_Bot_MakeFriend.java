@@ -39,6 +39,12 @@ public class net_maclife_wechat_http_Bot_MakeFriend extends net_maclife_wechat_h
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
+		if (! net_maclife_wechat_http_BotApp.hasCommandPrefix (sContent))
+		{
+			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		}
+		sContent = net_maclife_wechat_http_BotApp.StripOutCommandPrefix (sContent);
+
 		try
 		{
 			String[] arrayMessages = sContent.split ("\\s+", 2);
@@ -133,7 +139,7 @@ public class net_maclife_wechat_http_Bot_MakeFriend extends net_maclife_wechat_h
 		)
 	{
 		List<String> listAutoAccepts = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.make-friend.auto-accepts");
-		if (listAutoAccepts==null || listAutoAccepts.isEmpty ())	// 如果未配置命令，则不处理
+		if (listAutoAccepts==null || listAutoAccepts.isEmpty ())	// 如果未配置暗号，则不处理
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 		String s微信ID = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "UserName");

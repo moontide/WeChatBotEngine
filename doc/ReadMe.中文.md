@@ -34,29 +34,30 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 				<br/>
 				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.message-push-qiushibaike.png'/>
 			</li>
+			<li>利用 crontab，向一些“签到获得积分”的公众号定时“签到”</li>
 			<li>你一定还有其他好的点子，可在此处补充…</li>
 			<li>…</li>
 		</ul>
 	</dd>
 	<dt><strong>ShellCommand</strong>: 系统命令 / 命令行 机器人</dt>
-	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： <code>cmd ls -l /bin/</code>
+	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： <code>/cmd ls -l /bin/</code>
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-shell-command.png'/>
 	</dd>
 	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
-	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。
+	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>/txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book.png'/>
 	</dd>
 	<dt><strong>MakeFriend</strong>: 加好友 机器人</dt>
-	<dd>在群聊中，用 <code>addme</code> 命令向命令执行者发送加好友的请求。
+	<dd>在群聊中，用 <code>/addme</code> 命令向命令执行者发送加好友的请求。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-make-friend-addme.png'/>
 		<br/>
 		当收到别人发来的请求加好友消息时，根据设定的“暗号”，自动通过好友请求。
 	</dd>
 	<dt><strong>Manager</strong>: 远程管理 机器人</dt>
-	<dd>将控制台里的一些管理命令用远程管理机器人再次实现，以达到不在电脑跟前时，对引擎进行管理的目的。目前只实现了 加载机器人(LoadBot)、卸载机器人(UnloadBot)、列出机器人(ListBots, 所有人都可执行该命令)、查看设置日志级别(LogLevel)。
+	<dd>将控制台里的一些管理命令用远程管理机器人再次实现，以达到不在电脑跟前时，对引擎进行管理的目的。目前只实现了 加载机器人(/LoadBot)、卸载机器人(/UnloadBot)、列出机器人(/ListBots, 所有人都可执行该命令)、查看设置日志级别(/LogLevel)、邀请人加入群聊(/Invite)、将群成员踢出(/Kick，注意： Kick 操作仅当你是群主时才会执行成功)。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-manager.png'/>
 	</dd>
@@ -126,6 +127,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 - `OnEmotionMessageReceived` 当收到【表情图消息】时触发。
 - `OnSystemMessageReceived` 当收到【系统消息】（比如“收到红包，请到手机上查看”）时触发。
 - `OnMessageIsRevokedMessageReceived` 当收到【消息被撤回】消息时触发。
+- `OnRequestToMakeFriendMessageReceived` 当收到【别人请求加好友】消息时触发
 - `OnContactChanged` 当【联系人变更】时触发。
 - `OnContactDeleted` 当【联系人被删除】时触发。
 - `OnRoomMemberChanged` 当【群成员变更】时触发。

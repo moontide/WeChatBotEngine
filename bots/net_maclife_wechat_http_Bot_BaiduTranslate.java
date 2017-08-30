@@ -35,6 +35,12 @@ public class net_maclife_wechat_http_Bot_BaiduTranslate extends net_maclife_wech
 		if (listCommands==null || listCommands.isEmpty ())	// 如果未配置命令，则不处理
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
+		if (! net_maclife_wechat_http_BotApp.hasCommandPrefix (sContent))
+		{
+			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+		}
+		sContent = net_maclife_wechat_http_BotApp.StripOutCommandPrefix (sContent);
+
 		String sFromLanguage = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu-translate.from-language");
 		String sToLanguage = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu-translate.to-language");
 

@@ -1163,7 +1163,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 			{
 				if (StringUtils.containsIgnoreCase (e.toString (), "HTTP/1.1 0"))
 				{
-logger.info ("对方正在输入…？");
+logger.info ("对方正在输入…");
 					// 对方正在输入：
 					return jsonResult;
 				}
@@ -3070,6 +3070,23 @@ net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 		assert !quote_state_in_quote;
 
 		return listTokens;
+	}
+
+	public static boolean hasCommandPrefix (String sContent)
+	{
+		String sPrefix = GetConfig ().getString ("app.text-message.command-prefix");
+		return StringUtils.isEmpty (sPrefix) || StringUtils.startsWithIgnoreCase (sContent, sPrefix);
+	}
+
+	public static String StripOutCommandPrefix (String sContent, String sPrefix)
+	{
+		if (StringUtils.isEmpty (sPrefix))
+			return sContent;
+		return StringUtils.substring (sContent, StringUtils.length (sPrefix));
+	}
+	public static String StripOutCommandPrefix (String sContent)
+	{
+		return StripOutCommandPrefix (sContent, GetConfig ().getString ("app.text-message.command-prefix"));
 	}
 
 	public static void main (String[] args) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, ValidityException, ParsingException

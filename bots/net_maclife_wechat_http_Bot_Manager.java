@@ -28,6 +28,12 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 	{
 		try
 		{
+			if (! net_maclife_wechat_http_BotApp.hasCommandPrefix (sContent))
+			{
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+			}
+			sContent = net_maclife_wechat_http_BotApp.StripOutCommandPrefix (sContent);
+
 			if (StringUtils.equalsIgnoreCase (sContent, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.list-bots")))
 			{
 				StringBuilder sb = new StringBuilder ();
@@ -96,6 +102,11 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 				else if (StringUtils.equalsAnyIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite"), net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.kick"))
 					)
 				{
+					if (! isReplyToRoom)
+					{
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "邀请或者踢人操作需要在群内执行");
+						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+					}
 					InviteContactsToOrKickContactsFromRoom (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandInputed, sCommandOptionsInputed, sCommandParametersInputed);
 				}
 			}

@@ -44,25 +44,25 @@ Those bot applets are:
 	</dd>
 	<dt><strong>ShellCommand</strong>: A bot execute shell command</dt>
 	<dd>
-		Accept command line from text message, run it, return the result of command. Example: <code>cmd ls -l /bin/</code>
+		Accept command line from text message, run it, return the result of command. Example: <code>/cmd ls -l /bin/</code>
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-shell-command.png'/>
 	</dd>
 	<dt><strong>MakeFriend</strong>: A MakeFriend agent bot</dt>
-	<dd>In chat room, use <code>addme</code> command to send a request of MakeFriend to the command issuer.
+	<dd>In chat room, use <code>/addme</code> command to send a request of MakeFriend to the command issuer.
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-make-friend-addme.png'/>
 		<br/>
 		When a request of MakeFriend message is received, automatically accept the request according a keyword/password.
 	</dd>
 	<dt><strong>Manager</strong>: A remote manager bot</dt>
-	<dd>This is just a reimplementation of some console commands, to let you manage bot engine if you are not in front of your computer. Currently, the following commands are implemented: LoadBot, UnloadBot, ListBots (everyone can use this command), LogLevel (View or Set log level)。
+	<dd>This is just a reimplementation of some console commands, to let you manage bot engine if you are not in front of your computer. Currently, the following commands are implemented: /LoadBot, /UnloadBot, /ListBots (everyone can use this command), /LogLevel (View or Set log level), /Invite (Invite a contact to a chat room), /Kick (Kick a member from chat room, Kick operation works only if you're the administrator of that room)。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-manager.png'/>
 	</dd>
-	<dt><strong>SimpleAddressBook</strong>: A simple address book bot for WeChat group chat</dt>
+	<dt><strong>SimpleAddressBook</strong>: A simple address book bot for WeChat chat room</dt>
 	<dd>
-		This is a simple address book bot for WeChat [group chat / chat room] relied on MySQL database. It will query the database according the group nickname and return the contact information of the specified contact name. Example: send <code>sab Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.
+		This is a simple address book bot which relied on MySQL database for WeChat chat room. It will query the database according the room nickname and return the contact information of the specified contact name. Example: send <code>/sab Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book.png'/>
 	</dd>
@@ -136,6 +136,7 @@ Currently, the following interfaces/events are planned:
 - `OnEmotionMessageReceived` Triggered when an Emotion message received.
 - `OnSystemMessageReceived` Triggered when a System message received.
 - `OnMessageIsRevokedMessageReceived` Triggered when a MessageIsRevoked message received.
+- `OnRequestToMakeFriendMessageReceived` Triggered when a RequestToMakeFriend message received.
 - `OnContactChanged` Triggered when a contact was changed.
 - `OnContactDeleted` Triggered when a contact was deleted.
 - `OnRoomMemberChanged` Triggered when a room member changed.
