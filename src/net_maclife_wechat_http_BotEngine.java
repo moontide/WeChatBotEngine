@@ -577,6 +577,16 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		//jsonResult.get ("MemberList");
 		return jsonResult;
 	}
+	public JsonNode ModifyRoomName (String sRoomAccount, String sNewName) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatModifyRoomName (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sNewName);
+		return jsonResult;
+	}
+	public JsonNode CreateNewRoom (String sRoomTopic, List<String> listMemberAccounts) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatCreateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomTopic, listMemberAccounts);
+		return jsonResult;
+	}
 
 	// -------------------------------------------------------------------------
 	// 联系人（包括群联系人）、群成员 搜索、维护（增删改）

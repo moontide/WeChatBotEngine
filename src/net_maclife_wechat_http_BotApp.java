@@ -511,10 +511,27 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		return on;
 	}
 
+	public static JsonNode MakeBaseRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.put ("Uin", nUserID);
+		on.put ("Sid", sSessionID);
+		on.put ("Skey", sSessionKey);
+		on.put ("DeviceID", sDeviceID);
+		return on;
+	}
+
 	public static JsonNode MakeFullBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+		return on;
+	}
+
+	public static JsonNode MakeFullBaseRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		return on;
 	}
 
@@ -1947,15 +1964,24 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 
 
 
-	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated, boolean bInviteOrKick)
+	public static JsonNode MakeFullJsonNode_UpdateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFun, String sParam)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
 		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
 		on.put ("ChatRoomName", sTo_RoomAccount);
-		on.put (bInviteOrKick ? "AddMemberList" : "DelMemberList", sFriendsAccounts_CommaSeparated);
+		if (StringUtils.equalsIgnoreCase (sFun, "addmember"))
+			on.put ("AddMemberList", sParam);
+		else if (StringUtils.equalsIgnoreCase (sFun, "delmember"))
+			on.put ("DelMemberList", sParam);
+		else if (StringUtils.equalsIgnoreCase (sFun, "modtopic"))
+			on.put ("NewTopic", sParam);
 		return on;
 	}
-	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts, boolean bInviteOrKick)
+	public static JsonNode MakeFullJsonNode_InviteOrKick (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated, boolean bInviteOrKick)
+	{
+		return MakeFullJsonNode_UpdateChatRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, bInviteOrKick ? "addmember" : "delmember", sFriendsAccounts_CommaSeparated);
+	}
+	public static JsonNode MakeFullJsonNode_InviteOrKick (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts, boolean bInviteOrKick)
 	{
 		StringBuilder sb = new StringBuilder ();
 		for (int i=0; i<listFriendsAccounts.size (); i++)
@@ -1965,29 +1991,47 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 			String sAccount = listFriendsAccounts.get (i);
 			sb.append (sAccount);
 		}
-		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sb.toString (), bInviteOrKick);
+		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sb.toString (), bInviteOrKick);
 	}
 	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
 	{
-		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, true);
+		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, true);
 	}
 	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
 	{
-		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, true);
+		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, true);
 	}
 	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
 	{
-		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, false);
+		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, false);
 	}
 	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
 	{
-		return MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, false);
+		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, false);
 	}
-	private static JsonNode WebWeChatInviteOrKick (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated, boolean bInviteOrKick) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode MakeFullJsonNode_ModifyChatRoomName (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sNewName)
 	{
-logger.info ((bInviteOrKick ? "邀请联系人到群聊" : "从群中踢出联系人") + " …");
-		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxupdatechatroom?fun=" + (bInviteOrKick ? "addmember" : "delmember") + "&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
-logger.fine ("WebWeChatInviteOrKick 的 URL:");
+		return MakeFullJsonNode_UpdateChatRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, "modtopic", sNewName);
+	}
+	private static JsonNode WebWeChatUpdateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFun, String sParam) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		switch (sFun)
+		{
+			case "addmember":
+logger.info ("邀请联系人到群聊…");
+				break;
+			case  "delmember":
+logger.info ("从群中踢出联系人…");
+				break;
+			case "modtopic":
+logger.info ("修改群名…");
+				break;
+			default:
+logger.info ("未知的更新群聊操作: " + sFun);
+				return null;
+		}
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxupdatechatroom?fun=" + sFun + "&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
+logger.fine ("WebWeChatUpdateChatRoom 的 URL:");
 logger.fine ("	" + sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
@@ -1997,16 +2041,24 @@ logger.fine ("	" + sURL);
 		String sCookieValue = "";
 		sCookieValue = MakeCookieValue (listCookies);
 		mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 1100 1102 代码？
-logger.finer ("发送 WebWeChatInviteOrKick 的 http 请求消息头:");
+logger.finer ("发送 WebWeChatUpdateChatRoom 的 http 请求消息头:");
 logger.finer ("	" + mapRequestHeaders);
 
 		JsonNode jsonRequestBody = null;
-		if (bInviteOrKick)
-			jsonRequestBody = MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sFriendsAccounts_CommaSeparated);
-		else
-			jsonRequestBody = MakeFullJsonNode_KickMemberFromRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sFriendsAccounts_CommaSeparated);
+		switch (sFun)
+		{
+			case "addmember":
+				jsonRequestBody = MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
+				break;
+			case  "delmember":
+				jsonRequestBody = MakeFullJsonNode_KickMemberFromRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
+				break;
+			case "modtopic":
+				jsonRequestBody = MakeFullJsonNode_ModifyChatRoomName (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
+				break;
+		}
 		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
-logger.finer ("发送 WebWeChatInviteOrKick 的 http 请求消息体:");
+logger.finer ("发送 WebWeChatUpdateChatRoom 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody);
 
 		String sContent = null;
@@ -2016,11 +2068,11 @@ logger.finer ("	" + sRequestBody);
 			try
 			{
 				sContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, sRequestBody.getBytes ());
-logger.fine ("获取 WebWeChatInviteOrKick 的 http 响应消息体:");
+logger.fine ("获取 WebWeChatUpdateChatRoom 的 http 响应消息体:");
 logger.fine ("\n" + sContent);
 
 				JsonNode node = jacksonObjectMapper_Loose.readTree (sContent);
-				ProcessBaseResponse (node, "WebWeChatInviteFriendsToRoom (webwxupdatechatroom?fun=" + (bInviteOrKick ? "addmember" : "delmember") + ")");
+				ProcessBaseResponse (node, "WebWeChatUpdateChatRoom (webwxupdatechatroom?fun=" + sFun + ")");
 				return node;
 				//break;
 			}
@@ -2035,12 +2087,84 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 	}
 	public static JsonNode WebWeChatInviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatInviteOrKick (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, true);
+		return WebWeChatUpdateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "addmember", sFriendsAccounts_CommaSeparated);
 	}
 	public static JsonNode WebWeChatKickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatInviteOrKick (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, false);
+		return WebWeChatUpdateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "delmember", sFriendsAccounts_CommaSeparated);
 	}
+	public static JsonNode WebWeChatModifyRoomName (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sNewName) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+		return WebWeChatUpdateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "modtopic", sNewName);
+	}
+
+
+
+
+	public static JsonNode MakeFullJsonNode_CreateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTopic, List<String> listMemberAccounts)
+	{
+		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.put ("Topic", sTopic);
+		on.put ("MemberCount", listMemberAccounts.size ());
+		ArrayNode anMemberList = jacksonObjectMapper_Strict.createArrayNode ();
+		for (String sAccount : listMemberAccounts)
+		{
+			ObjectNode onMember = jacksonObjectMapper_Strict.createObjectNode ();
+			onMember.put ("UserName", sAccount);
+			anMemberList.add (onMember);
+		}
+		on.set ("MemberList", anMemberList);
+		return on;
+	}
+	public static JsonNode WebWeChatCreateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTopic, List<String> listMemberAccounts) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	{
+logger.info ("开房…………………………");
+		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom?r=" + System.currentTimeMillis () + "&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
+logger.fine ("WebWeChatCreateChatRoom 的 URL:");
+logger.fine ("	" + sURL);
+
+		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
+		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
+		CookieStore cookieStore = cookieManager.getCookieStore ();
+		List<HttpCookie> listCookies = cookieStore.get (new URI(sURL));
+		String sCookieValue = "";
+		sCookieValue = MakeCookieValue (listCookies);
+		mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 1100 1102 代码？
+logger.finer ("发送 WebWeChatCreateChatRoom 的 http 请求消息头:");
+logger.finer ("	" + mapRequestHeaders);
+
+		JsonNode jsonRequestBody = null;
+		jsonRequestBody = MakeFullJsonNode_CreateChatRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTopic, listMemberAccounts);
+		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
+logger.finer ("发送 WebWeChatCreateChatRoom 的 http 请求消息体:");
+logger.finer ("	" + sRequestBody);
+
+		String sContent = null;
+		int nTryTimes = GetConfig().getInt ("app.net.try-times", DEFAULT_NET_TRY_TIMES);
+		for (int i=0; i<nTryTimes; i++)
+		{
+			try
+			{
+				sContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, sRequestBody.getBytes ());
+logger.fine ("获取 WebWeChatCreateChatRoom 的 http 响应消息体:");
+logger.fine ("\n" + sContent);
+
+				JsonNode node = jacksonObjectMapper_Loose.readTree (sContent);
+				ProcessBaseResponse (node, "WebWeChatCreateChatRoom (webwxcreatechatroom)");
+				return node;
+				//break;
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace ();
+logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，不再重试" : "，准备重试 …"));
+				continue;
+			}
+		}
+		return null;
+	}
+
 
 	public static void ProcessBaseResponse (JsonNode node, String sAPIName)
 	{

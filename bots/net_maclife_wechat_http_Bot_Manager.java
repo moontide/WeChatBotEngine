@@ -99,15 +99,24 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 						}
 					}
 				}
-				else if (StringUtils.equalsAnyIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite"), net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.kick"))
+				else if (StringUtils.equalsAnyIgnoreCase (sCommandInputed,
+						net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite"),
+						net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.kick"),
+						net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.topic")
+						)
 					)
 				{
 					if (! isReplyToRoom)
 					{
-						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "邀请或者踢人操作需要在群内执行");
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "邀请或者踢人或改群名操作需要在群内执行");
 						return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					}
-					InviteContactsToOrKickContactsFromRoom (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandInputed, sCommandOptionsInputed, sCommandParametersInputed);
+					UpdateChatRoom (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandInputed, sCommandOptionsInputed, sCommandParametersInputed);
+				}
+				else if (StringUtils.equalsAnyIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.new-room"))
+					)
+				{
+					CreateNewRoom (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandInputed, sCommandOptionsInputed, sCommandParametersInputed);
 				}
 			}
 		}
@@ -211,15 +220,120 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 		}
 	}
 
-	public void InviteContactsToOrKickContactsFromRoom (String sReplyToAccount, String sReplyToName, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+	public void UpdateChatRoom (String sReplyToAccount, String sReplyToName, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
 			String sCommandInputed, String sCommandOptionsInputed, String sCommandParametersInputed
 			) throws Exception
 	{
-		if (StringUtils.isEmpty (sCommandParametersInputed))
+		String sSearchBy = sCommandOptionsInputed;
+		String sNameOfSearchBy = "";
+		String sCommandName = "";
+
+		if (StringUtils.equalsIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite")))
+			sCommandName = "邀请联系人入群";
+		else if (StringUtils.equalsIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.kick")))
+			sCommandName = "将成员踢出群";
+		else if (StringUtils.equalsIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.topic")))
+			sCommandName = "修改群名";
+		else
+			return;
+
+		if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "Account", "帐号"))
+			sNameOfSearchBy = "帐号";
+		else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "Alias", "微信号"))
+			sNameOfSearchBy = "微信号";
+		else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "RemarkName", "备注名"))
+			sNameOfSearchBy = "备注名";
+		else if (StringUtils.equalsAnyIgnoreCase (sSearchBy, "NickName", "昵称") || StringUtils.isEmpty (sSearchBy))
+			sNameOfSearchBy = "昵称";
+		else
 		{
-			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandInputed + "[" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "帐号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "微信号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "备注名|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "昵称] <群帐号> <朋友帐号/微信号/备注名/昵称>");
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "不知道你要根据什么找人… sSearchByName = " + sNameOfSearchBy);
 			return;
 		}
+
+		JsonNode jsonResult = null;
+		if (StringUtils.equalsIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.topic")))
+		{
+			if (StringUtils.isEmpty (sCommandParametersInputed))
+			{
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "当前群名为【" + sReplyToName + "】，若需要修改群名，必须输入新的群名");
+				return;
+			}
+			jsonResult = engine.ModifyRoomName (sReplyToAccount, sCommandParametersInputed);
+		}
+		else if (StringUtils.equalsAnyIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite"), net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.kick")))
+		{
+			if (StringUtils.isEmpty (sCommandParametersInputed))
+			{
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "必须输入至少一个联系人帐号/微信号/备注名/昵称\n\n" + sCommandInputed + "[" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "帐号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "微信号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "备注名|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "昵称] <群帐号> <朋友帐号/微信号/备注名/昵称>");
+				return;
+			}
+
+			List<String> listFriends = net_maclife_wechat_http_BotApp.SplitCommandLine (sCommandParametersInputed);	// 鉴于用户昵称可能包含空格或特殊字符的情况，这里必须用 SplitCommandLine 函数处理，不能简单的 .split (" ")
+			StringBuilder sbFriendsAccounts = new StringBuilder ();
+			for (int i=0; i<listFriends.size (); i++)
+			{
+				String sFriend = listFriends.get (i);
+				JsonNode jsonContact = null;
+				if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "帐号"))
+					jsonContact = engine.SearchForSingleContact (sFriend, null, null, null);
+				else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "微信号"))
+					jsonContact = engine.SearchForSingleContact (null, sFriend, null, null);
+				else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "备注名"))
+					jsonContact = engine.SearchForSingleContact (null, null, sFriend, null);
+				else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "昵称"))
+					jsonContact = engine.SearchForSingleContact (null, null, null, sFriend);
+
+				if (jsonContact==null)
+				{
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "根据【" + sNameOfSearchBy + "】搜索【" + sFriend + "】，未搜索到联系人");
+					return;
+				}
+
+				if (sbFriendsAccounts.length () != 0)
+					sbFriendsAccounts.append (',');
+
+				sbFriendsAccounts.append (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
+			}
+
+			if (sbFriendsAccounts.length () == 0)
+			{
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "根据【" + sNameOfSearchBy + "】搜索 " + sCommandParametersInputed + "，未搜索到任何联系人");
+				return;
+			}
+
+			if (StringUtils.equalsAnyIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite")))
+				jsonResult = engine.InviteFriendsToRoom (sReplyToAccount, sbFriendsAccounts.toString ());
+			else
+				jsonResult = engine.KickMemberFromRoom (sReplyToAccount, sbFriendsAccounts.toString ());
+		}
+
+		if (jsonResult == null)
+			return;
+
+		JsonNode jsonBaseResponse = jsonResult.get ("BaseResponse");
+		if (jsonBaseResponse == null)
+			return;
+
+		int nRet = net_maclife_wechat_http_BotApp.GetJSONInt (jsonBaseResponse, "Ret");
+		if (nRet != 0)
+		{
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sCommandName + " 操作失败，代码：" + nRet);
+		}
+	}
+
+	public void CreateNewRoom (String sReplyToAccount, String sReplyToName, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			String sCommandInputed, String sCommandOptionsInputed, String sCommandParametersInputed
+			) throws Exception
+	{
+		List<String> listParams = net_maclife_wechat_http_BotApp.SplitCommandLine (sCommandParametersInputed);	// 鉴于用户昵称可能包含空格或特殊字符的情况，这里必须用 SplitCommandLine 函数处理，不能简单的 .split (" ")
+		//if (StringUtils.isEmpty (sCommandParametersInputed))
+		if (listParams.size () < 1)
+		{
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "必须输入新房间名，另外，最好至少输入一个联系人帐号/微信号/备注名/昵称，否则只能创建一个人的群 -- 只有你自己的群\n\n" + sCommandInputed + "[" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "帐号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "微信号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "备注名|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "昵称]  <新群名>  [朋友帐号/微信号/备注名/昵称]...");
+			return;
+		}
+		String sNewRoomName = listParams.remove (0);
 
 		String sSearchBy = sCommandOptionsInputed;
 		String sNameOfSearchBy = "";
@@ -234,23 +348,14 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 			sNameOfSearchBy = "昵称";
 		else
 		{
-			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "不知道你要根据什么发消息… sSearchByName = " + sNameOfSearchBy);
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "不知道你要根据什么找人… sSearchByName = " + sNameOfSearchBy);
 			return;
 		}
 
-		if (StringUtils.isEmpty (sCommandParametersInputed))
+		//listParams.add (0, engine.sMyEncryptedAccountInThisSession);
+		for (int i=0; i<listParams.size (); i++)
 		{
-			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "必须输入至少一个联系人帐号/微信号/备注名/昵称");
-			return;
-		}
-
-		boolean bInviteOrKick = StringUtils.equalsIgnoreCase (sCommandInputed, net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.manager.command.invite"));
-
-		List<String> listFriends = net_maclife_wechat_http_BotApp.SplitCommandLine (sCommandParametersInputed);	// 鉴于用户昵称可能包含空格或特殊字符的情况，这里必须用 SplitCommandLine 函数处理，不能简单的 .split (" ")
-		StringBuilder sbFriendsAccounts = new StringBuilder ();
-		for (int i=0; i<listFriends.size (); i++)
-		{
-			String sFriend = listFriends.get (i);
+			String sFriend = listParams.get (i);
 			JsonNode jsonContact = null;
 			if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "帐号"))
 				jsonContact = engine.SearchForSingleContact (sFriend, null, null, null);
@@ -261,29 +366,15 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 			else if (StringUtils.equalsIgnoreCase (sNameOfSearchBy, "昵称"))
 				jsonContact = engine.SearchForSingleContact (null, null, null, sFriend);
 
-			if (jsonContact==null)
+			if (jsonContact != null)
 			{
-				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "根据【" + sNameOfSearchBy + "】搜索【" + sFriend + "】，未搜索到联系人");
-				return;
+				listParams.set (i, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
 			}
-
-			if (sbFriendsAccounts.length () != 0)
-				sbFriendsAccounts.append (',');
-
-			sbFriendsAccounts.append (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
-		}
-
-		if (sbFriendsAccounts.length () == 0)
-		{
-			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "根据【" + sNameOfSearchBy + "】搜索 " + sCommandParametersInputed + "，未搜索到任何联系人");
-			return;
 		}
 
 		JsonNode jsonResult = null;
-		if (bInviteOrKick)
-			jsonResult = engine.InviteFriendsToRoom (sReplyToAccount, sbFriendsAccounts.toString ());
-		else
-			jsonResult = engine.KickMemberFromRoom (sReplyToAccount, sbFriendsAccounts.toString ());
+		jsonResult = engine.CreateNewRoom (sNewRoomName, listParams);
+
 
 		if (jsonResult == null)
 			return;
@@ -293,9 +384,10 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 			return;
 
 		int nRet = net_maclife_wechat_http_BotApp.GetJSONInt (jsonBaseResponse, "Ret");
-		if (nRet != 0)
+		String sErrMsg = net_maclife_wechat_http_BotApp.GetJSONText (jsonBaseResponse, "ErrMsg");
+		if (nRet != 0 || StringUtils.isNotEmpty (sErrMsg))	// 当 Ret 等于 0 时，却有 ErrMsg: "ErrMsg": "MemberList are wrong"
 		{
-			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, (bInviteOrKick ? "邀请成员入群" : "将成员踢出群" ) + " 操作失败，代码：" + nRet);
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "创建新群 操作失败，代码：" + nRet + (StringUtils.isNotEmpty (sErrMsg) ? "，信息：" + sErrMsg : ""));
 		}
 	}
 }
