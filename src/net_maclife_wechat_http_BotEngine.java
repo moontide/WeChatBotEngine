@@ -117,7 +117,7 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 
 	boolean loggedIn  = false;
 
-	String sUserID     = null;
+	long  nUserID      = 0;
 	String sSessionID  = null;
 	String sSessionKey = null;
 	String sPassTicket = null;
@@ -284,12 +284,12 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 
 	JsonNode Init () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatInit (sUserID, sSessionID, sSessionKey, sPassTicket);
+		return net_maclife_wechat_http_BotApp.WebWeChatInit (nUserID, sSessionID, sSessionKey, sPassTicket);
 	}
 
 	JsonNode EmptyStatisticsReport () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatStatisticsReport (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession);
+		return net_maclife_wechat_http_BotApp.WebWeChatStatisticsReport (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession);
 	}
 
 	JsonNode FakeStatisticsReport () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
@@ -308,22 +308,22 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 			jsonFakeData_data1_text_data_actions_action1.put ("action", sRandomFakeResizeAction);
 		jsonFakeData_data1.put ("Text", net_maclife_wechat_http_BotApp.jacksonObjectMapper_Strict.writeValueAsString (jsonFakeData_data1_text));
 
-		return net_maclife_wechat_http_BotApp.WebWeChatStatisticsReport (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, jsonFakeData);
+		return net_maclife_wechat_http_BotApp.WebWeChatStatisticsReport (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, jsonFakeData);
 	}
 
 	JsonNode StatusNotify () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatStatusNotify (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession);
+		return net_maclife_wechat_http_BotApp.WebWeChatStatusNotify (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession);
 	}
 
 	JsonNode GetContacts () throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatGetContacts (sUserID, sSessionID, sSessionKey, sPassTicket);
+		return net_maclife_wechat_http_BotApp.WebWeChatGetContacts (nUserID, sSessionID, sSessionKey, sPassTicket);
 	}
 
 	JsonNode GetRoomsContactsFromServer (List<String> listRoomAccounts) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatGetRoomsContacts (sUserID, sSessionID, sSessionKey, sPassTicket, listRoomAccounts);
+		return net_maclife_wechat_http_BotApp.WebWeChatGetRoomsContacts (nUserID, sSessionID, sSessionKey, sPassTicket, listRoomAccounts);
 	}
 
 	JsonNode GetRoomContactFromServer (String sRoomAccount) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
@@ -339,14 +339,14 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 
 	JsonNode GetMessagePackage (JsonNode jsonSyncCheckKeys) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, ScriptException, URISyntaxException, InterruptedException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatGetMessagePackage (sUserID, sSessionID, sSessionKey, sPassTicket, jsonSyncCheckKeys);
+		return net_maclife_wechat_http_BotApp.WebWeChatGetMessagePackage (nUserID, sSessionID, sSessionKey, sPassTicket, jsonSyncCheckKeys);
 	}
 
 	public void Logout ()
 	{
 		try
 		{
-			net_maclife_wechat_http_BotApp.WebWeChatLogout (sUserID, sSessionID, sSessionKey, sPassTicket);
+			net_maclife_wechat_http_BotApp.WebWeChatLogout (nUserID, sSessionID, sSessionKey, sPassTicket);
 			loggedIn = false;
 			OnLoggedOut ();
 		}
@@ -379,11 +379,11 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 		}
 		if (StringUtils.isEmpty (sToAccount_RoomMember))
 		{	// 私信，直接发送
-			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMessage);
+			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMessage);
 		}
 		else
 		{	// 聊天室，需要做一下处理： @一下发送人，然后是消息
-			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, (bMentionedMeFirstInIncomingRoomMessage && StringUtils.isNotEmpty (sToName_RoomMember) ? "@" + sToName_RoomMember + "\n" : "") + sMessage);
+			net_maclife_wechat_http_BotApp.WebWeChatSendTextMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, (bMentionedMeFirstInIncomingRoomMessage && StringUtils.isNotEmpty (sToName_RoomMember) ? "@" + sToName_RoomMember + "\n" : "") + sMessage);
 		}
 	}
 	public void SendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage, boolean bInsertExtraNewLineBeforeTimestamp, boolean bMentionedMeInIncomingRoomMessage, boolean bMentionedMeFirstInIncomingRoomMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
@@ -457,10 +457,10 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 	{
 		File f = null;
 		// 先上传文件
-		net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, f);
+		net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, f);
 
 		// 再用上传返回的 MediaID 把图片消息（已不是图片本身）发出
-		net_maclife_wechat_http_BotApp.WebWeChatSendImageMessage (sUserID, sSessionID, sSessionKey, sPassTicket, this.sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
+		net_maclife_wechat_http_BotApp.WebWeChatSendImageMessage (nUserID, sSessionID, sSessionKey, sPassTicket, this.sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
 	}
 
 	public void SendMediaFile (String sToAccount, File f) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
@@ -469,7 +469,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 			return;
 
 		// 先上传文件
-		JsonNode jsonUploadResult = net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, f);
+		JsonNode jsonUploadResult = net_maclife_wechat_http_BotApp.WebWeChatUploadMedia (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, f);
 		if (jsonUploadResult == null)
 		{
 net_maclife_wechat_http_BotApp.logger.warning ("文件 " + f + " 上传失败");
@@ -480,12 +480,12 @@ net_maclife_wechat_http_BotApp.logger.warning ("文件 " + f + " 上传失败");
 
 		// 再用上传返回的 MediaID 把文件消息（已不是文件本身）发出
 		if (StringUtils.equalsIgnoreCase (sWeChatMediaType, "pic"))
-			net_maclife_wechat_http_BotApp.WebWeChatSendImageMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
+			net_maclife_wechat_http_BotApp.WebWeChatSendImageMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
 		else if (StringUtils.equalsIgnoreCase (sWeChatMediaType, "video"))
-			net_maclife_wechat_http_BotApp.WebWeChatSendVideoMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
+			net_maclife_wechat_http_BotApp.WebWeChatSendVideoMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, sMediaID);
 		else if (StringUtils.equalsIgnoreCase (sWeChatMediaType, "doc"))
 		{
-			net_maclife_wechat_http_BotApp.WebWeChatSendApplicationMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, net_maclife_wechat_http_BotApp.MakeFullSendApplicationMessageRequestElement (sMediaID, f));
+			net_maclife_wechat_http_BotApp.WebWeChatSendApplicationMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sMyEncryptedAccountInThisSession, sToAccount, net_maclife_wechat_http_BotApp.MakeFullSendApplicationMessageRequestElement (sMediaID, f));
 		}
 		else
 		{
@@ -551,40 +551,40 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 
 	public JsonNode SendRequestToMakeFriend (String sTo, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatSendRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, sTo, sIdentityContent);
+		return net_maclife_wechat_http_BotApp.WebWeChatSendRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sPassTicket, sTo, sIdentityContent);
 	}
 	public JsonNode AcceptRequestToMakeFriend (String sMakeFriendTicket, int nScene, String sTo, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, sMakeFriendTicket, nScene, sTo, sIdentityContent);
+		return net_maclife_wechat_http_BotApp.WebWeChatAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sPassTicket, sMakeFriendTicket, nScene, sTo, sIdentityContent);
 	}
 	public JsonNode AcceptRequestToMakeFriend (String sMakeFriendTicket, String sTo, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return net_maclife_wechat_http_BotApp.WebWeChatAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, sMakeFriendTicket, sTo, sIdentityContent);
+		return net_maclife_wechat_http_BotApp.WebWeChatAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sPassTicket, sMakeFriendTicket, sTo, sIdentityContent);
 	}
 
 
 	public JsonNode InviteFriendsToRoom (String sRoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatInviteFriendsToRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sFriendsAccounts_CommaSeparated);
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatInviteFriendsToRoom (nUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sFriendsAccounts_CommaSeparated);
 		//net_maclife_wechat_http_BotApp.GetJSONInt (jsonResult, "MemberCount");
 		//jsonResult.get ("MemberList");
 		return jsonResult;
 	}
 	public JsonNode KickMemberFromRoom (String sRoomAccount, String sMembersAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatKickMemberFromRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sMembersAccounts_CommaSeparated);
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatKickMemberFromRoom (nUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sMembersAccounts_CommaSeparated);
 		//net_maclife_wechat_http_BotApp.GetJSONInt (jsonResult, "MemberCount");
 		//jsonResult.get ("MemberList");
 		return jsonResult;
 	}
 	public JsonNode ModifyRoomName (String sRoomAccount, String sNewName) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatModifyRoomName (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sNewName);
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatModifyRoomName (nUserID, sSessionID, sSessionKey, sPassTicket, sRoomAccount, sNewName);
 		return jsonResult;
 	}
 	public JsonNode CreateNewRoom (String sRoomTopic, List<String> listMemberAccounts) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatCreateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sRoomTopic, listMemberAccounts);
+		JsonNode jsonResult = net_maclife_wechat_http_BotApp.WebWeChatCreateChatRoom (nUserID, sSessionID, sSessionKey, sPassTicket, sRoomTopic, listMemberAccounts);
 		return jsonResult;
 	}
 
@@ -892,7 +892,7 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		try
 		{
 			ObjectNode jsonSessionCache = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.createObjectNode ();
-			jsonSessionCache.put ("UserID", sUserID);
+			jsonSessionCache.put ("UserID", nUserID);
 			jsonSessionCache.put ("SessionID", sSessionID);
 			jsonSessionCache.put ("SessionKey", sSessionKey);
 			jsonSessionCache.put ("PassTicket", sPassTicket);
@@ -1006,10 +1006,10 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 							}
 						}
 					}
-					if (!bSessionExpired && fSessionCache.exists () && ((fSessionCache.lastModified () + 12 * 3600 * 1000) > System.currentTimeMillis ()))	// 目前的微信 Session 只有 12 小时的生命
+					if (!bSessionExpired && fSessionCache.exists () && ((fSessionCache.lastModified () + 600 * 1000) > System.currentTimeMillis ()))	// 目前的微信 Session 只有 12 小时的生命（但其实如果几分钟没有跟服务器交互，也会过期，这里暂定为 10 分钟。一般，重启电脑再重新登录，session 还是有效的）
 					{
 						JsonNode jsonSessionCache = GetSessionCache ();
-						sUserID     = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "UserID");
+						nUserID     = net_maclife_wechat_http_BotApp.GetJSONLong (jsonSessionCache, "UserID");
 						sSessionID  = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "SessionID");
 						sSessionKey = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "SessionKey");
 						sPassTicket = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "PassTicket");
@@ -1017,7 +1017,7 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 						sMyEncryptedAccountInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "EncryptedAccountInThisSession");
 						sMyCustomAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "CustomAccount");
 						sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonSessionCache, "NickName");
-net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " + sUserID + "\n	SID: " + sSessionID + "\n	SKEY: " + sSessionKey + "\n	TICKET: " + sPassTicket + "\n	EncryptedAccountInThisSession: " + sMyEncryptedAccountInThisSession + "\n	CustomAccount/Alias: " + sMyCustomAccount + "\n	NickName: " + sMyNickName + "\n	SyncCheckKeys: " + jsonSyncCheckKeys + "\n");
+net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " + nUserID + "\n	SID: " + sSessionID + "\n	SKEY: " + sSessionKey + "\n	TICKET: " + sPassTicket + "\n	EncryptedAccountInThisSession: " + sMyEncryptedAccountInThisSession + "\n	CustomAccount/Alias: " + sMyCustomAccount + "\n	NickName: " + sMyNickName + "\n	SyncCheckKeys: " + jsonSyncCheckKeys + "\n");
 					}
 					else
 					{
@@ -1054,12 +1054,12 @@ net_maclife_wechat_http_BotApp.logger.info (net_maclife_util_ANSIEscapeTool.Gray
 						nWaitTimeToRetry = 0;
 
 						mapWaitLoginResult = (Map<String, Object>) o;
-						sUserID     = (String) mapWaitLoginResult.get ("UserID");
+						nUserID     = (Long)   mapWaitLoginResult.get ("UserID");
 						sSessionID  = (String) mapWaitLoginResult.get ("SessionID");
 						sSessionKey = (String) mapWaitLoginResult.get ("SessionKey");
 						sPassTicket = (String) mapWaitLoginResult.get ("PassTicket");
 						bSessionExpired = false;
-net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UIN: " + sUserID + "\n	SID: " + sSessionID + "\n	SKEY: " + sSessionKey + "\n	TICKET: " + sPassTicket + "\n");
+net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UIN: " + nUserID + "\n	SID: " + sSessionID + "\n	SKEY: " + sSessionKey + "\n	TICKET: " + sPassTicket + "\n");
 
 						// 4. 确认登录后，初始化 Web 微信，返回初始信息
 						JsonNode jsonInit = Init ();

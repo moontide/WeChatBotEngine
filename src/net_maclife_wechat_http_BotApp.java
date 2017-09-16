@@ -490,7 +490,7 @@ logger.fine ("登录页面响应的消息体:");
 //System.out.println ("	[" + sContent + "]");
 logger.fine ("	[" + eXML.toXML() + "]");
 			Map<String, Object> mapResult = new HashMap <String, Object> ();
-			mapResult.put ("UserID", GetXMLValue (eXML, "wxuin"));
+			mapResult.put ("UserID", Long.parseLong (GetXMLValue (eXML, "wxuin")));
 			mapResult.put ("SessionID", GetXMLValue (eXML, "wxsid"));
 			mapResult.put ("SessionKey", GetXMLValue (eXML, "skey"));
 			mapResult.put ("PassTicket", GetXMLValue (eXML, "pass_ticket"));
@@ -501,15 +501,15 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		return nLoginResultCode;
 	}
 
-	public static JsonNode MakeBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
-	{
-		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.put ("Uin", sUserID);
-		on.put ("Sid", sSessionID);
-		on.put ("Skey", sSessionKey);
-		on.put ("DeviceID", sDeviceID);
-		return on;
-	}
+	//public static JsonNode MakeBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
+	//{
+	//	ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+	//	on.put ("Uin", sUserID);
+	//	on.put ("Sid", sSessionID);
+	//	on.put ("Skey", sSessionKey);
+	//	on.put ("DeviceID", sDeviceID);
+	//	return on;
+	//}
 
 	public static JsonNode MakeBaseRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
@@ -521,12 +521,12 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		return on;
 	}
 
-	public static JsonNode MakeFullBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
-	{
-		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
-		return on;
-	}
+	//public static JsonNode MakeFullBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
+	//{
+	//	ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
+	//	on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+	//	return on;
+	//}
 
 	public static JsonNode MakeFullBaseRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
@@ -584,7 +584,7 @@ logger.fine ("	[" + eXML.toXML() + "]");
 		AppendContactInformation (sb, jsonContact, false);
 	}
 
-	public static JsonNode WebWeChatInit (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatInit (long nUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("初始化 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=1703974212&lang=zh_CN&pass_ticket=ZfvpI6wcO7N5PTkacmWK9zUTXpUOB3kqre%2BrkQ8IAtHDAIP2mc2psB5eDH8cwzsp
@@ -597,7 +597,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatInit 的 http 请求消息头 (Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
 
-		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID ()));
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID ()));
 logger.finer ("发送 WebWeChatInit 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 
@@ -661,10 +661,10 @@ logger.info (sb.toString ());
 		return System.currentTimeMillis () * 10000 + (nRecycledMessageID ++);
 	}
 
-	public static JsonNode MakeFullStatisticsReportRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount, JsonNode jsonData)
+	public static JsonNode MakeFullStatisticsReportRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount, JsonNode jsonData)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		if (jsonData==null || !(jsonData instanceof ArrayNode))
 		{
 			on.put ("Count", 0);
@@ -683,7 +683,7 @@ logger.info (sb.toString ());
 	 * @param jsonData 可以为 null
 	 * @return
 	 */
-	public static JsonNode WebWeChatStatisticsReport (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount, JsonNode jsonData) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatStatisticsReport (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount, JsonNode jsonData) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发送统计报告到腾讯 = = …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatreport?fun=new";
@@ -695,7 +695,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatStatisticsReport 的 http 请求消息头 (Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
 
-		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullStatisticsReportRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount, jsonData));
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullStatisticsReportRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount, jsonData));
 logger.finer ("发送 WebWeChatStatisticsReport 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 		InputStream is = null;
@@ -726,22 +726,22 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 
 		return node;
 	}
-	public static JsonNode WebWeChatStatisticsReport (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	public static JsonNode WebWeChatStatisticsReport (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		return WebWeChatStatisticsReport (sUserID, sSessionID, sSessionKey, sPassTicket, sMyAccount, null);
+		return WebWeChatStatisticsReport (nUserID, sSessionID, sSessionKey, sPassTicket, sMyAccount, null);
 	}
 
-	public static JsonNode MakeFullStatusNotifyRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount)
+	public static JsonNode MakeFullStatusNotifyRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMyAccount)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		on.put ("Code", 3);
 		on.put ("FromUserName", sMyAccount);
 		on.put ("ToUserName", sMyAccount);
 		on.put ("ClientMsgId", GenerateLocalMessageID ());
 		return on;
 	}
-	public static JsonNode WebWeChatStatusNotify (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatStatusNotify (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMyAccount) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("开启状态通知 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify?lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
@@ -753,7 +753,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息头 (Content-Type):");
 logger.finer ("	" + mapRequestHeaders);
 
-		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullStatusNotifyRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount));
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullStatusNotifyRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sMyAccount));
 logger.finer ("发送 WebWeChatStatusNotify 的 http 请求消息体:");
 logger.finer (sRequestBody_JSONString);
 		InputStream is = null;
@@ -784,7 +784,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		return node;
 	}
 
-	public static JsonNode WebWeChatGetContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatGetContacts (long nUserID, String sSessionID, String sSessionKey, String sPassTicket) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("获取联系人 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
@@ -796,7 +796,7 @@ logger.fine ("	" + sURL);
 logger.finer  ("发送 WebWeChatGetContacts 的 http 请求消息头 (Content-Type):");
 logger.finer  ("	" + mapRequestHeaders);
 
-String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID ()));
+String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID ()));
 logger.finer  ("发送 WebWeChatGetContacts 的 http 请求消息体:");
 logger.finer  ("	" + sRequestBody_JSONString);
 
@@ -863,10 +863,10 @@ logger.info (sb.toString ());
 		}
 		return listRoomAccounts;
 	}
-	public static JsonNode MakeFullGetRoomContactRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomAccounts)
+	public static JsonNode MakeFullGetRoomContactRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomAccounts)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		on.put ("Count", listRoomAccounts.size ());
 		ArrayNode an = jacksonObjectMapper_Strict.createArrayNode ();
 		for (int i=0; i<listRoomAccounts.size (); i++)
@@ -880,7 +880,7 @@ logger.info (sb.toString ());
 		return on;
 	}
 
-	public static JsonNode WebWeChatGetRoomsContacts (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomAccounts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatGetRoomsContacts (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, List<String> listRoomAccounts) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("获取 " + listRoomAccounts.size () + " 个聊天室的联系人 …");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
@@ -889,7 +889,7 @@ logger.fine ("	" + sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
 		mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
-		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullGetRoomContactRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), listRoomAccounts));
+		String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullGetRoomContactRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), listRoomAccounts));
 logger.finer ("发送 WebWeChatGetRoomContacts 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody_JSONString);
 		InputStream is = null;
@@ -1097,10 +1097,10 @@ logger.severe ("联系人数量超过 0xFFFFFF" + 0xFFFFFF + " 个，这样可�
 		}
 		return sbSyncCheckKeys.toString ();
 	}
-	public static JsonNode MakeFullWeChatSyncRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonSyncKey)
+	public static JsonNode MakeFullWeChatSyncRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, JsonNode jsonSyncKey)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		on.set ("SyncKey", jsonSyncKey);
 		on.put ("rr", System.currentTimeMillis ()/1000);
 		return on;
@@ -1121,11 +1121,11 @@ logger.severe ("联系人数量超过 0xFFFFFF" + 0xFFFFFF + " 个，这样可�
 		}
 		return sbResult.toString ();
 	}
-	public static JsonNode WebWeChatGetMessagePackage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException, InterruptedException
+	public static JsonNode WebWeChatGetMessagePackage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, JsonNode jsonSyncCheckKeys) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, ScriptException, URISyntaxException, InterruptedException
 	{
 logger.finest ("等待并获取新消息 WebWeChatGetMessagePackage (synccheck & webwxsync) …");	// 这里的日志级别改为了 fine，因这个在死循环中，产生太多日志
 		String sSyncCheckKeys = MakeSyncCheckKeysQueryString (jsonSyncCheckKeys);
-		String sSyncCheckURL = "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck?r=" + System.currentTimeMillis () + "&skey=" + URLEncoder.encode (sSessionKey, utf8) + "&sid=" + URLEncoder.encode (sSessionID, utf8) + "&uin=" + sUserID + "&deviceid=" + MakeDeviceID () + "&synckey=" +  sSyncCheckKeys + "&_=" + System.currentTimeMillis ();
+		String sSyncCheckURL = "https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck?r=" + System.currentTimeMillis () + "&skey=" + URLEncoder.encode (sSessionKey, utf8) + "&sid=" + URLEncoder.encode (sSessionID, utf8) + "&uin=" + nUserID + "&deviceid=" + MakeDeviceID () + "&synckey=" +  sSyncCheckKeys + "&_=" + System.currentTimeMillis ();
 logger.finest ("WebWeChatGetMessagePackage 中 synccheck 的 URL:");
 logger.finest ("	" + sSyncCheckURL);
 
@@ -1213,7 +1213,7 @@ logger.finest ("	" + sSyncURL);
 					//mapRequestHeaders = new HashMap<String, Object> ();
 					mapRequestHeaders.put ("Content-Type", "application/json; charset=utf-8");
 					//mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 "Ret": 1 代码
-					String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullWeChatSyncRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys));
+					String sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullWeChatSyncRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), jsonSyncCheckKeys));
 logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息头 (Cookie & Content-Type):");
 logger.finest ("	" + mapRequestHeaders);
 logger.finest ("发送 WebWeChatGetMessagePackage 中 webwxsync 的 http 请求消息体:");
@@ -1292,7 +1292,7 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("WebWeChatGetMessagePack
 		return jsonResult;
 	}
 
-	public static void WebWeChatLogout (String sUserID, String sSessionID, String sSessionKey, String sPassTicket) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static void WebWeChatLogout (long nUserID, String sSessionID, String sSessionKey, String sPassTicket) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("退出微信 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout?redirect=1&type=1&skey=@crypt_1df7c02d_9effb9a7d4292af4681c79dab30b6a57	// 加上表单数据 uin=****&sid=**** ，POST
@@ -1314,7 +1314,7 @@ logger.fine ("	" + sURL);
 logger.finer ("发送 WebWeChatLogout 的 http 请求消息头:");
 logger.finer ("	" + mapRequestHeaders);
 
-		String sRequestBody = "wxsid=" + URLEncoder.encode (sSessionID, utf8) + "&uin=" + sUserID;
+		String sRequestBody = "wxsid=" + URLEncoder.encode (sSessionID, utf8) + "&uin=" + nUserID;
 logger.finer ("发送 WebWeChatLogout 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody);
 
@@ -1345,7 +1345,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 	 * @param sFrom_Account 来自帐号（大概，Web 版微信 HTTP 协议中，发件人只有可能是自己了，然而也不确定）
 	 * @param sTo_Account 发往帐号。帐号可以是本次会话的加密帐号，也可以是类似 wxid_***  gh_***  filehelper 之类的明帐号
 	 */
-	public static JsonNode WebWeChatSendMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, int nMessageType, Object oMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, int nMessageType, Object oMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.fine ("发消息 WebWeChatSendMessage …");
 		String sURL = null;
@@ -1357,27 +1357,27 @@ logger.fine ("发消息 WebWeChatSendMessage …");
 		{
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?r=" + System.currentTimeMillis () + "&lang=zh_CN&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendTextMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendTextMessageRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendImageMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendImageMessageRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvoicemsg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendVoiceMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendVoiceMessageRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendvideomsg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendVideoMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendVideoMessageRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendApplicationMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (Element)oMessage));
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendApplicationMessageRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (Element)oMessage));
 				break;
 			case net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION:
 				sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&lang=zh_CN&pass_ticket="+ URLEncoder.encode (sPassTicket, utf8);
-				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendEmotionMessageRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
+				sRequestBody_JSONString = jacksonObjectMapper_Strict.writeValueAsString (MakeFullSendEmotionMessageRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sFrom_Account, sTo_Account, (String)oMessage));
 				break;
 			default:
 				break;
@@ -1416,11 +1416,11 @@ logger.fine ("\n" + node);
 		return node;
 	}
 
-	public static JsonNode MakeFullSendTextMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sContent)
+	public static JsonNode MakeFullSendTextMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sContent)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
 			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT);
 			msg.put ("Content", sContent);
@@ -1431,17 +1431,17 @@ logger.fine ("\n" + node);
 		on.set ("Msg", msg);
 		return on;
 	}
-	public static JsonNode WebWeChatSendTextMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendTextMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发文本消息:\n" + net_maclife_util_ANSIEscapeTool.Cyan (sMessage));
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
 	}
 
-	public static JsonNode MakeFullSendImageMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	public static JsonNode MakeFullSendImageMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
 			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE);
 			msg.put ("MediaId", sMediaID);
@@ -1453,17 +1453,17 @@ logger.info ("发文本消息:\n" + net_maclife_util_ANSIEscapeTool.Cyan (sMessa
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendImageMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendImageMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发图片消息: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID);
 	}
 
-	public static JsonNode MakeFullSendEmotionMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	public static JsonNode MakeFullSendEmotionMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
 			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION);
 			msg.put ("EmojiFlag", 2);
@@ -1476,10 +1476,10 @@ logger.info ("发图片消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendEmotionMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendEmotionMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发表情图消息: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
 	}
 
 	public static Element MakeFullSendVoiceMessageRequestElement (String sMediaID, File f) throws UnsupportedAudioFileException, IOException
@@ -1504,11 +1504,11 @@ logger.info ("发表情图消息: " + sMediaID);
 
 		return eVoiceMsg;
 	}
-	public static JsonNode MakeFullSendVoiceMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	public static JsonNode MakeFullSendVoiceMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
 			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE);
 			msg.put ("MediaId", sMediaID);
@@ -1520,17 +1520,17 @@ logger.info ("发表情图消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendVoiceMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendVoiceMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发语音消息: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE, sMediaID);
 	}
 
-	public static JsonNode MakeFullSendVideoMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
+	public static JsonNode MakeFullSendVideoMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
 			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG);
 			msg.put ("MediaId", sMediaID);
@@ -1542,10 +1542,10 @@ logger.info ("发语音消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendVideoMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendVideoMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发视频消息: " + sMediaID);
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG, sMediaID);
 	}
 
 	public static Element MakeFullSendApplicationMessageRequestElement (String sMediaID, File f)
@@ -1588,11 +1588,11 @@ logger.info ("发视频消息: " + sMediaID);
 
 		return eAppMsg;
 	}
-	public static JsonNode MakeFullSendApplicationMessageRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, Element eXML)
+	public static JsonNode MakeFullSendApplicationMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, Element eXML)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 			ObjectNode msg = jacksonObjectMapper_Strict.createObjectNode ();
 			msg.put ("Type", net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP);
 			msg.put ("Content", eXML.toXML ());
@@ -1604,17 +1604,17 @@ logger.info ("发视频消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendApplicationMessage (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, Element eXML) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendApplicationMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, Element eXML) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发应用程序 (如：上传文件) 消息，XML: " + eXML.toXML ());
-		return WebWeChatSendMessage (sUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, eXML);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, eXML);
 	}
 
-	public static JsonNode MakeFullUploadMediaRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom_Account, String sTo_Account, File f)
+	public static JsonNode MakeFullUploadMediaRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom_Account, String sTo_Account, File f)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
 		on.put ("UploadType", 2);
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode(nUserID, sSessionID, sSessionKey, sDeviceID));
 		on.put ("ClientMediaId", GenerateLocalMessageID ());
 		on.put ("TotalLen", f.length ());
 		on.put ("StartPos", 0);
@@ -1646,7 +1646,7 @@ logger.info ("发应用程序 (如：上传文件) 消息，XML: " + eXML.toXML 
 		return null;
 	}
 
-	public static JsonNode WebWeChatUploadMedia (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, File f) throws IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, URISyntaxException
+	public static JsonNode WebWeChatUploadMedia (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, File f) throws IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, URISyntaxException
 	{
 		if (f!=null && !f.exists ())
 			return null;
@@ -1686,7 +1686,7 @@ logger.info ("上传媒体/上传文件: " + f);
 		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "mediatype", sMediaTypeForWeChat);
 
 		// {"UploadType":2,"BaseRequest":{"Uin":2100343515,"Sid":"4jLhehGMAlOrWmf3","Skey":"@crypt_1df7c02d_37e815cc9f64301caac3bb34bfa582a5","DeviceID":"e946852220005919"},"ClientMediaId":1483416567527,"TotalLen":2703813,"StartPos":0,"DataLen":2703813,"MediaType":4,"FromUserName":"@310be1aaf2953c82ea2a4482fd6be8c1ce3d123d6e37a3382cbfd5e629e01d84","ToUserName":"@5c9e12b6d0f2e6eafa6f9d061df8e53cf6922ed853b55642ba9b0989c6ecccdb","FileMd5":"8adb013061367e26b17730d06b77b3fb"}
-		JsonNode onUploadMediaRequest = MakeFullUploadMediaRequestJsonNode (sUserID, sSessionID, sSessionKey, MakeDeviceID(), sFrom_Account, sTo_Account, f);
+		JsonNode onUploadMediaRequest = MakeFullUploadMediaRequestJsonNode (nUserID, sSessionID, sSessionKey, MakeDeviceID(), sFrom_Account, sTo_Account, f);
 		net_maclife_util_HTTPUtils.FillMultipartSimplely (baos, sMultipartBoundary, "uploadmediarequest", jacksonObjectMapper_Strict.writeValueAsString (onUploadMediaRequest));
 		CookieStore cookieStore = cookieManager.getCookieStore ();
 		List<HttpCookie> listCookies = cookieStore.get (new URI(sURL));
@@ -1854,10 +1854,10 @@ logger.fine ("	" + fMediaFile);
 		return fMediaFile;
 	}
 
-	public static JsonNode MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sContent)
+	public static JsonNode MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sContent)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		on.put ("Opcode", bRequestOrResponse ? 2 : 3);
 		on.put ("VerifyUserListSize", 1);	// 暂时，固定每次只处理一个
 		ArrayNode anUserList = jacksonObjectMapper_Strict.createArrayNode ();
@@ -1875,25 +1875,25 @@ logger.fine ("	" + fMediaFile);
 		return on;
 	}
 
-	public static JsonNode MakeFullJsonNode_SendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, int nScene, String sTo_Account, String sContent)
+	public static JsonNode MakeFullJsonNode_SendRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, int nScene, String sTo_Account, String sContent)
 	{
-		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, true, null, nScene, sTo_Account, sContent);
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sDeviceID, true, null, nScene, sTo_Account, sContent);
 	}
-	public static JsonNode MakeFullJsonNode_SendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_Account, String sContent)
+	public static JsonNode MakeFullJsonNode_SendRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_Account, String sContent)
 	{
-		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, true, null, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sContent);
-	}
-
-	public static JsonNode MakeFullJsonNode_AcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sContent)
-	{
-		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sContent);
-	}
-	public static JsonNode MakeFullJsonNode_AcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sContent)
-	{
-		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sContent);
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sDeviceID, true, null, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sContent);
 	}
 
-	private static JsonNode WebWeChatSendOrAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode MakeFullJsonNode_AcceptRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sContent)
+	{
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sContent);
+	}
+	public static JsonNode MakeFullJsonNode_AcceptRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sContent)
+	{
+		return MakeFullJsonNode_SendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sDeviceID, false, sMakeFriendRequestTicketFromPeer, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sContent);
+	}
+
+	private static JsonNode WebWeChatSendOrAcceptRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, boolean bRequestOrResponse, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("添加朋友 或 接收添加朋友的请求 …");
 		// https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxverifyuser?r=***&pass_ticket=***	// 加上 JSON 格式的消息体，POST
@@ -1913,9 +1913,9 @@ logger.finer ("	" + mapRequestHeaders);
 
 		JsonNode jsonRequestBody = null;
 		if (bRequestOrResponse)
-			jsonRequestBody = MakeFullJsonNode_SendRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), nScene, sTo_Account, sIdentityContent);
+			jsonRequestBody = MakeFullJsonNode_SendRequestToMakeFriend (nUserID, sSessionID, sSessionKey, MakeDeviceID (), nScene, sTo_Account, sIdentityContent);
 		else
-			jsonRequestBody = MakeFullJsonNode_AcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sIdentityContent);
+			jsonRequestBody = MakeFullJsonNode_AcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sIdentityContent);
 		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
 logger.finer ("发送 WebWeChatSendOrAcceptRequestToMakeFriend 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody);
@@ -1944,30 +1944,30 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		}
 		return null;
 	}
-	public static JsonNode WebWeChatSendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatSendRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, nScene, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sPassTicket, true, null, nScene, sTo_Account, sIdentityContent);
 	}
-	public static JsonNode WebWeChatSendRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatSendRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, true, null, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sPassTicket, true, null, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sIdentityContent);
 	}
-	public static JsonNode WebWeChatAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatAcceptRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, int nScene, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, nScene, sTo_Account, sIdentityContent);
 	}
-	public static JsonNode WebWeChatAcceptRequestToMakeFriend (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatAcceptRequestToMakeFriend (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sMakeFriendRequestTicketFromPeer, String sTo_Account, String sIdentityContent) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatSendOrAcceptRequestToMakeFriend (sUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sIdentityContent);
+		return WebWeChatSendOrAcceptRequestToMakeFriend (nUserID, sSessionID, sSessionKey, sPassTicket, false, sMakeFriendRequestTicketFromPeer, net_maclife_wechat_http_BotEngine.WECHAT_SCENE_RoomMemberList2, sTo_Account, sIdentityContent);
 	}
 
 
 
 
-	public static JsonNode MakeFullJsonNode_UpdateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFun, String sParam)
+	public static JsonNode MakeFullJsonNode_UpdateChatRoom (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFun, String sParam)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		on.put ("ChatRoomName", sTo_RoomAccount);
 		if (StringUtils.equalsIgnoreCase (sFun, "addmember"))
 			on.put ("AddMemberList", sParam);
@@ -1977,11 +1977,11 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 			on.put ("NewTopic", sParam);
 		return on;
 	}
-	public static JsonNode MakeFullJsonNode_InviteOrKick (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated, boolean bInviteOrKick)
+	public static JsonNode MakeFullJsonNode_InviteOrKick (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated, boolean bInviteOrKick)
 	{
-		return MakeFullJsonNode_UpdateChatRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, bInviteOrKick ? "addmember" : "delmember", sFriendsAccounts_CommaSeparated);
+		return MakeFullJsonNode_UpdateChatRoom (nUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, bInviteOrKick ? "addmember" : "delmember", sFriendsAccounts_CommaSeparated);
 	}
-	public static JsonNode MakeFullJsonNode_InviteOrKick (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts, boolean bInviteOrKick)
+	public static JsonNode MakeFullJsonNode_InviteOrKick (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts, boolean bInviteOrKick)
 	{
 		StringBuilder sb = new StringBuilder ();
 		for (int i=0; i<listFriendsAccounts.size (); i++)
@@ -1991,29 +1991,29 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 			String sAccount = listFriendsAccounts.get (i);
 			sb.append (sAccount);
 		}
-		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sb.toString (), bInviteOrKick);
+		return MakeFullJsonNode_InviteOrKick (nUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sb.toString (), bInviteOrKick);
 	}
-	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
+	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
 	{
-		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, true);
+		return MakeFullJsonNode_InviteOrKick (nUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, true);
 	}
-	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
+	public static JsonNode MakeFullJsonNode_InviteFriendsToRoom (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
 	{
-		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, true);
+		return MakeFullJsonNode_InviteOrKick (nUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, true);
 	}
-	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
+	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated)
 	{
-		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, false);
+		return MakeFullJsonNode_InviteOrKick (nUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, sFriendsAccounts_CommaSeparated, false);
 	}
-	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
+	public static JsonNode MakeFullJsonNode_KickMemberFromRoom (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, List<String> listFriendsAccounts)
 	{
-		return MakeFullJsonNode_InviteOrKick (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, false);
+		return MakeFullJsonNode_InviteOrKick (nUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, listFriendsAccounts, false);
 	}
-	public static JsonNode MakeFullJsonNode_ModifyChatRoomName (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sNewName)
+	public static JsonNode MakeFullJsonNode_ModifyChatRoomName (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTo_RoomAccount, String sNewName)
 	{
-		return MakeFullJsonNode_UpdateChatRoom (sUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, "modtopic", sNewName);
+		return MakeFullJsonNode_UpdateChatRoom (nUserID, sSessionID, sSessionKey, sDeviceID, sTo_RoomAccount, "modtopic", sNewName);
 	}
-	private static JsonNode WebWeChatUpdateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFun, String sParam) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	private static JsonNode WebWeChatUpdateChatRoom (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFun, String sParam) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 		switch (sFun)
 		{
@@ -2048,13 +2048,13 @@ logger.finer ("	" + mapRequestHeaders);
 		switch (sFun)
 		{
 			case "addmember":
-				jsonRequestBody = MakeFullJsonNode_InviteFriendsToRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
+				jsonRequestBody = MakeFullJsonNode_InviteFriendsToRoom (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
 				break;
 			case  "delmember":
-				jsonRequestBody = MakeFullJsonNode_KickMemberFromRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
+				jsonRequestBody = MakeFullJsonNode_KickMemberFromRoom (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
 				break;
 			case "modtopic":
-				jsonRequestBody = MakeFullJsonNode_ModifyChatRoomName (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
+				jsonRequestBody = MakeFullJsonNode_ModifyChatRoomName (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sTo_RoomAccount, sParam);
 				break;
 		}
 		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
@@ -2085,26 +2085,26 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		}
 		return null;
 	}
-	public static JsonNode WebWeChatInviteFriendsToRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatInviteFriendsToRoom (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatUpdateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "addmember", sFriendsAccounts_CommaSeparated);
+		return WebWeChatUpdateChatRoom (nUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "addmember", sFriendsAccounts_CommaSeparated);
 	}
-	public static JsonNode WebWeChatKickMemberFromRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatKickMemberFromRoom (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sFriendsAccounts_CommaSeparated) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatUpdateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "delmember", sFriendsAccounts_CommaSeparated);
+		return WebWeChatUpdateChatRoom (nUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "delmember", sFriendsAccounts_CommaSeparated);
 	}
-	public static JsonNode WebWeChatModifyRoomName (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sNewName) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatModifyRoomName (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTo_RoomAccount, String sNewName) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
-		return WebWeChatUpdateChatRoom (sUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "modtopic", sNewName);
+		return WebWeChatUpdateChatRoom (nUserID, sSessionID, sSessionKey, sPassTicket, sTo_RoomAccount, "modtopic", sNewName);
 	}
 
 
 
 
-	public static JsonNode MakeFullJsonNode_CreateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTopic, List<String> listMemberAccounts)
+	public static JsonNode MakeFullJsonNode_CreateChatRoom (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sTopic, List<String> listMemberAccounts)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-		on.set ("BaseRequest", MakeBaseRequestJsonNode(sUserID, sSessionID, sSessionKey, sDeviceID));
+		on.set ("BaseRequest", MakeBaseRequestJsonNode (nUserID, sSessionID, sSessionKey, sDeviceID));
 		on.put ("Topic", sTopic);
 		on.put ("MemberCount", listMemberAccounts.size ());
 		ArrayNode anMemberList = jacksonObjectMapper_Strict.createArrayNode ();
@@ -2117,7 +2117,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		on.set ("MemberList", anMemberList);
 		return on;
 	}
-	public static JsonNode WebWeChatCreateChatRoom (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTopic, List<String> listMemberAccounts) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static JsonNode WebWeChatCreateChatRoom (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sTopic, List<String> listMemberAccounts) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("开房…………………………");
 		String sURL = "https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom?r=" + System.currentTimeMillis () + "&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8);
@@ -2135,7 +2135,7 @@ logger.finer ("发送 WebWeChatCreateChatRoom 的 http 请求消息头:");
 logger.finer ("	" + mapRequestHeaders);
 
 		JsonNode jsonRequestBody = null;
-		jsonRequestBody = MakeFullJsonNode_CreateChatRoom (sUserID, sSessionID, sSessionKey, MakeDeviceID (), sTopic, listMemberAccounts);
+		jsonRequestBody = MakeFullJsonNode_CreateChatRoom (nUserID, sSessionID, sSessionKey, MakeDeviceID (), sTopic, listMemberAccounts);
 		String sRequestBody = jacksonObjectMapper_Strict.writeValueAsString (jsonRequestBody);
 logger.finer ("发送 WebWeChatCreateChatRoom 的 http 请求消息体:");
 logger.finer ("	" + sRequestBody);
