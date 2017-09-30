@@ -27,7 +27,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		<ul>
 			<li>Transmission 下载任务完成后，执行脚本（需在 Transmission 中配置），脚本通过消息中继发送到微信，以达到通知的目的。
 				<br/>
-				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete-50%.png'/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete-50%25.png'/>
 			</li>
 			<li>利用 crontab，实现一个简单的整点报时的功能。（当然你也可以单独写一个 Bot 小程序来实现）</li>
 			<li>利用 crontab，定时获取一个网页的信息，将内容发到微信，达到定期推送消息的目的。
@@ -36,7 +36,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 			</li>
 			<li>利用 crontab，向一些“签到获得积分”的公众号定时“签到”
 				<br/>
-				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.scheduled-sign-50%.png'/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.scheduled-sign-50%25.png'/>
 			</li>
 			<li>你一定还有其他好的点子，可在此处补充…</li>
 			<li>…</li>
@@ -62,12 +62,12 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
 	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>/txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book-50%.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book-50%25.png'/>
 	</dd>
 	<dt><strong>BaiduImageSearch</strong>: 百度图片搜索（百度识图）机器人</dt>
 	<dd>当有人发了图片时，提交给百度图片搜索，给出百度图片搜索的结果、可能的图片来源。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%25.png'/>
 	</dd>
 	<dt><strong>BaiduVoice</strong>: 百度语音识别、语音合成机器人</dt>
 	<dd>当有人发了音频、视频时，将音频、视频中的音频提交给百度语音识别（语音转文字），给出识别后的文字结果。 -- 因为在搜索聊天记录只能用文字来搜索，所以，非常实用。
@@ -106,7 +106,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	<dt><strong>iConTek</strong>: iConTek 智能客服机器人</dt>
 	<dd>利用 iConTek 提供的 http 接口，从 iConTek 机器人引擎获取一条答案，回复给用户。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-iConTek-50%.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-iConTek-50%25.png'/>
 	</dd>
 </dl>
 

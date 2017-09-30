@@ -31,7 +31,7 @@ Those bot applets are:
 		<ul>
 			<li>When download task of Transmission completed, a script will run (configurable in Transmission)，the script send message to WeChat via this relay bot, hence Download-Completed-Notification function is implemented.
 				<br/>
-				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete-50%.png'/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete-50%25.png'/>
 			</li>
 			<li>Using crontab to implement a Hourly-Time-Announcement function. (Of course you can write a bot applet to do it)</li>
 			<li>Fetch information from a web page periodically, and send it to WeChat, to implement Scheduled-Information/Message-Push function.
@@ -40,7 +40,7 @@ Those bot applets are:
 			</li>
 			<li>Using crontab to 'sign' in to some public accounts to get membership points.
 				<br/>
-				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.scheduled-sign-50%.png'/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.scheduled-sign-50%25.png'/>
 			</li>
 			<li>You must have good ideas, please write it here ...</li>
 			<li>...</li>
@@ -68,13 +68,13 @@ Those bot applets are:
 	<dd>
 		This is a simple address book bot which relied on MySQL database for WeChat chat room. It will query the database according the room nickname and return the contact information of the specified contact name. Example: send <code>/sab Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book-50%.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book-50%25.png'/>
 	</dd>
 	<dt><strong>BaiduImageSearch</strong>: Baidu image search</dt>
 	<dd>
 		When an image message posted, send the image to baidu image search, return the guess information and possible image sources.
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%25.png'/>
 	</dd>
 	<dt><strong>BaiduVoice</strong>: Baidu Automatic Speech Recognition (ASR) and Text To Speech (TTS)</dt>
 	<dd>
@@ -118,7 +118,7 @@ Those bot applets are:
 	<dd>
 		Using the HTTP protocol of iConTek, fetch the answer from iConTek NLP engine, then reply to user.
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-iConTek-50%.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-iConTek-50%25.png'/>
 	</dd>
 </dl>
 
