@@ -2,8 +2,6 @@
 
 ----
 
-*由于微信官方未公开 Web 版通信协议，微信 Web 版本也有可能像 QQ Web 版那样停止运营，因此不建议将本引擎用于商业用途（前景未知）*
-
 # 关于 #
 
 WeChatBotEngine 是一个基于微信 Web 版通信协议的机器人引擎/机器人框架。
@@ -14,7 +12,9 @@ WeChatBotEngine 自身处理了与微信后台的通信，开发者只需要在�
 ## WeChatBotEngine 自带的几个机器人小程序 ##
 WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的，一些出于给开发者以参考的目的。这些机器人有：
 
-### 自带的机器人小程序列表
+### 自带的机器人小程序列表 ###
+
+#### 公用机器人 ####
 <dl>
 	<dt><strong>SayHi</strong>: 问候/再见机器人</dt>
 	<dd>主要用于机器人上线、下线时发出通知。问候语、再见语可配置。</dd>
@@ -27,14 +27,17 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		<ul>
 			<li>Transmission 下载任务完成后，执行脚本（需在 Transmission 中配置），脚本通过消息中继发送到微信，以达到通知的目的。
 				<br/>
-				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete.png'/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete-50%.png'/>
 			</li>
 			<li>利用 crontab，实现一个简单的整点报时的功能。（当然你也可以单独写一个 Bot 小程序来实现）</li>
 			<li>利用 crontab，定时获取一个网页的信息，将内容发到微信，达到定期推送消息的目的。
 				<br/>
 				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.message-push-qiushibaike.png'/>
 			</li>
-			<li>利用 crontab，向一些“签到获得积分”的公众号定时“签到”</li>
+			<li>利用 crontab，向一些“签到获得积分”的公众号定时“签到”
+				<br/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.scheduled-sign-50%.png'/>
+			</li>
 			<li>你一定还有其他好的点子，可在此处补充…</li>
 			<li>…</li>
 		</ul>
@@ -44,11 +47,6 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-shell-command.png'/>
 	</dd>
-	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
-	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>/txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。
-		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book.png'/>
-	</dd>
 	<dt><strong>MakeFriend</strong>: 加好友 机器人</dt>
 	<dd>在群聊中，用 <code>/addme</code> 命令向命令执行者发送加好友的请求。
 		<br/>
@@ -57,19 +55,19 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		当收到别人发来的请求加好友消息时，根据设定的“暗号”，自动通过好友请求。
 	</dd>
 	<dt><strong>Manager</strong>: 远程管理 机器人</dt>
-	<dd>将控制台里的一些管理命令用远程管理机器人再次实现，以达到不在电脑跟前时，对引擎进行管理的目的。目前只实现了 加载机器人(/LoadBot)、卸载机器人(/UnloadBot)、列出机器人(/ListBots, 所有人都可执行该命令)、查看设置日志级别(/LogLevel)、邀请人加入群聊(/Invite)、将群成员踢出(/Kick，注意： Kick 操作仅当你是群主时才会执行成功)。
+	<dd>将控制台里的一些管理命令用远程管理机器人再次实现，以达到不在电脑跟前时，对引擎进行管理的目的。目前只实现了 加载机器人(/LoadBot)、卸载机器人(/UnloadBot)、列出机器人(/ListBots, 所有人都可执行该命令)、查看设置日志级别(/LogLevel)、改群名(/Topic)、邀请人加入群聊(/Invite)、将群成员踢出(/Kick，注意： Kick 操作仅当你是群主时才会执行成功)。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-manager.png'/>
 	</dd>
-	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
-	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。
+	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
+	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>/txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-hcicloud-csr.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book-50%.png'/>
 	</dd>
 	<dt><strong>BaiduImageSearch</strong>: 百度图片搜索（百度识图）机器人</dt>
 	<dd>当有人发了图片时，提交给百度图片搜索，给出百度图片搜索的结果、可能的图片来源。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%.png'/>
 	</dd>
 	<dt><strong>BaiduVoice</strong>: 百度语音识别、语音合成机器人</dt>
 	<dd>当有人发了音频、视频时，将音频、视频中的音频提交给百度语音识别（语音转文字），给出识别后的文字结果。 -- 因为在搜索聊天记录只能用文字来搜索，所以，非常实用。
@@ -95,6 +93,20 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 	<dd>当有人发了地理位置信息时，把经纬度报出来，然后加上一句随机可设置的“导弹准备就绪”的恶搞话语…… = =
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-missile-launched.png'/>
+	</dd>
+</dl>
+
+#### 工业/商业机器人 ####
+<dl>
+	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
+	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-hcicloud-csr.png'/>
+	</dd>
+	<dt><strong>iConTek</strong>: iConTek 智能客服机器人</dt>
+	<dd>利用 iConTek 提供的 http 接口，从 iConTek 机器人引擎获取一条答案，回复给用户。
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-iConTek-50%.png'/>
 	</dd>
 </dl>
 

@@ -2,8 +2,6 @@
 
 ----
 
-*WeChat does not officially publish the HTTP protocol of WeChat Web Edition, so WeChat Web Edition could be stopped like QQ Web Edition, running this BotEngine for business is not recommended.*
-
 # About #
 
 WeChatBotEngine is a bot engine/framework based on HTTP protocol of WeChat Web Edition.
@@ -15,6 +13,8 @@ WeChatBotEngine deals the communication with WeChat server itself, developers ca
 WeChatBotEngine project ships with several official bot applets, to demonstrate how to build a bot applet or you can just to run it.
 Those bot applets are:
 
+### Bots shipped with WeChatBotEngine ###
+#### Common Bots ####
 <dl>
 	<dt><strong>SayHi</strong>: A bot which say Hi and Goodbye</dt>
 	<dd>
@@ -31,12 +31,16 @@ Those bot applets are:
 		<ul>
 			<li>When download task of Transmission completed, a script will run (configurable in Transmission)，the script send message to WeChat via this relay bot, hence Download-Completed-Notification function is implemented.
 				<br/>
-				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete.png'/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete-50%.png'/>
 			</li>
 			<li>Using crontab to implement a Hourly-Time-Announcement function. (Of course you can write a bot applet to do it)</li>
 			<li>Fetch information from a web page periodically, and send it to WeChat, to implement Scheduled-Information/Message-Push function.
 				<br/>
 				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.message-push-qiushibaike.png'/>
+			</li>
+			<li>Using crontab to 'sign' in to some public accounts to get membership points.
+				<br/>
+				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.scheduled-sign-50%.png'/>
 			</li>
 			<li>You must have good ideas, please write it here ...</li>
 			<li>...</li>
@@ -56,7 +60,7 @@ Those bot applets are:
 		When a request of MakeFriend message is received, automatically accept the request according a keyword/password.
 	</dd>
 	<dt><strong>Manager</strong>: A remote manager bot</dt>
-	<dd>This is just a reimplementation of some console commands, to let you manage bot engine if you are not in front of your computer. Currently, the following commands are implemented: /LoadBot, /UnloadBot, /ListBots (everyone can use this command), /LogLevel (View or Set log level), /Invite (Invite a contact to a chat room), /Kick (Kick a member from chat room, Kick operation works only if you're the administrator of that room)。
+	<dd>This is just a reimplementation of some console commands, to let you manage bot engine if you are not in front of your computer. Currently, the following commands are implemented: /LoadBot, /UnloadBot, /ListBots (everyone can use this command), /LogLevel (View or Set log level), /Topic (Change room name like change topic in IRC channel), /Invite (Invite a contact to a chat room), /Kick (Kick a member from chat room, Kick operation works only if you're the administrator of that room)。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-manager.png'/>
 	</dd>
@@ -64,19 +68,13 @@ Those bot applets are:
 	<dd>
 		This is a simple address book bot which relied on MySQL database for WeChat chat room. It will query the database according the room nickname and return the contact information of the specified contact name. Example: send <code>/sab Alice</code> in chat room <code>My Company 1</code> will return contact information of <code>Alice</code> of <code>My Company 1</code> address book.
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book.png'/>
-	</dd>
-	<dt><strong>HCICloudCSR</strong>: HCICloud customer service representative chat bot</dt>
-	<dd>
-		Using the HTTP protocol from HCICloud CSR, fetch the answer from CSR bot, then reply to user.
-		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-hcicloud-csr.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book-50%.png'/>
 	</dd>
 	<dt><strong>BaiduImageSearch</strong>: Baidu image search</dt>
 	<dd>
 		When an image message posted, send the image to baidu image search, return the guess information and possible image sources.
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%.png'/>
 	</dd>
 	<dt><strong>BaiduVoice</strong>: Baidu Automatic Speech Recognition (ASR) and Text To Speech (TTS)</dt>
 	<dd>
@@ -107,6 +105,23 @@ Those bot applets are:
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-missile-launched.png'/>
 	</dd>
 </dl>
+
+#### Industrial Bots ####
+<dl>
+	<dt><strong>HCICloudCSR</strong>: HCICloud customer service representative chat bot</dt>
+	<dd>
+		Using the HTTP protocol from HCICloud CSR, fetch the answer from CSR bot, then reply to user.
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-hcicloud-csr.png'/>
+	</dd>
+	<dt><strong>iConTek</strong>: iConTek NLP (Natual Language Processing) customer service chat bot</dt>
+	<dd>
+		Using the HTTP protocol of iConTek, fetch the answer from iConTek NLP engine, then reply to user.
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-iConTek-50%.png'/>
+	</dd>
+</dl>
+
 
 ### load/unload bots dynamically ###
 	/listbots
