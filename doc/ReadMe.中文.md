@@ -2,6 +2,8 @@
 
 ----
 
+*注意： 使用本机器人引擎，可能会导致你的[微信帐号无法再登录 Web 版（Web 版被封）](https://github.com/moontide/WeChatBotEngine/issues/12)，也就无法再使用本机器人引擎登录！*
+
 # 关于 #
 
 WeChatBotEngine 是一个基于微信 Web 版通信协议的机器人引擎/机器人框架。
@@ -69,7 +71,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%25.png'/>
 	</dd>
-	<dt><strong>BaiduVoice</strong>: 百度语音识别、语音合成机器人</dt>
+	<dt><strong>BaiduVoice</strong>: 百度语音识别机器人</dt>
 	<dd>当有人发了音频、视频时，将音频、视频中的音频提交给百度语音识别（语音转文字），给出识别后的文字结果。 -- 因为在搜索聊天记录只能用文字来搜索，所以，非常实用。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-voice.png'/>

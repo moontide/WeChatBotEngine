@@ -2,6 +2,8 @@
 
 ----
 
+*Warning: It could caused your [wechat account forbidden to login web edition anymore if you use WeChatBotEngine](https://github.com/moontide/WeChatBotEngine/issues/12), hence you'll unable to run WeChatBotEngine properly anymore!*
+
 # About #
 
 WeChatBotEngine is a bot engine/framework based on HTTP protocol of WeChat Web Edition.
@@ -76,7 +78,7 @@ Those bot applets are:
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%25.png'/>
 	</dd>
-	<dt><strong>BaiduVoice</strong>: Baidu Automatic Speech Recognition (ASR) and Text To Speech (TTS)</dt>
+	<dt><strong>BaiduVoice</strong>: Baidu Automatic Speech Recognition (ASR)</dt>
 	<dd>
 		When an audio or short video message is posted, send the audio to baidu ASR api, and return the text result. -- Because you can only use text when searching chat history, so it's very useful.
 		<br/>

@@ -1031,6 +1031,11 @@ net_maclife_wechat_http_BotApp.logger.info ("缓存的 Session 信息\n	UIN: " +
 						do
 						{
 							o = net_maclife_wechat_http_BotApp.等待二维码被扫描以便登录 (sLoginID);
+							if (o == null)
+							{
+								continue _outer_loop;
+							}
+
 							if (o instanceof Integer)
 							{
 								int n = (Integer) o;

@@ -490,6 +490,15 @@ logger.fine ("登录页面响应的消息体:");
 //System.out.println ("	[" + sContent + "]");
 logger.fine ("	[" + eXML.toXML() + "]");
 			Map<String, Object> mapResult = new HashMap <String, Object> ();
+			if (eXML.getFirstChildElement ("ret") != null)
+			{
+				if (Long.parseLong(GetXMLValue(eXML, "ret")) != 0)
+				{
+// <error><ret>1203</ret><message>当前登录环境异常。为了你的帐号安全，暂时不能登录web微信。你可以通过手机客户端或者windows微信登录。</message></error>
+logger.severe (net_maclife_util_ANSIEscapeTool.Red (GetXMLValue(eXML, "message")));
+					return null;
+				}
+			}
 			mapResult.put ("UserID", Long.parseLong (GetXMLValue (eXML, "wxuin")));
 			mapResult.put ("SessionID", GetXMLValue (eXML, "wxsid"));
 			mapResult.put ("SessionKey", GetXMLValue (eXML, "skey"));
