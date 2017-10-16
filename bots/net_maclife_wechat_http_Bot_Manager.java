@@ -328,9 +328,9 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 	{
 		List<String> listParams = net_maclife_wechat_http_BotApp.SplitCommandLine (sCommandParametersInputed);	// 鉴于用户昵称可能包含空格或特殊字符的情况，这里必须用 SplitCommandLine 函数处理，不能简单的 .split (" ")
 		//if (StringUtils.isEmpty (sCommandParametersInputed))
-		if (listParams.size () < 1)
+		if (listParams.size () < 3)
 		{
-			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "必须输入新房间名，另外，最好至少输入一个联系人帐号/微信号/备注名/昵称，否则只能创建一个人的群 -- 只有你自己的群\n\n" + sCommandInputed + "[" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "帐号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "微信号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "备注名|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "昵称]  <新群名>  [朋友帐号/微信号/备注名/昵称]...");
+			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "必须输入新群名，以及，至少输入两个联系人帐号/微信号/备注名/昵称。如果群名、昵称有空格等特殊字符，请用引号引起来。\n\n" + sCommandInputed + "[" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "帐号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "微信号|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "备注名|" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "昵称]  <新群名>  <朋友帐号/微信号/备注名/昵称>  <朋友帐号/微信号/备注名/昵称>...");
 			return;
 		}
 		String sNewRoomName = listParams.remove (0);
@@ -385,7 +385,7 @@ public class net_maclife_wechat_http_Bot_Manager extends net_maclife_wechat_http
 
 		int nRet = net_maclife_wechat_http_BotApp.GetJSONInt (jsonBaseResponse, "Ret");
 		String sErrMsg = net_maclife_wechat_http_BotApp.GetJSONText (jsonBaseResponse, "ErrMsg");
-		if (nRet != 0 || StringUtils.isNotEmpty (sErrMsg))	// 当 Ret 等于 0 时，却有 ErrMsg: "ErrMsg": "MemberList are wrong"
+		if (nRet != 0 || (nRet==0 && !StringUtils.equalsIgnoreCase (sErrMsg, "Everything is OK")))	// 当 Ret 等于 0 时，却有 ErrMsg: "ErrMsg": "MemberList are wrong"
 		{
 			SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "创建新群 操作失败，代码：" + nRet + (StringUtils.isNotEmpty (sErrMsg) ? "，信息：" + sErrMsg : ""));
 		}
