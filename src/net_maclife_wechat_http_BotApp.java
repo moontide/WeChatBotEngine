@@ -3205,10 +3205,15 @@ net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 		return listTokens;
 	}
 
+	public static boolean hasCommandPrefix (String sContent, String sPrefix)
+	{
+		return StringUtils.isEmpty (sPrefix) || StringUtils.startsWithIgnoreCase (sContent, sPrefix);
+	}
+
 	public static boolean hasCommandPrefix (String sContent)
 	{
 		String sPrefix = GetConfig ().getString ("app.text-message.command-prefix");
-		return StringUtils.isEmpty (sPrefix) || StringUtils.startsWithIgnoreCase (sContent, sPrefix);
+		return hasCommandPrefix (sContent, sPrefix);
 	}
 
 	public static String StripOutCommandPrefix (String sContent, String sPrefix)
