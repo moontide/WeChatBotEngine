@@ -1,7 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.security.*;
-import java.security.cert.*;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.*;
@@ -14,20 +12,25 @@ import org.apache.commons.lang3.*;
 import org.jsoup.nodes.*;
 import org.jsoup.select.*;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
 /**
  * 抓取网页内容，解析 HTML 或 JSON，获取其中的文字信息，然后发到微信。
- * 解析 HTML / JSON 这一部分可以做成 HTML / JSON 模板、且，微信群里的用户可以自己添加 ---- 让高级用户自己丰富模板库。
+ * 解析 HTML/XML/JSON 这一部分可以做成 HTML/XML/JSON 模板、且，微信群里的用户可以自己添加 ---- 让高级用户自己丰富模板库。
  *
 	<h3>常用用法</h3>
 	<dl>
-		<dt>无模板执行 - HTML 版</dt>
+		<dt>无模板执行(裸执行) - HTML/XML 数据</dt>
 		<dd><code>/ht  &lt;网址&gt;  &lt;CSS 选择器&gt;</code></dd>
 
-		<dt>无模板执行 - JSON/JS 版</dt>
+		<dt>无模板执行(裸执行) - JSON/JS 数据</dt>
 		<dd><code>/json  &lt;网址&gt;  &lt;/ss &lt;JavaScript 代码&gt;&gt; [/ss &lt;其他 JavaScript 代码&gt;]...</code></dd>
+
+		<dt>执行 ht 模板</dt>
+		<dd><code>$<i>模板名称</i></code> [模板参数]...<br/>
+			如：<code>$<i>糗事百科</i> 2</code>
+			<br/>
+		</dd>
 
 		<dt>添加/保存 ht 模板</dt>
 		<dd><code></code></dd>
@@ -41,6 +44,18 @@ import com.fasterxml.jackson.databind.*;
 		<dt></dt>
 		<dd><code></code></dd>
 	</dl>
+
+	<h3>高级用法举例</h3>
+	<dl>
+		<dt>裸执行，抓取 HTML/XML，使用所有参数</dt>
+		<dd><code></code></dd>
+
+		<dt>裸执行，抓取 JSON/JS，将 JS 代码中的不必要的头尾部分切除，只剩下有效的 JSON</dt>
+		<dd><code></code>有时候，某个接口返回的是一段包含了 JSON 数据的 JavaScript 代码，这时候，就需要对返回来的数据进行处理。模板功能支持掐头、去尾的功能，可以将包裹在里面的 JSON 数据提取出来。</dd>
+
+		<dt>带参数执行模板</dt>
+		<dd><code></code>有的模板，在执行时，需要指定参数，这个参数是由添加模板的人自己定义的。指定的参数会按照模板作者的设计进入到 URL 或者 sub selector (JavaScript) 中，从而达到灵活处理的功能。</dd>
+	</dl>
  * @author liuyan
  *
  */
@@ -49,7 +64,6 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 	public static final String SHORTCUT_PREFIX = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.web-soup.template-shortcut-prefix");
 	public static final String TABLE_NAME_Tempalte = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.web-soup.table-name.template", "ht_templates");
 	public static final String TABLE_NAME_SubSelectors = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.web-soup.table-name.sub-selectors", "ht_templates_other_sub_selectors");
-	//public static final String SHORTCUT_PREFIX = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.web-soup.template-shortcut-prefix");
 	public static final List<String> COMMANDS_LIST_HTML = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.web-soup.commands.html/xml");
 	public static final List<String> COMMANDS_LIST_JSON = net_maclife_wechat_http_BotApp.GetConfig ().getList (String.class, "bot.web-soup.commands.json/js");
 
@@ -85,9 +99,6 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 		}
 
 		String sHTTemplateName = "";
-		//String sBotCommandOptions = "";
-		//String sBotCommandParameters = "";
-		//String[] args = null;
 		// 查看 ht 命令的模板表，看看名字是否有，如果有的话，就直接执行之
 		try
 		{
@@ -133,62 +144,14 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 				sHTTemplateName = sCommandInputed;
 				sCommandParametersInputed = sHTTemplateName + " " + StringUtils.trimToEmpty (sCommandParametersInputed);	// 将模板名当成第一个参数
 				isUsingHTTemplateNameAsShortcut = CheckHTTemplateExistence (sHTTemplateName);
-				if (isUsingHTTemplateNameAsShortcut)
-				{	// 如果有效，则在命令选项中添加 'run'，以促使子动作变成 'run' 一个模板而不是裸执行 ht 命令
-					if (StringUtils.isEmpty (sCommandOptionsInputed))
-					{
-						arrayCommandAndOptions = new String[1];
-					}
-					else
-					{
-						String[] arrayOld = sCommandOptionsInputed.split ("\\" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "+");
-						arrayCommandAndOptions = new String[arrayOld.length + 1];
-						System.arraycopy (arrayOld, 0, arrayCommandAndOptions, 0, arrayOld.length);
-					}
-					arrayCommandAndOptions [arrayCommandAndOptions.length - 1] = "run";	// 当使用模板快捷命令执行时，手工在 CommandOptions 里加上 'run' 作为当前操作的 Action
-				}
 			}
-
-			/*
-			if (
-				StringUtils.isNotEmpty (SHORTCUT_PREFIX) && StringUtils.startsWithIgnoreCase (sContent, SHORTCUT_PREFIX)
-				||  StringUtils.isEmpty (SHORTCUT_PREFIX)
-			)
-			{
-				if (StringUtils.isNotEmpty (SHORTCUT_PREFIX))
-					sContent = sContent.substring (SHORTCUT_PREFIX.length ());
-				args = sContent.split (" +", 3);
-				if (args[0].contains (net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR))
-				{
-					int iFirstOptionSeparatorIndex = args[0].indexOf (net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR);
-					sHTTemplateName = args[0].substring (0, iFirstOptionSeparatorIndex);
-					sBotCommandOptions = args[0].substring (iFirstOptionSeparatorIndex);
-				}
-				else
-					sHTTemplateName = args[0];
-				if (StringUtils.containsIgnoreCase (sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "to"))
-				{
-					if (args.length < 2)
-						throw new IllegalArgumentException ("用 " + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "to 选项执行 html/json 模板时，需要先指定用户名");
-				}
-				else
-				{
-					if (args.length > 1)	// 如果这个 ht 命令带了其他参数
-						sBotCommandParameters = args[1];
-					if (args.length > 2)	// 如果这个 ht 命令带了其他参数
-						sBotCommandParameters = sBotCommandParameters + " " + args[2];
-				}
-
-				isUsingHTTemplateNameAsShortcut = CheckHTTemplateExistence (sHTTemplateName);
-			}
-			//*/
 
 			ProcessCommand_WebSoup (jsonFrom, sFromAccount, sFromName,
 				jsonTo, sToAccount, sToName,
 				jsonReplyTo, sReplyToAccount, sReplyToName,
 				jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember,
 				jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person,
-				sFormalCommand, sCommandInputed, arrayCommandAndOptions, sCommandParametersInputed
+				sFormalCommand, sCommandInputed, isUsingHTTemplateNameAsShortcut, arrayCommandAndOptions, sCommandParametersInputed
 			);
 		}
 		catch (Throwable e)
@@ -196,30 +159,6 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 			e.printStackTrace ();
 		}
 
-		/*
-		if (isUsingHTTemplateNameAsShortcut)
-		{
-			//if (StringUtils.equalsIgnoreCase (sHTContentType, "json"))
-			//	botCmd = "json";
-			//else
-			//	botCmd = BOT_PRIMARY_COMMAND_HTMLParser;
-
-			sContent =
-				//botCmd +
-				(
-					StringUtils.containsIgnoreCase(sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "add")
-						|| StringUtils.containsIgnoreCase(sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "run") || StringUtils.containsIgnoreCase(sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "go")
-						|| StringUtils.containsIgnoreCase(sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "show")
-						|| StringUtils.containsIgnoreCase(sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "list") || StringUtils.containsIgnoreCase(sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "search")
-						|| StringUtils.containsIgnoreCase(sBotCommandOptions, net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "stats")
-					? sBotCommandOptions
-					: net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "run" + sBotCommandOptions
-				)
-				;//+ (StringUtils.isEmpty (msgTo) ? "" : net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "to " + msgTo) + " " + sHTTemplateName + (sBotCommandParameters.isEmpty () ? "" : " " + sBotCommandParameters);	// 重新组合生成 ht 命令
-		}
-		//*/
-
-		//
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
@@ -327,14 +266,13 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName,
 			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
 			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
-			String sFormalCommand, String sCommandAlias, String[] arrayCommandOptions, String params
+			String sFormalCommand, String sCommandAlias, boolean isUsingHTTemplateNameAsShortcut, String[] arrayCommandOptions, String params
 		) throws Exception
 	{
 		String botCmdAlias = null;
 		boolean usingGFWProxy = false;
 		//boolean isOutputScheme = true;	// 是否输出 URL 中的 scheme (如 http://  https://)，这是应对一些不用命令前缀来触发其命令的 bot “智能”输出网页标题 的功能而设置的 (最起码，如果别人发的消息只有 1 个 url，你才输出其标题好吧)
 
-		//List<String> listCmdEnv = null;
 		String sAction = null;
 		if (arrayCommandOptions!=null && arrayCommandOptions.length>0)
 		{
@@ -359,6 +297,12 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 					continue;
 			}
 		}
+		if (isUsingHTTemplateNameAsShortcut && StringUtils.isEmpty (sAction))
+		{
+			sAction = "run";
+System.err.println ("用 ht 模板名快捷 ht 命令，但未指定动作，动作自动变为 " + sAction);
+		}
+System.err.println ("ht action: " + sAction);
 
 		int opt_max_response_lines = 20;
 		boolean opt_max_response_lines_specified = false;
@@ -366,7 +310,6 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 		String sContentType = "html";	// 人工指定的该网址返回的是什么类型的数据，目前支持 html / json
 		int nJS_Cut_Start = 0;
 		int nJS_Cut_End = 0;
-		//String sID = null;
 		long nID = 0;
 		String sName = null;
 		String sURL = null;
@@ -384,11 +327,9 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 		String sHTTPRequestMethod = null;
 		String sHTTPReferer = null;
 
-		//String sIgnoreContentType = null;
 		boolean isIgnoreContentType = false;
 		boolean isIgnoreHTTPSCertificateValidation = true;
 
-		//String sStart = null;
 		long iStart = 0;
 
 		List<String> listParams = net_maclife_wechat_http_BotApp.SplitCommandLine (params);
@@ -418,7 +359,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 							//
 						}
 						else
-							sContentType = "html";	// 其他的默认为 html
+							sContentType = "html";	// 其他的默认为 html/xml
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (param, "jcs"))
 						nJS_Cut_Start = Integer.parseInt (value);
@@ -449,7 +390,6 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 					else if (StringUtils.equalsAnyIgnoreCase (param, "e", "extract", "取", "取值"))
 					{
 						FixHTCommandSubSelectorParameterGroupsSize (listSubSelectors, listLeftPaddings, listExtracts, listAttributes, listFormatFlags, listFormatWidth, listRightPaddings);
-						//FixElementNumber (listSubSelectors, listLeftPaddings, listExtracts, listAttributes, listRightPaddings);
 						listExtracts.set (listExtracts.size () - 1, value);	// 在上面的修复参数数量后，更改最后 1 项
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (param, "a" ,"attr" ,"attribute", "属性", "属性名"))
@@ -496,7 +436,6 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 						sHTTPReferer = value;
 					else if (StringUtils.equalsAnyIgnoreCase (param, "start" ,"offset", "起始", "偏移量"))
 					{
-						//sStart = value;
 						iStart = Integer.parseInt (value);
 						iStart -= 1;
 						if (iStart <= 0)
@@ -504,7 +443,6 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (param, "ict" ,"IgnoreContentType"))
 					{
-						//sIgnoreContentType = value;
 						isIgnoreContentType = BooleanUtils.toBoolean (value);
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (param, "icv" ,"IgnoreHTTPSCertificateValidation"))
@@ -542,7 +480,6 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 		{
 			if (StringUtils.isEmpty (params))
 			{
-				//ProcessCommand_Help (ch, nick, login, hostname, botcmd, botCmdAlias, mapGlobalOptions, listCmdEnv, botcmd);
 				return;
 			}
 		}
@@ -617,6 +554,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 			}
 		}
 
+		// 实际执行各 Action
 		int nLines = 0;
 		List<Map<String, Object>> listQueryResult = null;
 		try
@@ -629,8 +567,15 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 				{
 					//if (nLines >= opt_max_response_lines)
 					//	break;
-
-					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sbHelp.toString ());
+					if (StringUtils.equalsIgnoreCase (sAction, "show") && listQueryResult!=null && !listQueryResult.isEmpty ())
+					{
+						Map<String, Object> mapHTTemplate = listQueryResult.get (0);
+						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, RestoreCommandLineFromTemplate(mapHTTemplate));
+					}
+					else
+					{
+						//
+					}
 					nLines ++;
 				}
 				if (listQueryResult==null || listQueryResult.isEmpty())
@@ -642,7 +587,7 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 					return;
 				}
 				if (StringUtils.equalsAnyIgnoreCase (sAction, "show", "list"))
-				{
+				{	// show 和 list 两个 action 到这里就处理完了，返回。剩下的 run 继续往下执行
 					return;
 				}
 			}
@@ -742,11 +687,6 @@ net_maclife_wechat_http_BotApp.logger.fine ("url after parameter expansion: " + 
 		}
 		finally
 		{
-			//try { if (rs != null) rs.close(); } catch(Exception e) { }
-			//try { if (stmt != null) stmt.close(); } catch(Exception e) { }
-			//try { if (stmt_sp != null) stmt_sp.close(); } catch(Exception e) { }
-			//try { if (stmt_GetSubSelectors != null) stmt_GetSubSelectors.close ();} catch(Exception e) { }
-			//try { if (conn != null) conn.close(); } catch(Exception e) { }
 		}
 	}
 
@@ -918,7 +858,6 @@ fw.close ();
 				if (StringUtils.equalsIgnoreCase (sContentType, "json") )	//|| jsoup_conn.response ().contentType ().equalsIgnoreCase ("application/json"))
 				{
 					if (nJS_Cut_Start > 0)
-						//sbJSON =
 						sContent = sContent.substring (nJS_Cut_Start);
 					if (nJS_Cut_End > 0)
 						sContent = sContent.substring (0, sContent.length () - nJS_Cut_End);
@@ -1057,7 +996,6 @@ System.out.println (sQueryString);
 
 					//System.out.println (e.text());
 					Element sub_e = e;
-
 					String text = "";
 
 //System.err.println ("处理 " + e);
@@ -1100,13 +1038,16 @@ System.err.println ("	子选择器 " + (iSS+1) + " " + net_maclife_util_ANSIEsca
 						}
 					}
 					sbText.append ('\n');	// 与 IRC 中不同，微信中可以输出多行文字，所以，每
-					//if (sbText.length () > MAX_SAFE_BYTES_LENGTH_OF_IRC_MESSAGE)
-					//	text = sbText.substring (0, MAX_SAFE_BYTES_LENGTH_OF_IRC_MESSAGE);
-					//else
+
 					nLines ++;
 				}
-System.out.println (sbText.toString ());
-				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sbText.toString ());
+
+				String sText = sbText.toString ();
+				Matcher mat = PAT_IRC_ColorSequence.matcher (sText);
+				sText = mat.replaceAll ("");	// 先剔除掉 IRC 颜色序列
+				sText = StringUtils.replaceEach (sText, arraySource, arrayReplacements);	// 再替换（或剔除）其他特殊字符
+System.out.println (sText);
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sText);
 			}
 		}
 		catch (Exception e)
@@ -1139,6 +1080,30 @@ System.out.println (sbText.toString ());
 			(short)mapHTTemplate.get ("max")
 		);
 	}
+	static final String[] arraySource =
+		{	// 与 IRCBot 不同，这里要剔除掉 IRC 转义字符。 '\u0003' 在微信中会以 'U+0003' 这样的形势的字符串出现，没有必要
+			"\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007",
+			"\u0008", /*"\u0009",*//*\t*/ /*"\n",*//*\u000A*/ "\u000B", "\u000C", "\r"/*\u000D*/, "\u000E", "\u000F",
+			"\u0010", "\u0011", "\u0012", "\u0013", "\u0014", "\u0015", "\u0016", "\u0017",
+			"\u0018", "\u0019", "\u001A", "\u001B", "\u001C", "\u001D", "\u001E", "\u001F",
+		};
+	static final String[] arrayReplacements =
+		{
+			"", "", "", "", "", "", "", "",
+			"", /*" ",*/ /*" ",*/ "", " ", "", "", "",
+			"", "", "", "", "", "", "", "",
+			"", "", "", "", "", "", "", "",
+		};
+		/*
+		new String[]
+		{
+			"␀", "␁", "␂", "␃", "␄", "␅", "␆", "␇",
+			"␈", "␉", "␊", "␋", "␌", "␍", "␎", "␏",
+			"␐", "␑", "␒", "␓", "␔", "␕", "␖", "␗",
+			"␘", "␙", "␚", "␛", "␜", "␝", "␞", "␟",
+		}
+		*/
+	static final Pattern PAT_IRC_ColorSequence = Pattern.compile ("\u0003\\d{1,2}");
 	/**
 	 * 从 Element 对象根据要提取的数据类型来取出文字。
 	 * @param e Element 对象
@@ -1213,33 +1178,6 @@ System.out.println (sbText.toString ());
 		{
 			text = sExtract;	// 如果以上都不是，则把 sExtract 的字符串加进去，此举是为了能自己增加一些明文文字（通常是一些分隔符、label）
 		}
-
-		text = StringUtils.replaceEach (
-			text,
-			new String[]
-			{
-				"\u0000", "\u0001", /*"\u0002", "\u0003",*/ "\u0004", "\u0005", "\u0006", "\u0007",
-				"\u0008", "\u0009"/*\t*/, "\n"/*\u000A*/, "\u000B", "\u000C", "\r"/*\u000D*/, "\u000E", /*"\u000F",*/
-				"\u0010", "\u0011", "\u0012", "\u0013", "\u0014", "\u0015", /*"\u0016",*/ "\u0017",
-				"\u0018", "\u0019", "\u001A", "\u001B", "\u001C", "\u001D", "\u001E", /*"\u001F",*/
-			},
-			new String[]
-			{
-				"", "", "", /*"", "",*/ "", "", "",
-				"", " ", " ", "", " ", " ", "", /*"",*/
-				"", "", "", "", "", "", /*"",*/ "",
-				"", "", "", "", "", "", "", /*"",*/
-			}
-			/*
-			new String[]
-			{
-				"␀", "␁", "␂", "␃", "␄", "␅", "␆", "␇",
-				"␈", "␉", "␊", "␋", "␌", "␍", "␎", "␏",
-				"␐", "␑", "␒", "␓", "␔", "␕", "␖", "␗",
-				"␘", "␙", "␚", "␛", "␜", "␝", "␞", "␟",
-			}
-			*/
-			);
 
 		if (StringUtils.isNotEmpty (text))
 		{	// 仅当要输出的字符串有内容时才会输出（并且也输出前填充、后填充）
@@ -1549,6 +1487,16 @@ System.out.println (sbText.toString ());
 				mapHTTemplate.put ("referer", rs.getString ("referer"));
 				mapHTTemplate.put ("max", rs.getShort ("max"));
 
+				//mapHTTemplate.put ("source_type", rs.getString ("source_type"));
+				mapHTTemplate.put ("added_by", rs.getString ("added_by"));
+				mapHTTemplate.put ("added_by_user", rs.getString ("added_by_user"));
+				mapHTTemplate.put ("added_by_host", rs.getString ("added_by_host"));
+				mapHTTemplate.put ("added_time", rs.getTimestamp ("added_time"));
+				mapHTTemplate.put ("updated_by", rs.getString ("updated_by"));
+				mapHTTemplate.put ("updated_by_user", rs.getString ("updated_by_user"));
+				mapHTTemplate.put ("updated_by_host", rs.getString ("updated_by_host"));
+				mapHTTemplate.put ("updated_time", rs.getTimestamp ("updated_time"));
+				mapHTTemplate.put ("updated_times", rs.getInt ("updated_times"));
 
 				mapHTTemplate.put ("selector", rs.getString ("selector"));
 				List<String> listSubSelectors = new ArrayList<String> ();
@@ -1623,6 +1571,151 @@ System.out.println (sbText.toString ());
 		return ReadTemplate (null, nQueryParam_TemplateID, sQueryParam_TemplateName, null, null, null, null, null, 0, 0);
 	}
 
+	String RestoreCommandLineFromTemplate (Map<String, Object> mapHTTemplate)
+	{
+		StringBuilder sbHelp = new StringBuilder ();
+		sbHelp.append (
+			"模板序号: " + mapHTTemplate.get ("id") + "\n" +
+			"模板名称: '" + mapHTTemplate.get ("name") + "\n" +
+			"不用模板时的裸执行命令行:\n\n/ht" +
+			net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + mapHTTemplate.get ("max") +
+			"'  '" + mapHTTemplate.get ("url") +
+			"'  '" + mapHTTemplate.get ("selector") +
+			"'"
+			);
+
+		String sContentType = (String)mapHTTemplate.get ("content_type");
+		if (StringUtils.isNotEmpty (sContentType) && !StringUtils.equalsIgnoreCase (sContentType, "html"))
+		{	// 对于 JSON/JS 的 ht 模板，要特殊处理
+			int nJS_Cut_Start = (int)mapHTTemplate.get ("js_cut_start");
+			int nJS_Cut_End = (int)mapHTTemplate.get ("js_cut_end");
+			// 指定内容类型
+			sbHelp.append ("  /ct '");
+			sbHelp.append (sContentType);
+			sbHelp.append ("'");
+
+			// 掐头、去尾 参数
+			if (nJS_Cut_Start > 0)
+			{
+				sbHelp.append ("  /jcs ");
+				sbHelp.append (nJS_Cut_Start);
+			}
+			if (nJS_Cut_End > 0)
+			{
+				sbHelp.append ("  /jce ");
+				sbHelp.append (nJS_Cut_End);
+			}
+		}
+
+		List<String> listSubSelectors = (List<String>)mapHTTemplate.get ("list sub selectors");
+		List<String> listLeftPaddings = (List<String>)mapHTTemplate.get ("list left paddings");
+		List<String> listExtracts = (List<String>)mapHTTemplate.get ("list extracts");
+		List<String> listAttributes = (List<String>)mapHTTemplate.get ("list attributes");
+		List<String> listFormatFlags = (List<String>)mapHTTemplate.get ("list format flags");
+		List<String> listFormatWidth = (List<String>)mapHTTemplate.get ("list format width");
+		List<String> listRightPaddings = (List<String>)mapHTTemplate.get ("list right paddings");
+
+		for (int iSS=0; iSS<listSubSelectors.size (); iSS++)
+		{
+			String sSubSelector = listSubSelectors.get (iSS);
+			String sLeftPadding = listLeftPaddings.get (iSS);
+			String sExtract = listExtracts.get (iSS);
+			String sAttr = listAttributes.get (iSS);
+			String sFormatFlags = listFormatFlags.get (iSS);
+			String sFormatWidth = listFormatWidth.get (iSS);
+			String sRightPadding = listRightPaddings.get (iSS);
+
+			if (StringUtils.isNotEmpty (sSubSelector))
+			{
+				sbHelp.append ("  /ss '");
+				sbHelp.append (sSubSelector);
+				sbHelp.append ("'");
+			}
+
+			if (StringUtils.isNotEmpty (sLeftPadding))
+			{
+				sbHelp.append (" /lp '");
+				sbHelp.append (sLeftPadding);
+				sbHelp.append ("'");
+			}
+
+			if (StringUtils.isNotEmpty (sExtract))
+			{
+				sbHelp.append (" /e '");
+				sbHelp.append (sExtract);
+				sbHelp.append ("'");
+			}
+
+			if (StringUtils.isNotEmpty (sAttr))
+			{
+				sbHelp.append (" /a ");
+				sbHelp.append (sAttr);
+			}
+
+			if (StringUtils.isNotEmpty (sFormatFlags))
+			{
+				sbHelp.append (" /ff ");
+				sbHelp.append (sFormatFlags);
+			}
+
+			if (StringUtils.isNotEmpty (sFormatWidth))
+			{
+				sbHelp.append (" /fw ");
+				sbHelp.append (sFormatWidth);
+			}
+
+			if (StringUtils.isNotEmpty (sRightPadding))
+			{
+				sbHelp.append (" /rp '");
+				sbHelp.append (sRightPadding);
+				sbHelp.append ("'");
+			}
+		}
+		if (StringUtils.isNotEmpty ((String)mapHTTemplate.get ("ua")))
+		{
+			sbHelp.append (" /ua '");
+			sbHelp.append ((String)mapHTTemplate.get ("ua"));
+			sbHelp.append ("'");
+		}
+		if (StringUtils.isNotEmpty ((String)mapHTTemplate.get ("request_method")))
+		{
+			sbHelp.append (" /m ");
+			sbHelp.append ((String)mapHTTemplate.get ("request_method"));
+		}
+		if (StringUtils.isNotEmpty ((String)mapHTTemplate.get ("referer")))
+		{
+			sbHelp.append (" /r ");
+			sbHelp.append ((String)mapHTTemplate.get ("referer"));
+		}
+
+		if (StringUtils.isNotEmpty ((String)mapHTTemplate.get ("url_param_usage")))
+		{
+			sbHelp.append ("\n\n该模板的帮助信息:\n");
+			sbHelp.append ((String)mapHTTemplate.get ("url_param_usage"));
+			//sbHelp.append ("");
+		}
+		sbHelp.append ("\n\n添加人: ");
+		sbHelp.append ((String)mapHTTemplate.get ("added_by"));
+		sbHelp.append ("\n添加时间: ");
+		sbHelp.append (((Timestamp)mapHTTemplate.get ("added_time")).toString ().substring (0, 19));
+		if ((int)mapHTTemplate.get ("updated_times") > 0)
+		{
+			sbHelp.append ("\n最后更新人: ");
+			sbHelp.append ((String)mapHTTemplate.get ("updated_by"));
+			sbHelp.append ("\n最后更新时间: ");
+			sbHelp.append (((Timestamp)mapHTTemplate.get ("updated_time")).toString ().substring (0, 19));
+			sbHelp.append ("\n共更新了 ");
+			sbHelp.append ((int)mapHTTemplate.get ("updated_times"));
+			sbHelp.append (" 次");
+		}
+		return sbHelp.toString ();
+	}
+
+	void ListTemplates (String sReplyToAccount, String sReplyToName, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember, List<Map<String, Object>> listHTTemplates)
+	{
+
+	}
+
 	public static void main (String[] args) throws Exception
 	{
 		net_maclife_wechat_http_Bot_WebSoup bot = new net_maclife_wechat_http_Bot_WebSoup ();
@@ -1645,7 +1738,7 @@ System.out.println (sbText.toString ());
 
 		//*/
 
-		bot.ProcessCommand_WebSoup (null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "ht", "ht", null, "www.kernel.org  '#releases tr'");
+		bot.ProcessCommand_WebSoup (null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "ht", "ht", false, null, "www.kernel.org  '#releases tr'");
 		//bot.DoFetchHyperText ();
 	}
 }
