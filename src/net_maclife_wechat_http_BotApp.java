@@ -56,8 +56,8 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 	 */
 	public static final String COMMAND_OPTION_SEPARATOR = ".";
 
-	public static final int WECHAT_ACCOUNT_TYPE_MASK__Public = 0x08;	// 公众号
-	public static final int WECHAT_ACCOUNT_TYPE_MASK__Subscriber = 0x10;	// 订阅号
+	public static final int WECHAT_ACCOUNT_TYPE_MASK__Public     = 0x08;	// 个人公众号/服务号
+	public static final int WECHAT_ACCOUNT_TYPE_MASK__Enterprise = 0x10;	// 企业号
 	public static final int WECHAT_ACCOUNT_TYPE_MASK__WeChatTeam = 0x20;	// 微信团队自己的公众号
 
 	static final String sMultipartBoundary = "JsoupDoesNotSupportFormDataWell, and, ApacheHCDoesNotSupportSOCKSProxy";
@@ -86,6 +86,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 			if (StringUtils.isNotEmpty (sDefaultLogLevel))
 			{
 				logger.setLevel (Level.parse (sDefaultLogLevel));
+System.err.println ("默认日志级别改为 " + logger.getLevel ());
 			}
 		}
 		//catch (ConfigurationException e)
@@ -557,18 +558,24 @@ logger.severe (net_maclife_util_ANSIEscapeTool.Red (GetXMLValue(eXML, "message")
 		if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
 			sNickName = RestoreEmojiCharacters (sNickName);
 		sb.append (sNickName);
+		//sb.append ('/');
+		//sb.append (GetJSONText (jsonContact, "Alias"));
+		//sb.append ('/');
+		//sb.append (GetJSONText (jsonContact, "UserName"));
 		String sRemarkNameOrDisplayName = GetJSONText (jsonContact, bIsRoomMember ? "DisplayName" : "RemarkName");
 		if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
 			sRemarkNameOrDisplayName = RestoreEmojiCharacters (sRemarkNameOrDisplayName);
 
 		int nVerifyFlag = GetJSONInt (jsonContact, "VerifyFlag");
+		//sb.append ('/');
+		//sb.append (nVerifyFlag);
 		boolean isPublicAccount = IsPublicAccount (nVerifyFlag);
 		boolean isRoomAccount = IsRoomAccount (GetJSONText (jsonContact, "UserName"));
 		if (isRoomAccount || isPublicAccount || (StringUtils.isNotBlank (sRemarkNameOrDisplayName) && ! StringUtils.equalsIgnoreCase (sNickName, sRemarkNameOrDisplayName)))
 		{
 			sb.append (" (");
 			if (StringUtils.isNotBlank (sRemarkNameOrDisplayName) && ! StringUtils.equalsIgnoreCase (sNickName, sRemarkNameOrDisplayName))
-			{
+			{	// 昵称与[备注名/显示名]不同的，则把[备注名/显示名]也显示出来
 				sb.append (sRemarkNameOrDisplayName);
 			}
 			if (isRoomAccount)
@@ -576,13 +583,12 @@ logger.severe (net_maclife_util_ANSIEscapeTool.Red (GetXMLValue(eXML, "message")
 			if (isPublicAccount)
 			{
 				sb.append ("公众号");
-				if (IsSubscriberAccount (nVerifyFlag))
+				if (IsEnterprisePublicAccount (nVerifyFlag))
+					sb.append (", 企业号");
+
+				if (IsWeChatTeamAccount (nVerifyFlag))
 				{
-					sb.append (", 订阅号");
-					if (IsWeChatTeamAccount (nVerifyFlag))
-					{
-						sb.append (", 微信团队号");
-					}
+					sb.append (", 微信团队号");
 				}
 			}
 			sb.append (")");
@@ -2211,9 +2217,9 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 	{
 		return nVerifyFlag!=-1 && ((nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Public) == WECHAT_ACCOUNT_TYPE_MASK__Public);
 	}
-	public static boolean IsSubscriberAccount (int nVerifyFlag)
+	public static boolean IsEnterprisePublicAccount (int nVerifyFlag)
 	{
-		return nVerifyFlag!=-1 && ((nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Subscriber) == WECHAT_ACCOUNT_TYPE_MASK__Subscriber);
+		return nVerifyFlag!=-1 && ((nVerifyFlag & WECHAT_ACCOUNT_TYPE_MASK__Enterprise) == WECHAT_ACCOUNT_TYPE_MASK__Enterprise);
 	}
 	public static boolean IsWeChatTeamAccount (int nVerifyFlag)
 	{
