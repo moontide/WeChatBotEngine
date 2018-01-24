@@ -149,8 +149,8 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 				isUsingHTTemplateNameAsShortcut = CheckHTTemplateExistence (sHTTemplateName);
 			}
 
-			//if (!isCommandValid && !isUsingHTTemplateNameAsShortcut)
-			if (StringUtils.isEmpty (sFormalCommand))
+			if (!isCommandValid && !isUsingHTTemplateNameAsShortcut)
+			//if (StringUtils.isEmpty (sFormalCommand))
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 			ProcessCommand_WebSoup (jsonFrom, sFromAccount, sFromName,
