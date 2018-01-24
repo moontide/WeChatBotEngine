@@ -117,6 +117,7 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 			if (arrayCommandAndOptions.length >= 2)
 				sCommandOptionsInputed = arrayCommandAndOptions[1];
 
+			boolean isCommandValid = false;
 			String sFormalCommand = null;
 			for (int i=0; i<COMMANDS_LIST_HTML.size (); i++)
 			{
@@ -124,6 +125,7 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 				if (! StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 					continue;
 
+				isCommandValid = true;
 				sFormalCommand = "ht";
 				break;
 			}
@@ -134,6 +136,7 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 				if (! StringUtils.equalsIgnoreCase (sCommandInputed, sCommand))
 					continue;
 
+				isCommandValid = true;
 				sFormalCommand = "json";
 				break;
 			}
@@ -145,6 +148,10 @@ public class net_maclife_wechat_http_Bot_WebSoup extends net_maclife_wechat_http
 				sCommandParametersInputed = sHTTemplateName + " " + StringUtils.trimToEmpty (sCommandParametersInputed);	// 将模板名当成第一个参数
 				isUsingHTTemplateNameAsShortcut = CheckHTTemplateExistence (sHTTemplateName);
 			}
+
+			//if (!isCommandValid && !isUsingHTTemplateNameAsShortcut)
+			if (StringUtils.isEmpty (sFormalCommand))
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 			ProcessCommand_WebSoup (jsonFrom, sFromAccount, sFromName,
 				jsonTo, sToAccount, sToName,
