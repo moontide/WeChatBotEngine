@@ -27,11 +27,19 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 	 *  其中，<code>{0}</code> 是“帐号状态={禁用/启用/全部}”的搜索条件， <code>{1}</code> 是“是否显示组对象”的搜索条件
 	 */
 	public static final String DEFAULT_SEARCH_FILTER_Person_OrganizationalUnit_Group = "(|(&(objectCategory=person)(|(objectClass=user)(objectClass=contact)){0}){1}(objectCategory=OrganizationalUnit))";
+	public static final String DEFAULT_SEARCH_FILTER_Person = "(|(&(objectCategory=person)(|(objectClass=user)(objectClass=contact)){0}))";
+
 	/**
 	 * 按关键字搜索时的搜索条件/搜索过滤器。
-	 * 其中，{0} 是搜索的关键字，是 DEFAULT_SEARCH_FILTER_Person_OrganizationalUnit_Group 的搜索条件，可以合并到关键字搜索条件中来，以达到比较符合人类思维的目的
+	 * 其中，{0} 是搜索的关键字，是 DEFAULT_SEARCH_FILTER_Person 的搜索条件，可以合并到关键字搜索条件中来，以达到比较符合人类思维的目的
 	 */
 	public static final String DEFAULT_SEARCH_FILTER_KeywordSearch = "(&(|(cn={0})(sAMAccountName={0})(displayName={0})(telephoneNumber={0})(otherTelephone={0})(mobile={0})(otherMobile={0})(mail={0})(otherMailbox={0})){1})";
+	public static final String DEFAULT_SEARCH_FILTER_EnabledUser = "(!(userAccountControl:1.2.840.113556.1.4.803:=2))";
+	public static final String DEFAULT_SEARCH_FILTER_DisabledUser = "(userAccountControl:1.2.840.113556.1.4.803:=2)";
+	public static final int USER_ACCOUNT_STATUS_MASK__ENABLED  = 0x01;
+	public static final int USER_ACCOUNT_STATUS_MASK__DISABLED = 0x02;
+
+	public static int DEFAULT_MAX_FETCH_ENTRIES = net_maclife_wechat_http_BotApp.GetConfig().getInt ("bot.active-directory-address-book.max-fetched-entries", 2);
 
 	@Override
 	public int OnTextMessageReceived
@@ -94,7 +102,7 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 					"刘 -- 姓名包含“刘”的\n" +
 					"1178 -- 电话号码包含 “1178”的\n" +
 					"liu.yan -- 邮箱帐号包含“liu.yan”的\n\n" +
-					"管理员需注意：实际上，搜索时，是根据 bot.active-directory-address-book.ldap.search.filter 配置的过滤器来搜索的，" +
+					"管理员需注意：实际上，搜索时，是根据 bot.active-directory-address-book.<通讯簿名称>.ldap.search.filter 配置的过滤器来搜索的，" +
 					"默认的过滤器将从姓名、手机号码、座机号码、邮箱帐号、域帐号这几项中模糊匹配搜索条件，" +
 					"如果你更改了过滤器内容，将按照你改过的过滤器进行匹配");
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
@@ -102,7 +110,7 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 
 			try
 			{
-				String sResult = Query (sCommandParametersInputed, sReplyToName);
+				String sResult = Query (sCommandParametersInputed, sReplyToName, USER_ACCOUNT_STATUS_MASK__ENABLED /* | USER_ACCOUNT_STATUS_MASK__DISABLED */);
 				if (StringUtils.isEmpty (sResult))
 				{
 					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在通讯簿【" + sReplyToName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
@@ -126,114 +134,172 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
-	String Query (String sQuery, String sAddressBookName_RoomName)
+	String Query (String sKeyword, String sAddressBookName_RoomName, int nUserAccountStatusMask)
 	{
-		String sLDAPURL, sLDAPScheme, sLDAPServerAddress, sLDAPBindUser, sLDAPBindUserPassword, sLDAPSearchRootDN, sLDAPSearchFilter;
-		int nLDAPServerPort;
 		if (StringUtils.isEmpty (sAddressBookName_RoomName))
+			return null;
+		// 查找 sAddressBookName_RoomName 是否关联了通讯簿
+		List<String> listAddressBookNames = net_maclife_wechat_http_BotApp.GetConfig().getList (String.class, "bot.active-directory-address-book.map." + sAddressBookName_RoomName);
+		if (listAddressBookNames==null || listAddressBookNames.isEmpty ())
 		{
-			sLDAPURL = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book.ldap.url");
-			sLDAPScheme = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book.ldap.scheme");
-			sLDAPServerAddress = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book.ldap.server.address");
-			nLDAPServerPort = net_maclife_wechat_http_BotApp.GetConfig().getInt ("bot.active-directory-address-book.ldap.server.port", 389);
+			return null;
+		}
 
-			sLDAPBindUser = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book.ldap.bind.user-dn");
-			sLDAPBindUserPassword = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book.ldap.bind.user-password");
-			sLDAPSearchRootDN = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book.ldap.search.root-dn");
-			sLDAPSearchFilter = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book.ldap.search.filter");
-		}
-		else
-		{
-			sLDAPURL = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.url");
-			sLDAPScheme = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.scheme");
-			sLDAPServerAddress = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.server.address");
-			nLDAPServerPort = net_maclife_wechat_http_BotApp.GetConfig().getInt ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.server.port");
-
-			sLDAPBindUser = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.bind.user-dn");
-			sLDAPBindUserPassword = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.bind.user-password");
-			sLDAPSearchRootDN = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.search.root-dn");
-			sLDAPSearchFilter = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName_RoomName + ".ldap.search.filter");
-		}
-		if (StringUtils.isEmpty (sLDAPURL))
-		{
-			if (StringUtils.isEmpty (sLDAPServerAddress))
-			{
-				throw new RuntimeException ("没有为群名/通讯簿名为【" + sAddressBookName_RoomName + "】配置有效的 LDAP 参数(LDAP URL、服务器地址、服务器端口)，无法进行查询");
-			}
-		}
-		if (StringUtils.isEmpty (sLDAPSearchRootDN))
-		{
-			throw new RuntimeException ("没有为群名/通讯簿名为【" + sAddressBookName_RoomName + "】配置有效的 LDAP 参数(搜索的起始点/RootDN)，无法进行查询");
-		}
-		if (StringUtils.isEmpty (sLDAPSearchFilter))
-		{	// 如果未设置搜索过滤器/搜索条件，则使用默认的“关键字搜索”过滤器
-			sLDAPSearchFilter = DEFAULT_SEARCH_FILTER_KeywordSearch;
-		}
+		//sKeyword = sKeyword + "*";	// 搜索项的数值以关键字开头
+		//sKeyword = "*" + sKeyword;	// 搜索项的数值以关键字结尾
+		sKeyword = "*" + sKeyword + "*";	// 搜索项的数值包含关键字（模糊搜索）
+		String sSearchFilter_Person = "";
+		if ((nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__ENABLED) == USER_ACCOUNT_STATUS_MASK__ENABLED  &&  (nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__DISABLED) == USER_ACCOUNT_STATUS_MASK__DISABLED)
+			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, "");
+		else if ((nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__ENABLED) == USER_ACCOUNT_STATUS_MASK__ENABLED)
+			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, DEFAULT_SEARCH_FILTER_EnabledUser);
+		else if ((nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__DISABLED) == USER_ACCOUNT_STATUS_MASK__DISABLED)
+			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, DEFAULT_SEARCH_FILTER_DisabledUser);
 
 		StringBuilder sb = null;
-		LdapConnection lc = null;
+		int nBaseDN = 0;
+		boolean hasMultipleEntry = false;
 		try
 		{
-			lc = new LdapNetworkConnection (sLDAPServerAddress, nLDAPServerPort, StringUtils.equalsAnyIgnoreCase (sLDAPScheme, "ldaps"/*, "tls", "ssl"*/));
-			//lc.bind (sLDAPBindUser, sLDAPBindUserPassword);
-			BindRequest br = new BindRequestImpl ().setSimple (true).setName (sLDAPBindUser).setCredentials (sLDAPBindUserPassword);
-			lc.bind (br);
-			//MessageFormat mf = new MessageFormat (sLDAPSearchFilter);
-			String sFilter = MessageFormat.format (sLDAPSearchFilter, sQuery, "");
-System.err.println (sFilter);
-			EntryCursor ec = lc.search (sLDAPSearchRootDN, sFilter, SearchScope.SUBTREE);
-			while (ec.next ())
+			sb = new StringBuilder ();
+			for (String sAddressBookName : listAddressBookNames)
 			{
-				sb = new StringBuilder ();
-				Entry e = ec.get ();
+				String sLDAPURL, sLDAPScheme, sLDAPServerAddress, sLDAPServerPort, sLDAPBindUser, sLDAPBindUserPassword, sLDAPSearchBaseDN, sLDAPSearchFilter;
+				int nLDAPServerPort, nMaxFetchedEntries;
+				List<String> listLDAPSearchBaseDNs = null;
+				sLDAPURL = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.url");
+				sLDAPScheme = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.scheme");
+				sLDAPServerAddress = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.server.address");
+				sLDAPServerPort = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.server.port");
+				if (StringUtils.isEmpty (sLDAPServerPort))
+					nLDAPServerPort = 389;
+				else
+					nLDAPServerPort = net_maclife_wechat_http_BotApp.GetConfig().getInt ("bot.active-directory-address-book." + sAddressBookName + ".ldap.server.port", 389);
 
-				//
-				// 按 Active Directory 的属性名，输出信息。这也是为什么本 Bot 不叫 LDAP 通信录的原因：属性名是按 AD 预先定义的属性名来获取的，scheme aware
-				//
+				sLDAPBindUser = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.bind.user-name");
+				sLDAPBindUserPassword = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.bind.user-password");
+				sLDAPSearchBaseDN = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.search.base-dn");
+				listLDAPSearchBaseDNs = net_maclife_wechat_http_BotApp.GetConfig().getList (String.class, "bot.active-directory-address-book." + sAddressBookName + ".ldap.search.base-dn");
+				sLDAPSearchFilter = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.search.filter");
+				nMaxFetchedEntries = net_maclife_wechat_http_BotApp.GetConfig().getInt ("bot.active-directory-address-book." + sAddressBookName + ".max-fetched-entries", DEFAULT_MAX_FETCH_ENTRIES);
 
-				// 基本名称信息
-				ReadEntryValueToStringBuilder  (e, "name", "姓　　名", sb);
-				ReadEntryValueToStringBuilder  (e, "displayName", "显示名　", sb);
-				ReadEntryValueToStringBuilder  (e, "sn", "姓　　　", sb);
-				ReadEntryValueToStringBuilder  (e, "givenName", "名　　　", sb);
-				ReadEntryValueToStringBuilder  (e, "initials", "首字母缩写", sb);
+				if (StringUtils.isEmpty (sLDAPURL))
+				{
+					if (StringUtils.isEmpty (sLDAPServerAddress))
+					{
+						throw new RuntimeException ("没有为域通讯簿【" + sAddressBookName + "】配置有效的 LDAP 参数(LDAP URL、服务器地址、服务器端口)，无法进行查询");
+					}
+				}
+				if (StringUtils.isEmpty (sLDAPSearchBaseDN) || listLDAPSearchBaseDNs==null || listLDAPSearchBaseDNs.isEmpty ())
+				{
+					throw new RuntimeException ("没有为域通讯簿【" + sAddressBookName + "】配置有效的 LDAP 参数(搜索的起始点/BaseDN)，无法进行查询");
+				}
+				if (StringUtils.isEmpty (sLDAPSearchFilter))
+				{	// 如果未设置搜索过滤器/搜索条件，则使用默认的“关键字搜索”过滤器
+					sLDAPSearchFilter = DEFAULT_SEARCH_FILTER_KeywordSearch;
+				}
 
-				// 种联系信息
-				ReadEntryValueToStringBuilder  (e, "mobile", "手机号码", sb);
-				ReadEntryValuesToStringBuilder (e, "otherMobile", "其他手机号码", sb);
-				ReadEntryValueToStringBuilder  (e, "telephoneNumber", "办公电话", sb);
-				ReadEntryValuesToStringBuilder (e, "otherTelephone", "其他办公号码", sb);
-				ReadEntryValueToStringBuilder  (e, "homePhone", "家庭电话", sb);
-				ReadEntryValuesToStringBuilder (e, "otherHomePhone", "其他家庭号码", sb);
-				ReadEntryValueToStringBuilder  (e, "ipPhone", "ＩＰ电话", sb);
-				ReadEntryValuesToStringBuilder (e, "otherIpPhone", "其他ＩＰ号码", sb);
-				ReadEntryValueToStringBuilder  (e, "facsimileTelephoneNumber", "传真电话", sb);
-				ReadEntryValuesToStringBuilder (e, "otherFacsimileTelephoneNumber", "其他传真号码", sb);
-				ReadEntryValueToStringBuilder  (e, "mail", "电子邮箱", sb);
-				ReadEntryValuesToStringBuilder (e, "otherMailbox", "其他邮箱", sb);
-				ReadEntryValueToStringBuilder  (e, "info", "电话备注", sb);
+				LdapConnection lc = null;
 
-				// 再输出与公司相关的信息、职位信息
-				ReadEntryValueToStringBuilder  (e, "company", "公　　司", sb);	// 如果有很多分公司，在这里保存分公司名称
-				ReadEntryValueToStringBuilder  (e, "department", "部　　门", sb);	// 公司/分公司的部门名称
-				ReadEntryValueToStringBuilder  (e, "title", "职　　位", sb);	// 职位
-				ReadEntryValueToStringBuilder  (e, "manager", "上　　级", sb);	// 被谁管理，上级是谁
-				ReadEntryValueToStringBuilder  (e, "physicalDeliveryOfficeName", "办公位置", sb);
-				ReadEntryValueToStringBuilder  (e, "description", "说　　明", sb);
+				lc = new LdapNetworkConnection (sLDAPServerAddress, nLDAPServerPort, StringUtils.equalsAnyIgnoreCase (sLDAPScheme, "ldaps"/*, "tls", "ssl"*/));
+				//lc.bind (sLDAPBindUser, sLDAPBindUserPassword);
+				BindRequest br = new BindRequestImpl ().setSimple (true).setName (sLDAPBindUser).setCredentials (sLDAPBindUserPassword);
+				lc.bind (br);
+				String sSearchFilter = MessageFormat.format (sLDAPSearchFilter, sKeyword, sSearchFilter_Person);
+net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索过滤器: " + sSearchFilter);
 
-				// 地址信息（省、市、邮政）
-				ReadEntryValueToStringBuilder  (e, "co", "国　　家", sb);
-				ReadEntryValueToStringBuilder  (e, "st", "省/自治区", sb);
-				ReadEntryValueToStringBuilder  (e, "l", "城市／县", sb);
-				ReadEntryValueToStringBuilder  (e, "streetAddress", "街　　道", sb);
-				ReadEntryValueToStringBuilder  (e, "postOfficeBox", "邮政信箱", sb);
-				ReadEntryValueToStringBuilder  (e, "postalCode", "邮政编码", sb);
+				for (String sBaseDN : listLDAPSearchBaseDNs)
+				{
+net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
+					nBaseDN ++;
+					EntryCursor ec = lc.search (sBaseDN, sSearchFilter, SearchScope.SUBTREE);
+					int nFetchedEntries = 0;
+					while (ec.next ())
+					{
+						Entry e = ec.get ();
 
-				//
-				break;	// 只显示一个？ 如果模糊搜索，搜索出多条，怎么办？
+						//
+						// 按 Active Directory 的属性名，输出信息。这也是为什么本 Bot 不叫 LDAP 通信录的原因：属性名是按 AD 预先定义的属性名来获取的，schema aware
+						//
+						sb.append ("--------------------\n");	// 分割线
+
+						// 基本名称信息
+						ReadEntryValueToStringBuilder  (e, "name", "　　姓名", sb);
+						ReadEntryValueToStringBuilder  (e, "displayName", "　显示名", sb);
+						ReadEntryValueToStringBuilder  (e, "sn", "　　　姓", sb);
+						ReadEntryValueToStringBuilder  (e, "givenName", "　　　名", sb);
+						ReadEntryValueToStringBuilder  (e, "initials", "首字母缩写", sb);
+
+						// 种联系信息
+						ReadEntryValueToStringBuilder  (e, "mobile", "手机号码", sb);
+						ReadEntryValuesToStringBuilder (e, "otherMobile", "其他手机", sb);
+						ReadEntryValueToStringBuilder  (e, "telephoneNumber", "办公电话", sb);
+						ReadEntryValuesToStringBuilder (e, "otherTelephone", "其他办公", sb);
+						ReadEntryValueToStringBuilder  (e, "homePhone", "家庭电话", sb);
+						ReadEntryValuesToStringBuilder (e, "otherHomePhone", "其他家庭", sb);
+						ReadEntryValueToStringBuilder  (e, "ipPhone", "ＩＰ电话", sb);
+						ReadEntryValuesToStringBuilder (e, "otherIpPhone", "其他ＩＰ号码", sb);
+						ReadEntryValueToStringBuilder  (e, "facsimileTelephoneNumber", "传真电话", sb);
+						ReadEntryValuesToStringBuilder (e, "otherFacsimileTelephoneNumber", "其他传真", sb);
+						ReadEntryValueToStringBuilder  (e, "mail", "电子邮箱", sb);
+						ReadEntryValuesToStringBuilder (e, "otherMailbox", "其他邮箱", sb);
+						ReadEntryValueToStringBuilder  (e, "info", "电话备注", sb);
+
+						// 再输出与公司相关的信息、职位信息
+						ReadEntryValueToStringBuilder  (e, "company", "　　公司", sb);	// 如果有很多分公司，在这里保存分公司名称
+						ReadEntryValueToStringBuilder  (e, "department", "　　部门", sb);	// 公司/分公司的部门名称
+						ReadEntryValueToStringBuilder  (e, "title", "　　职位", sb);	// 职位
+						ReadEntryValueToStringBuilder  (e, "manager", "　　上级", sb);	// 被谁管理，上级是谁
+						ReadEntryValueToStringBuilder  (e, "physicalDeliveryOfficeName", "办公位置", sb);
+						ReadEntryValueToStringBuilder  (e, "description", "　　说明", sb);
+
+						// 地址信息（省、市、邮政）
+						ReadEntryValueToStringBuilder  (e, "co", "　　国家", sb);
+						ReadEntryValueToStringBuilder  (e, "st", "省自治区", sb);
+						ReadEntryValueToStringBuilder  (e, "l", "城市／县", sb);
+						ReadEntryValueToStringBuilder  (e, "streetAddress", "　　街道", sb);
+						ReadEntryValueToStringBuilder  (e, "postOfficeBox", "邮政信箱", sb);
+						ReadEntryValueToStringBuilder  (e, "postalCode", "邮政编码", sb);
+
+						//if (! ec.isLast ())	// java.lang.UnsupportedOperationException: ERR_02014_UNSUPPORTED_OPERATION The method method org.apache.directory.ldap.client.api.EntryCursorImpl.isLast() is not supported
+						//{
+						//	hasMultipleEntry = true;
+						//}
+						//
+						nFetchedEntries ++;
+System.err.println ("nFetchedEntries=" + nFetchedEntries + ", nMaxFetchedEntries=" + nMaxFetchedEntries + ", DEFAULT_MAX_FETCH_ENTRIES=" + DEFAULT_MAX_FETCH_ENTRIES);
+						if (nFetchedEntries >= nMaxFetchedEntries)
+						{	// 到达 nMaxFetchedEntries 后，本次 BaseDN 的 Search 操作就结束，继续下一个 AD 通讯簿的下一个 BaseDN
+							break;
+						}
+					}
+					ec.close ();
+				}
+				lc.unBind ();
+				lc.close ();
 			}
-			lc.unBind ();
-			lc.close ();
+			if (listAddressBookNames.size () > 1 || nBaseDN > 1)
+			{
+				sb.append ("本地查询搜索了");
+				if (listAddressBookNames.size () > 1)
+				{
+					sb.append (" ");
+					sb.append (listAddressBookNames.size ());
+					sb.append (" 个通讯簿");
+				}
+				if (nBaseDN > 1)
+				{
+					sb.append (" ");
+					sb.append (nBaseDN);
+					sb.append (" 个目录");
+				}
+				sb.append ('\n');
+			}
+			if (hasMultipleEntry)
+			{
+				sb.append ("本地查询在某个目录下搜索到多条通信录，请修改搜索条件使结果精确匹配到 1 条");
+				sb.append ('\n');
+			}
 		}
 		catch (IOException | LdapException | CursorException e)
 		{
