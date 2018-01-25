@@ -851,10 +851,6 @@ System.out.println (sHTTPReferer);
 				//  selector 或 subselector -- 这是类似  a.b[0].c.d 一样的 JSON 表达式，用于取出对象的数值
 				//  extract -- 取出 value 还是变量名(var)，还是数组索引号(index)
 				//  attr -- 无用
-				//if (jsoup_conn.response ().statusCode ()/100 > 3)
-				{
-				//	throw new org.jsoup.HttpStatusException (jsoup_conn.response ().statusMessage (), jsoup_conn.response ().statusCode (), sURL);
-				}
 				StringBuilder sbJSON = new StringBuilder ();
 				String sJSON;
 File f = new File ("ht-js-content.wechatbotengine.js");
@@ -862,7 +858,7 @@ FileWriter fw = new FileWriter (f);
 fw.write (sContent);
 fw.close ();
 //System.err.println (sContent);
-				if (StringUtils.equalsIgnoreCase (sContentType, "json") )	//|| jsoup_conn.response ().contentType ().equalsIgnoreCase ("application/json"))
+				//if (StringUtils.equalsIgnoreCase (sContentType, "json") )	//|| jsoup_conn.response ().contentType ().equalsIgnoreCase ("application/json"))
 				{
 					if (nJS_Cut_Start > 0)
 						sContent = sContent.substring (nJS_Cut_Start);
@@ -870,8 +866,8 @@ fw.close ();
 						sContent = sContent.substring (0, sContent.length () - nJS_Cut_End);
 					sbJSON.append ("var o = " + sContent + ";");
 				}
-				else
-					sbJSON.append (sContent + ";\n");
+				//else
+				//	sbJSON.append (sContent + ";\n");
 
 				//ObjectMapper om = new ObjectMapper();
 				//om.configure (JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
@@ -918,17 +914,12 @@ net_maclife_wechat_http_BotApp.logger.warning ("javascript 求值返回 null 结
 					}
 				}
 
-				String text = null;
-				//text = EvaluateJSONExpression (node, sSelector, listExtracts.get(0));
-				text = sbText.toString ();
-				String[]arrayLines = text.split ("\n+");
-				for (int i=iStart; i<arrayLines.length; i++)
-				{
-					if (nLines >= opt_max_response_lines)
-						break;
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, arrayLines[i]);
-					nLines ++;
-				}
+				String sText = sbText.toString ();
+				Matcher mat = PAT_IRC_ColorSequence.matcher (sText);
+				sText = mat.replaceAll ("");	// 先剔除掉 IRC 颜色序列
+				sText = StringUtils.replaceEach (sText, arrayReplaceControlCharacters_Sources, arrayReplaceControlCharacters_Replacements);	// 再替换（或剔除）其他特殊字符
+System.out.println (sText);
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sText);
 			}
 			else
 			{
@@ -1052,7 +1043,7 @@ System.err.println ("	子选择器 " + (iSS+1) + " " + net_maclife_util_ANSIEsca
 				String sText = sbText.toString ();
 				Matcher mat = PAT_IRC_ColorSequence.matcher (sText);
 				sText = mat.replaceAll ("");	// 先剔除掉 IRC 颜色序列
-				sText = StringUtils.replaceEach (sText, arraySource, arrayReplacements);	// 再替换（或剔除）其他特殊字符
+				sText = StringUtils.replaceEach (sText, arrayReplaceControlCharacters_Sources, arrayReplaceControlCharacters_Replacements);	// 再替换（或剔除）其他特殊字符
 System.out.println (sText);
 				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sText);
 			}
@@ -1087,19 +1078,81 @@ System.out.println (sText);
 			(short)mapHTTemplate.get ("max")
 		);
 	}
-	static final String[] arraySource =
+	static final String[] arrayReplaceControlCharacters_Sources =
 		{	// 与 IRCBot 不同，这里要剔除掉 IRC 转义字符。 '\u0003' 在微信中会以 'U+0003' 这样的形势的字符串出现，没有必要
-			"\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007",
-			"\u0008", /*"\u0009",*//*\t*/ /*"\n",*//*\u000A*/ "\u000B", "\u000C", "\r"/*\u000D*/, "\u000E", "\u000F",
-			"\u0010", "\u0011", "\u0012", "\u0013", "\u0014", "\u0015", "\u0016", "\u0017",
-			"\u0018", "\u0019", "\u001A", "\u001B", "\u001C", "\u001D", "\u001E", "\u001F",
+			"\u0000",
+			"\u0001",
+			"\u0002",	// IRC 粗体、高亮
+			"\u0003",	// IRC 颜色开始
+			"\u0004",
+			"\u0005",
+			"\u0006",
+			"\u0007",
+
+			"\u0008",
+			//"\u0009",	//\t
+			//"\n",	// 0x0A 换行符
+			"\u000B",
+			"\u000C",
+			"\r",	// 0x0D 回车符
+			"\u000E",
+			"\u000F",	// IRC 恢复正常
+
+			"\u0010",
+			"\u0011",
+			"\u0012",
+			"\u0013",
+			"\u0014",
+			"\u0015",
+			"\u0016",	// IRC 反色
+			"\u0017",
+
+			"\u0018",
+			"\u0019",
+			"\u001A",
+			//"\u001B",	// ANSI Escape ESC，留着把，不替换了
+			"\u001C",
+			"\u001D",
+			"\u001E",
+			"\u001F",	// IRC 下划线
 		};
-	static final String[] arrayReplacements =
+	static final String[] arrayReplaceControlCharacters_Replacements =
 		{
-			"", "", "", "", "", "", "", "",
-			"", /*" ",*/ /*" ",*/ "", " ", "", "", "",
-			"", "", "", "", "", "", "", "",
-			"", "", "", "", "", "", "", "",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+
+			"",
+			//" ",
+			//" ",
+			"",
+			" ",
+			"",
+			"",
+			"",
+
+			"",
+			"",
+			"",
+			//"",
+			"",
+			"",
+			"",
+			"",
+
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
 		};
 		/*
 		new String[]
