@@ -27,7 +27,7 @@ public class net_maclife_wechat_http_Bot_Repeater extends net_maclife_wechat_htt
 		)
 	{
 		boolean bRepeatMyOwnMessage = net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.repeater.repeat-my-own-message", "no"), false);
-		if (!bRepeatMyOwnMessage && engine.IsMe (sFromAccount))
+		if (!bRepeatMyOwnMessage && isFromMe)
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
 		try

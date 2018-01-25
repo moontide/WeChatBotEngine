@@ -73,7 +73,7 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 			if (arrayMessages.length >= 2)
 				sCommandParametersInputed = arrayMessages[1];
 
-			String[] arrayCommandOptions = sCommandInputed.split ("\\.+", 2);
+			String[] arrayCommandOptions = sCommandInputed.split ("\\" + net_maclife_wechat_http_BotApp.COMMAND_OPTION_SEPARATOR + "+", 2);
 			sCommandInputed = arrayCommandOptions[0];
 			String sCommandOptionsInputed = null;
 			if (arrayCommandOptions.length >= 2)
@@ -218,6 +218,14 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 		{
 			p = pb.start ();
 			mapProcessesRunning.put (p, System.currentTimeMillis () + nTimeout * 1000);
+			int rc = p.waitFor ();
+			mapProcessesRunning.remove (p);
+			assert (rc == 0);
+			if (rc != 0)
+			{
+net_maclife_wechat_http_BotApp.logger.severe ("'" + sCommandLineString + "' 执行失败（返回代码不是 0，而是 " + rc + "）。");
+			}
+
 			InputStream in = p.getInputStream ();
 			InputStream err = p.getErrorStream ();
 			//IOUtils.toString (in);
@@ -241,29 +249,29 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 				}
 				nLines ++;
 			}
-			br.close ();
+			//br.close ();
 			if (! bRedirectStdErr)
 			{
 				br = new BufferedReader (new InputStreamReader (err));
 				while ((sLine = br.readLine ()) != null)
 				{
-//System.err.println (sLine);
-					nTotalLines ++;
-					if (nMaxLinesReturns != 0  && nLines >= nMaxLinesReturns)
-						continue;
-					//if (nMaxLinesReturns == 0 || (nMaxLinesReturns != 0  && nLines < nMaxLinesReturns))
-					if (bResponseLineByLine)
-					{
-						SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sLine);
-					}
-					else
-					{
-						sb.append (sLine);
-						sb.append ('\n');
-					}
-					nLines ++;
+System.err.println (sLine);
+				//	nTotalLines ++;
+				//	if (nMaxLinesReturns != 0  && nLines >= nMaxLinesReturns)
+				//		continue;
+				//	//if (nMaxLinesReturns == 0 || (nMaxLinesReturns != 0  && nLines < nMaxLinesReturns))
+				//	if (bResponseLineByLine)
+				//	{
+				//		SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sLine);
+				//	}
+				//	else
+				//	{
+				//		sb.append (sLine);
+				//		sb.append ('\n');
+				//	}
+				//	nLines ++;
 				}
-				br.close ();
+				//br.close ();
 			}
 
 			if (nMaxLinesReturns != 0 && nLines < nTotalLines)
@@ -276,13 +284,9 @@ public class net_maclife_wechat_http_Bot_ShellCommand extends net_maclife_wechat
 				sb.append (" 行)");
 			}
 
-			int rc = p.waitFor ();
-			mapProcessesRunning.remove (p);
-			assert (rc == 0);
-			if (rc != 0)
-			{
-net_maclife_wechat_http_BotApp.logger.severe ("'" + sCommandLineString + "' 执行失败（返回代码不是 0，而是 " + rc + "）。");
-			}
+			//err.close ();
+			//in.close ();
+
 		}
 		catch (IOException e)
 		{	// 进程有可能超时被杀死，也应该返回被杀死前的内容
