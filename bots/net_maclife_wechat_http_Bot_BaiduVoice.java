@@ -72,14 +72,17 @@ net_maclife_wechat_http_BotApp.logger.info ("本机 IP 地址: " + ip.getHostAdd
 			if (network != null)
 			{
 				byte[] arrayMAC = network.getHardwareAddress();
-				StringBuilder sb = new StringBuilder ();
-				for (int i=0; i<arrayMAC.length; i++)
+				if (arrayMAC != null)
 				{
-					if (i!=0)
-						sb.append ("-");
-					sb.append (String.format ("%02X", arrayMAC[i]));
+					StringBuilder sb = new StringBuilder ();
+					for (int i=0; i<arrayMAC.length; i++)
+					{
+						if (i!=0)
+							sb.append ("-");
+						sb.append (String.format ("%02X", arrayMAC[i]));
+					}
+					sMACAddress = sb.toString ();
 				}
-				sMACAddress = sb.toString ();
 net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 			}
 		}
@@ -87,6 +90,43 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 		{
 			e.printStackTrace ();
 		}
+	}
+
+	@Override
+	public int OnTextMessageReceived
+		(
+			JsonNode jsonMessage,
+			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
+			JsonNode jsonTo, String sToAccount, String sToName, boolean isToMe,
+			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
+			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
+			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
+			String sContent, boolean isContentMentionedMe, boolean isContentMentionedMeFirst
+		)
+	{
+		try
+		{
+			JsonNode jsonCSRResponse = null;
+			//GetTTSReponse (sFromAccount, sContent);
+			if (jsonCSRResponse == null)
+				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+
+			//String sResponse = ParseASRResponse (jsonCSRResponse);
+			// 上传语音媒体文件到微信服务器，获得媒体 ID
+			if (StringUtils.isNotEmpty (""))
+			{
+				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "");
+			}
+			// 然后将该媒体文件（媒体ID）发到微信【好友/群】
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+
+		return
+			  net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
+			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	@Override
@@ -228,8 +268,8 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 
 			String sResponseBodyContent = net_maclife_util_HTTPUtils.CURL_Post (sURL, mapRequestHeaders, arrayPostData);
 			JsonNode jsonNode = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (sResponseBodyContent);
-net_maclife_wechat_http_BotApp.logger.info  (GetName() + " 机器人获取百度语音识别 (ASR) 的 http 响应消息体:");
-net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
+net_maclife_wechat_http_BotApp.logger.info (GetName() + " 机器人获取百度语音识别 (ASR) 的 http 响应消息体:");
+net_maclife_wechat_http_BotApp.logger.info ("	" + sResponseBodyContent);
 
 			int err_no = net_maclife_wechat_http_BotApp.GetJSONInt (jsonNode, "err_no");
 			String err_msg = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "err_msg");
@@ -259,25 +299,32 @@ net_maclife_wechat_http_BotApp.logger.info  ("	" + sResponseBodyContent);
 						| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 					//break;
 				case 3300:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "输入参数不正确");
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + err_msg + " 输入参数不正确");
+					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "输入参数不正确");
 					break;
 				case 3301:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "识别错误");
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + err_msg + " 识别错误");
+					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "识别错误");
 					break;
 				case 3302:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "验证失败");
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + err_msg + " 验证失败");
+					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "验证失败");
 					break;
 				case 3303:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "语音服务器后端问题");
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + err_msg + " 语音服务器后端问题");
+					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "语音服务器后端问题");
 					break;
 				case 3304:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "请求 GPS 过大，超过限额");
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + err_msg + " 请求 GPS 过大，超过限额");
+					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "请求 GPS 过大，超过限额");
 					break;
 				case 3305:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "产品线当前日请求数超过限额");
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + err_msg + " 产品线当前日请求数超过限额");
+					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "产品线当前日请求数超过限额");
 					break;
 				default:
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "听不清 " + (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? sReplyToName : sReplyToName_RoomMember) + " 说了些啥: " + err_msg);
+net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + err_msg + " 听不清 " + (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? sReplyToName : sReplyToName_RoomMember) + " 说了些啥");
+					//SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "听不清 " + (StringUtils.isEmpty (sReplyToAccount_RoomMember) ? sReplyToName : sReplyToName_RoomMember) + " 说了些啥: " + err_msg);
 					break;
 			}
 		}
