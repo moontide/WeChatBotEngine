@@ -7,6 +7,8 @@ import org.apache.directory.api.ldap.model.cursor.*;
 import org.apache.directory.api.ldap.model.entry.*;
 import org.apache.directory.api.ldap.model.exception.*;
 import org.apache.directory.api.ldap.model.message.*;
+import org.apache.directory.api.ldap.model.message.controls.*;
+import org.apache.directory.api.ldap.model.name.*;
 import org.apache.directory.ldap.client.api.*;
 
 import com.fasterxml.jackson.databind.*;
@@ -166,7 +168,7 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 			{
 				String sLDAPURL, sLDAPScheme, sLDAPServerAddress, sLDAPServerPort, sLDAPBindUser, sLDAPBindUserPassword, sLDAPSearchBaseDN, sLDAPSearchFilter;
 				int nLDAPServerPort, nMaxFetchedEntries;
-				List<String> listLDAPSearchBaseDNs = null;
+				List<String> listLDAPSearchBaseDNs = null, listSearchControlSortAttributeNames;
 				sLDAPURL = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.url");
 				sLDAPScheme = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.scheme");
 				sLDAPServerAddress = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.server.address");
@@ -181,6 +183,7 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 				sLDAPSearchBaseDN = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.search.base-dn");
 				listLDAPSearchBaseDNs = net_maclife_wechat_http_BotApp.GetConfig().getList (String.class, "bot.active-directory-address-book." + sAddressBookName + ".ldap.search.base-dn");
 				sLDAPSearchFilter = net_maclife_wechat_http_BotApp.GetConfig().getString ("bot.active-directory-address-book." + sAddressBookName + ".ldap.search.filter");
+				listSearchControlSortAttributeNames = net_maclife_wechat_http_BotApp.GetConfig().getList (String.class, "bot.active-directory-address-book." + sAddressBookName + ".ldap.search.control.sort.attribute-names");
 				nMaxFetchedEntries = net_maclife_wechat_http_BotApp.GetConfig().getInt ("bot.active-directory-address-book." + sAddressBookName + ".max-fetched-entries", DEFAULT_MAX_FETCH_ENTRIES);
 
 				if (StringUtils.isEmpty (sLDAPURL))
@@ -199,6 +202,16 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 					sLDAPSearchFilter = DEFAULT_SEARCH_FILTER_KeywordSearch;
 				}
 
+				SortRequest ctrlSortControl = null;
+				if (listSearchControlSortAttributeNames!=null && !listSearchControlSortAttributeNames.isEmpty ())
+				{
+					ctrlSortControl = new SortRequestControlImpl ();
+					for (String sAttributeName : listSearchControlSortAttributeNames)
+					{
+						ctrlSortControl.addSortKey (new SortKey(sAttributeName));
+					}
+				}
+
 				LdapConnection lc = null;
 
 				lc = new LdapNetworkConnection (sLDAPServerAddress, nLDAPServerPort, StringUtils.equalsAnyIgnoreCase (sLDAPScheme, "ldaps"/*, "tls", "ssl"*/));
@@ -212,11 +225,19 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索过滤器: " + sSearchF
 				{
 net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 					nBaseDN ++;
-					EntryCursor ec = lc.search (sBaseDN, sSearchFilter, SearchScope.SUBTREE);
+					SearchRequest sr = new SearchRequestImpl ();
+					sr.setBase (new Dn(sBaseDN)).setFilter (sSearchFilter).setScope (SearchScope.SUBTREE).setSizeLimit (nMaxFetchedEntries).ignoreReferrals ();
+					if (ctrlSortControl != null)
+						sr.addControl (ctrlSortControl);
+					SearchCursor sc = lc.search (sr);
+					//EntryCursor ec = lc.search (sBaseDN, sSearchFilter, SearchScope.SUBTREE);
 					int nFetchedEntries = 0;
-					while (ec.next ())
+					//while (ec.next ())
+					while (sc.next () && sc.isEntry ())
 					{
-						Entry e = ec.get ();
+						Entry e = null;
+						//e = ec.get ();
+						e = sc.getEntry ();
 
 						//
 						// 按 Active Directory 的属性名，输出信息。这也是为什么本 Bot 不叫 LDAP 通信录的原因：属性名是按 AD 预先定义的属性名来获取的，schema aware
@@ -267,13 +288,14 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 						//}
 						//
 						nFetchedEntries ++;
-System.err.println ("nFetchedEntries=" + nFetchedEntries + ", nMaxFetchedEntries=" + nMaxFetchedEntries + ", DEFAULT_MAX_FETCH_ENTRIES=" + DEFAULT_MAX_FETCH_ENTRIES);
+//System.err.println ("nFetchedEntries=" + nFetchedEntries + ", nMaxFetchedEntries=" + nMaxFetchedEntries + ", DEFAULT_MAX_FETCH_ENTRIES=" + DEFAULT_MAX_FETCH_ENTRIES);
 						if (nFetchedEntries >= nMaxFetchedEntries)
 						{	// 到达 nMaxFetchedEntries 后，本次 BaseDN 的 Search 操作就结束，继续下一个 AD 通讯簿的下一个 BaseDN
 							break;
 						}
 					}
-					ec.close ();
+					//ec.close ();
+					sc.close ();
 				}
 				lc.unBind ();
 				lc.close ();
