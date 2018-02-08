@@ -115,7 +115,7 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 				String sResult = Query (sCommandParametersInputed, sReplyToName, USER_ACCOUNT_STATUS_MASK__ENABLED /* | USER_ACCOUNT_STATUS_MASK__DISABLED */);
 				if (StringUtils.isEmpty (sResult))
 				{
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在通讯簿【" + sReplyToName + "】（与群名相同）中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在与【" + sReplyToName + "】（与群名相同）关联的通讯簿中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
 					return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 				}
 				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sResult);
