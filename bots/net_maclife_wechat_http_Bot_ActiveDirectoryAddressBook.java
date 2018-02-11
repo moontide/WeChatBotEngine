@@ -115,7 +115,7 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 				String sResult = Query (sCommandParametersInputed, sReplyToName, USER_ACCOUNT_STATUS_MASK__ENABLED /* | USER_ACCOUNT_STATUS_MASK__DISABLED */);
 				if (StringUtils.isEmpty (sResult))
 				{
-					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在与【" + sReplyToName + "】（与群名相同）关联的通讯簿中没找到姓名为【" + sCommandParametersInputed + "】的联系信息");
+					SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, "在与【" + sReplyToName + "】关联的 AD 通讯簿中没找到关键字为【" + sCommandParametersInputed + "】的联系信息");
 					return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 				}
 				SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sResult);
@@ -136,12 +136,12 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
-	String Query (String sKeyword, String sAddressBookName_RoomName, int nUserAccountStatusMask)
+	String Query (String sKeyword, String sAddressBookName_NickName, int nUserAccountStatusMask)
 	{
-		if (StringUtils.isEmpty (sAddressBookName_RoomName))
+		if (StringUtils.isEmpty (sAddressBookName_NickName))
 			return null;
 		// 查找 sAddressBookName_RoomName 是否关联了通讯簿
-		List<String> listAddressBookNames = net_maclife_wechat_http_BotApp.GetConfig().getList (String.class, "bot.active-directory-address-book.map." + sAddressBookName_RoomName);
+		List<String> listAddressBookNames = net_maclife_wechat_http_BotApp.GetConfig().getList (String.class, "bot.active-directory-address-book.map." + sAddressBookName_NickName);
 		if (listAddressBookNames==null || listAddressBookNames.isEmpty ())
 		{
 			return null;
