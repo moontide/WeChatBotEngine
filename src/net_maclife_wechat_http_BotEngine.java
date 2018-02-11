@@ -9,7 +9,8 @@ import java.util.regex.*;
 import javax.script.*;
 
 import org.apache.commons.io.*;
-import org.apache.commons.lang3.*;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.*;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
@@ -819,11 +820,12 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 			return null;
 
 		String sName = null;
-		String sDisplayName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomMemberContact, "DisplayName");
-		if (StringUtils.isNotEmpty (sDisplayName))
+		String sNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomMemberContact, "NickName");	// 实际上，如果在手机端对群内联系人加了备注名，这里取到就会是自己设置的备注名
+		String sDisplayName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomMemberContact, "DisplayName");	// 群昵称
+		if (StringUtils.isNotEmpty (sDisplayName) && !StringUtils.equals (sNickName, sDisplayName))
 			sName = sDisplayName;
 		else
-			sName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomMemberContact, "NickName");
+			sName = sNickName;
 
 		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
 		{
@@ -1341,19 +1343,47 @@ net_maclife_wechat_http_BotApp.logger.fine ("* 是自己发出的消息，现在
 			{
 net_maclife_wechat_http_BotApp.logger.info
 				(
-					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息（自己在其他设备上发出的）\n"
-					+ " → " + (isToMe ? net_maclife_util_ANSIEscapeTool.DarkCyan ("自己") : (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.DarkCyan (sReplyToName) + "】")) + ":\n"
-					+ (nMsgType == WECHAT_MSG_TYPE__TEXT ? net_maclife_util_ANSIEscapeTool.LightGreen (sContent) : sContent)
+					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息（自己在其他设备上发出的）\n" +
+					" → " +
+					(
+						isToMe ?
+						net_maclife_util_ANSIEscapeTool.DarkCyan ("自己") :
+						(
+							StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ?
+							"" :
+							"【" + net_maclife_util_ANSIEscapeTool.DarkCyan (sReplyToName) + "】"
+						)
+					) + ":\n" +
+					(nMsgType == WECHAT_MSG_TYPE__TEXT ? net_maclife_util_ANSIEscapeTool.LightGreen (sContent) : sContent)
 				);
 			}
 			else
 			{
 net_maclife_wechat_http_BotApp.logger.info
 				(
-					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n"
-					+ (StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ? "" : "【" + net_maclife_util_ANSIEscapeTool.Green (sReplyToName) + "】") + (jsonReplyTo_RoomMember == null ? "" : " 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】")
-					+ " → " + (isToMe ? "" : " 【" + sToName + "】") + ":\n"
-					+ (nMsgType == WECHAT_MSG_TYPE__TEXT ? net_maclife_util_ANSIEscapeTool.LightGreen (sContent) : sContent)
+					"收到类型=" + nMsgType + ", ID=" + sMsgID + " 的消息\n" +
+					(
+						StringUtils.isEmpty (sReplyToName) || StringUtils.equalsIgnoreCase (sReplyToName, "null") ?
+						"" :
+						"【" + net_maclife_util_ANSIEscapeTool.Green (sReplyToName) + "】"
+					) +
+					(
+						jsonReplyTo_RoomMember == null ?
+						"" :
+						" 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】" +
+						(
+							!StringUtils.equalsIgnoreCase (sReplyToName_RoomMember, net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo_RoomMember, "NickName")) ?
+							"(【" + net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo_RoomMember, "NickName") + "】)":
+							""
+						)
+					) +
+					" → " +
+					(
+						isToMe ?
+						"" :
+						" 【" + sToName + "】"
+					) + ":\n" +
+					(nMsgType == WECHAT_MSG_TYPE__TEXT ? net_maclife_util_ANSIEscapeTool.LightGreen (sContent) : sContent)
 				);
 			}
 
@@ -1394,7 +1424,7 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Gray
 						bRoomMessageContentMentionedMeFirst = IsRoomTextMessageMentionedMeFirst (sContent, sMyDisplayNameInThisRoom);
 
 						if (bRoomMessageContentMentionedMeFirst)
-							sContent = StringUtils.substring (sContent, (StringUtils.isNotEmpty (sMyDisplayNameInThisRoom) ? StringUtils.length (sMyDisplayNameInThisRoom) : StringUtils.length (sMyEncryptedAccountInThisSession)) + 1);
+							sContent = StringUtils.substring (sContent, (StringUtils.isNotEmpty (sMyDisplayNameInThisRoom) ? StringUtils.length (sMyDisplayNameInThisRoom) : StringUtils.length (sMyEncryptedAccountInThisSession)) + 2);
 					}
 
 					OnTextMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, bRoomMessageContentMentionedMe, bRoomMessageContentMentionedMeFirst);

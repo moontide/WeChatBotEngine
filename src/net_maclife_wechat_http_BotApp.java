@@ -1,6 +1,5 @@
 import java.awt.image.*;
 import java.io.*;
-import java.math.*;
 import java.net.*;
 import java.nio.charset.*;
 import java.nio.file.*;
@@ -24,6 +23,7 @@ import org.apache.commons.configuration2.builder.fluent.*;
 import org.apache.commons.configuration2.ex.*;
 import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.tomcat.jdbc.pool.*;
 
 import com.fasterxml.jackson.core.*;
@@ -71,7 +71,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 	static
 	{
 		//try
-		{
+		//{
 			configParameters = new Parameters ();
 			BuilderParameters builderParameters = configParameters
 				.fileBased ()
@@ -88,11 +88,11 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 				logger.setLevel (Level.parse (sDefaultLogLevel));
 System.err.println ("默认日志级别改为 " + logger.getLevel ());
 			}
-		}
+		//}
 		//catch (ConfigurationException e)
-		{
+		//{
 		//	e.printStackTrace();
-		}
+		//}
 	}
 
 	public static Configuration GetConfig ()
@@ -555,16 +555,22 @@ logger.severe (net_maclife_util_ANSIEscapeTool.Red (GetXMLValue(eXML, "message")
 	public static void AppendContactInformation (StringBuilder sb, JsonNode jsonContact, boolean bIsRoomMember)
 	{
 		String sNickName = GetJSONText (jsonContact, "NickName");
+		String sDisplayName = GetJSONText (jsonContact, "DisplayName");
+		String sRemarkName = GetJSONText (jsonContact, "RemarkName");
 		if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+		{
 			sNickName = RestoreEmojiCharacters (sNickName);
+			sDisplayName = RestoreEmojiCharacters (sDisplayName);
+			sRemarkName = RestoreEmojiCharacters (sRemarkName);
+		}
+		//String sDisplayNameOrNickName = bIsRoomMember && StringUtils.isNotBlank (sDisplayName) ? sDisplayName : sNickName;
+		String sRemarkNameOrDisplayName = bIsRoomMember ? sDisplayName : sRemarkName;
+
 		sb.append (sNickName);
 		//sb.append ('/');
 		//sb.append (GetJSONText (jsonContact, "Alias"));
 		//sb.append ('/');
 		//sb.append (GetJSONText (jsonContact, "UserName"));
-		String sRemarkNameOrDisplayName = GetJSONText (jsonContact, bIsRoomMember ? "DisplayName" : "RemarkName");
-		if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
-			sRemarkNameOrDisplayName = RestoreEmojiCharacters (sRemarkNameOrDisplayName);
 
 		int nVerifyFlag = GetJSONInt (jsonContact, "VerifyFlag");
 		//sb.append ('/');
@@ -2228,6 +2234,7 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 
 	/**
 	 * 群聊文本消息中是否提到了某人。
+	 * 注意：微信手机端发送的 @某人 消息后面跟着的字符是 U+2005 -- mid space。
 	 * @param sRoomTextMessage 群文本消息
 	 * @param sNickName 某人的昵称
 	 * @param sDisplayName 某人的群昵称（显示名）
@@ -2237,9 +2244,9 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 	{
 		boolean bMentioned = false;
 		if (StringUtils.isNotEmpty (sDisplayName))
-			bMentioned = StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sDisplayName + " ");
+			bMentioned = StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sDisplayName + '\u2005') || StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sDisplayName + ' ');
 		if (! bMentioned)
-			bMentioned = StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sNickName + " ");
+			bMentioned = StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sNickName + '\u2005') || StringUtils.containsIgnoreCase (sRoomTextMessage, "@" + sNickName + ' ');
 		return bMentioned;
 	}
 	public static boolean IsRoomTextMessageMentionedThisOne (String sRoomTextMessage, JsonNode jsonContactInRoom)
@@ -2251,6 +2258,7 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 
 	/**
 	 * 群文本消息是否指名道姓的 @ 某人，即：群文本消息以 @某人 为开头。
+	 * 注意：微信手机端发送的 @某人 消息后面跟着的字符是 U+2005 -- mid space。
 	 * （很奇怪，微信消息包中并没有 “消息是否 @自己” 的信息）
 	 * @param sRoomTextMessage 群文本消息
 	 * @param sNickName 某人的昵称
@@ -2261,9 +2269,9 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 	{
 		boolean bMentionedFirst = false;
 		if (StringUtils.isNotEmpty (sDisplayName))
-			bMentionedFirst = StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sDisplayName + " ");
+			bMentionedFirst = StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sDisplayName + '\u2005') || StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sDisplayName + ' ');
 		if (! bMentionedFirst)
-			bMentionedFirst = StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sNickName + " ");
+			bMentionedFirst = StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sNickName + '\u2005') || StringUtils.startsWithIgnoreCase (sRoomTextMessage, "@" + sNickName + ' ');
 		return bMentionedFirst;
 	}
 	public static boolean IsRoomTextMessageMentionedThisOneFirst (String sRoomTextMessage, JsonNode jsonContactInRoom)
@@ -2599,7 +2607,7 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearch
 						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
 						engine.SendTextMessage (GetJSONText (jsonContact, "UserName"), sMessage);
 					}
-					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "SendFile", "SendImage", "SendAudio", "SendVideo"))	// 发送图片、视频、其他文件
+					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "SendFile", "SendImage", "SendAudio", "SendVideo", "FileTo", "ImageTo", "AudioTo", "VideoTo"))	// 发送图片、视频、其他文件
 					{
 						if (StringUtils.isEmpty (sParam))
 						{
