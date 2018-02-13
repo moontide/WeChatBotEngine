@@ -2,14 +2,19 @@ import java.io.*;
 import java.text.*;
 import java.util.*;
 
+import javax.naming.*;
+import javax.naming.directory.*;
+import javax.naming.ldap.*;
+
 import org.apache.commons.lang3.*;
-import org.apache.directory.api.ldap.model.cursor.*;
-import org.apache.directory.api.ldap.model.entry.*;
-import org.apache.directory.api.ldap.model.exception.*;
-import org.apache.directory.api.ldap.model.message.*;
-import org.apache.directory.api.ldap.model.message.controls.*;
-import org.apache.directory.api.ldap.model.name.*;
-import org.apache.directory.ldap.client.api.*;
+//import org.apache.directory.api.ldap.model.cursor.*;
+//import org.apache.directory.api.ldap.model.entry.*;
+//import org.apache.directory.api.ldap.model.exception.*;
+//import org.apache.directory.api.ldap.model.message.*;
+//import org.apache.directory.api.ldap.model.message.controls.*;
+//import org.apache.directory.api.ldap.model.name.*;
+//import org.apache.directory.ldap.client.api.*;
+//import org.apache.directory.api.ldap.model.message.*;
 
 import com.fasterxml.jackson.databind.*;
 
@@ -24,6 +29,10 @@ import com.fasterxml.jackson.databind.*;
  */
 public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_maclife_wechat_http_Bot
 {
+	public static final String DEFAULT_INITIAL_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
+	public static final String DEFAULT_SECURITY_AUTHENTICATION = "simple";	// 默认验证方式：明文。其他：”none", "simple", "strong"; DIGEST-MD5, GSSAPI
+	public static final String DEFAULT_REFERRAL = "follow";	// "follow" "ignore" "throw"
+
 	/**
 	 *  搜索用户、联系人、组、组织单元的搜索条件/搜索过滤器。
 	 *  其中，<code>{0}</code> 是“帐号状态={禁用/启用/全部}”的搜索条件， <code>{1}</code> 是“是否显示组对象”的搜索条件
@@ -36,8 +45,8 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 	 * 其中，{0} 是搜索的关键字，是 DEFAULT_SEARCH_FILTER_Person 的搜索条件，可以合并到关键字搜索条件中来，以达到比较符合人类思维的目的
 	 */
 	public static final String DEFAULT_SEARCH_FILTER_KeywordSearch = "(&(|(cn={0})(sAMAccountName={0})(displayName={0})(telephoneNumber={0})(otherTelephone={0})(mobile={0})(otherMobile={0})(mail={0})(otherMailbox={0})){1})";
-	public static final String DEFAULT_SEARCH_FILTER_EnabledUser = "(!(userAccountControl:1.2.840.113556.1.4.803:=2))";
-	public static final String DEFAULT_SEARCH_FILTER_DisabledUser = "(userAccountControl:1.2.840.113556.1.4.803:=2)";
+	public static final String SEARCH_FILTER_EnabledUser = "(!(userAccountControl:1.2.840.113556.1.4.803:=2))";
+	public static final String SEARCH_FILTER_DisabledUser = "(userAccountControl:1.2.840.113556.1.4.803:=2)";
 	public static final int USER_ACCOUNT_STATUS_MASK__ENABLED  = 0x01;
 	public static final int USER_ACCOUNT_STATUS_MASK__DISABLED = 0x02;
 
@@ -154,9 +163,9 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 		if ((nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__ENABLED) == USER_ACCOUNT_STATUS_MASK__ENABLED  &&  (nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__DISABLED) == USER_ACCOUNT_STATUS_MASK__DISABLED)
 			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, "");
 		else if ((nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__ENABLED) == USER_ACCOUNT_STATUS_MASK__ENABLED)
-			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, DEFAULT_SEARCH_FILTER_EnabledUser);
+			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, SEARCH_FILTER_EnabledUser);
 		else if ((nUserAccountStatusMask & USER_ACCOUNT_STATUS_MASK__DISABLED) == USER_ACCOUNT_STATUS_MASK__DISABLED)
-			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, DEFAULT_SEARCH_FILTER_DisabledUser);
+			sSearchFilter_Person = MessageFormat.format (DEFAULT_SEARCH_FILTER_Person, SEARCH_FILTER_DisabledUser);
 
 		StringBuilder sb = null;
 		int nBaseDN = 0;
@@ -202,42 +211,83 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 					sLDAPSearchFilter = DEFAULT_SEARCH_FILTER_KeywordSearch;
 				}
 
-				SortRequest ctrlSortControl = null;
+				//SortRequest ctrlSortControl = null;
+				//if (listSearchControlSortAttributeNames!=null && !listSearchControlSortAttributeNames.isEmpty ())
+				//{
+				//	ctrlSortControl = new SortRequestControlImpl ();
+				//	for (String sAttributeName : listSearchControlSortAttributeNames)
+				//	{
+				//		ctrlSortControl.addSortKey (new SortKey(sAttributeName));
+				//	}
+				//}
+				byte[] arrayPagingCookie = null;
+				List<Control> listRequestControls = new ArrayList<Control> ();
+				listRequestControls.add (new PagedResultsControl (nMaxFetchedEntries, Control.CRITICAL));
 				if (listSearchControlSortAttributeNames!=null && !listSearchControlSortAttributeNames.isEmpty ())
 				{
-					ctrlSortControl = new SortRequestControlImpl ();
-					for (String sAttributeName : listSearchControlSortAttributeNames)
+					for (int i=0; i<listSearchControlSortAttributeNames.size(); i++)
 					{
-						ctrlSortControl.addSortKey (new SortKey(sAttributeName));
+						// 第一个排序属性当成[必须遵守的/关键的]
+						listRequestControls.add (new SortControl (listSearchControlSortAttributeNames.get (i), i==0 ? Control.CRITICAL : Control.NONCRITICAL));
 					}
 				}
+				Control[] arrayRequestControls = listRequestControls.toArray (new Control[0]);
 
-				LdapConnection lc = null;
+				//LdapConnection lc = null;
+				//lc = new LdapNetworkConnection (sLDAPServerAddress, nLDAPServerPort, StringUtils.equalsAnyIgnoreCase (sLDAPScheme, "ldaps"/*, "tls", "ssl"*/));
+				////lc.bind (sLDAPBindUser, sLDAPBindUserPassword);
+				//BindRequest br = new BindRequestImpl ().setSimple (true).setName (sLDAPBindUser).setCredentials (sLDAPBindUserPassword);
+				//lc.bind (br);
+				Hashtable<String, Object> env = new Hashtable<String, Object> ();
+				LdapContext ctx = null;
+				String sInitialContextFactory = DEFAULT_INITIAL_CONTEXT_FACTORY;	// TODO 临时
+				String sSecurityAuthentication = DEFAULT_SECURITY_AUTHENTICATION;	// TODO 临时
+				String sReferral = DEFAULT_REFERRAL;	// TODO 临时
+				String sLDAPServerURL = sLDAPScheme + "://" + sLDAPServerAddress + ":" + nLDAPServerPort;
+				env.put (Context.INITIAL_CONTEXT_FACTORY, sInitialContextFactory);
+				env.put (Context.PROVIDER_URL, sLDAPServerURL);
+				env.put (Context.SECURITY_AUTHENTICATION, sSecurityAuthentication);
+				env.put (Context.REFERRAL, sReferral);
+				if (StringUtils.equalsAnyIgnoreCase (sLDAPScheme, "ldaps"/*, "tls", "ssl"*/))
+				{
+					env.put (Context.SECURITY_PROTOCOL, "tls");	// "ssl"
+				}
+				env.put (Context.SECURITY_PRINCIPAL, sLDAPBindUser);
+				env.put (Context.SECURITY_CREDENTIALS, sLDAPBindUserPassword);
+				ctx = new InitialLdapContext (env, null);	// 若无异常抛出，则认为验证通过;
 
-				lc = new LdapNetworkConnection (sLDAPServerAddress, nLDAPServerPort, StringUtils.equalsAnyIgnoreCase (sLDAPScheme, "ldaps"/*, "tls", "ssl"*/));
-				//lc.bind (sLDAPBindUser, sLDAPBindUserPassword);
-				BindRequest br = new BindRequestImpl ().setSimple (true).setName (sLDAPBindUser).setCredentials (sLDAPBindUserPassword);
-				lc.bind (br);
 				String sSearchFilter = MessageFormat.format (sLDAPSearchFilter, sKeyword, sSearchFilter_Person);
 net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索过滤器: " + sSearchFilter);
 
+				ctx.setRequestControls (arrayRequestControls);
 				for (String sBaseDN : listLDAPSearchBaseDNs)
 				{
 net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 					nBaseDN ++;
-					SearchRequest sr = new SearchRequestImpl ();
-					sr.setBase (new Dn(sBaseDN)).setFilter (sSearchFilter).setScope (SearchScope.SUBTREE).setSizeLimit (nMaxFetchedEntries).ignoreReferrals ();
-					if (ctrlSortControl != null)
-						sr.addControl (ctrlSortControl);
-					SearchCursor sc = lc.search (sr);
-					//EntryCursor ec = lc.search (sBaseDN, sSearchFilter, SearchScope.SUBTREE);
+					//SearchRequest sr = new SearchRequestImpl ();
+					//sr.setBase (new Dn(sBaseDN)).setFilter (sSearchFilter).setScope (SearchScope.SUBTREE).setSizeLimit (nMaxFetchedEntries).ignoreReferrals ();
+					//if (ctrlSortControl != null)
+					//	sr.addControl (ctrlSortControl);
+					//SearchCursor sc = lc.search (sr);
+					////EntryCursor ec = lc.search (sBaseDN, sSearchFilter, SearchScope.SUBTREE);
 					int nFetchedEntries = 0;
 					//while (ec.next ())
-					while (sc.next () && sc.isEntry ())
+
+					NamingEnumeration<SearchResult> enumSearchResults = null;
+					SearchControls sc = new SearchControls ();
+					sc.setSearchScope (SearchControls.SUBTREE_SCOPE);
+					//enumSearchResults = ctx.search (sBaseDN, sSearchFilter, null, sc);
+					enumSearchResults = ctx.search (sBaseDN, sSearchFilter, sc);
+					// 所有条目
+					////for (SearchResult entry : answer)
+					//while (sc.next () && sc.isEntry ())
+					while (enumSearchResults.hasMore ())
 					{
-						Entry e = null;
-						//e = ec.get ();
-						e = sc.getEntry ();
+						//Entry e = null;
+						////e = ec.get ();
+						//e = sc.getEntry ();
+						SearchResult sr = enumSearchResults.next ();
+						Attributes as = sr.getAttributes ();
 
 						//
 						// 按 Active Directory 的属性名，输出信息。这也是为什么本 Bot 不叫 LDAP 通信录的原因：属性名是按 AD 预先定义的属性名来获取的，schema aware
@@ -245,42 +295,42 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 						sb.append ("--------------------\n");	// 分割线
 
 						// 基本名称信息
-						ReadEntryValueToStringBuilder  (e, "name", "　　姓名", sb);
-						ReadEntryValueToStringBuilder  (e, "displayName", "　显示名", sb);
-						ReadEntryValueToStringBuilder  (e, "sn", "　　　姓", sb);
-						ReadEntryValueToStringBuilder  (e, "givenName", "　　　名", sb);
-						ReadEntryValueToStringBuilder  (e, "initials", "首字母缩写", sb);
+						ReadEntryValueToStringBuilder  (as, "name", "　　姓名", sb);
+						ReadEntryValueToStringBuilder  (as, "displayName", "　显示名", sb);
+						ReadEntryValueToStringBuilder  (as, "sn", "　　　姓", sb);
+						ReadEntryValueToStringBuilder  (as, "givenName", "　　　名", sb);
+						ReadEntryValueToStringBuilder  (as, "initials", "首字母缩写", sb);
 
 						// 种联系信息
-						ReadEntryValueToStringBuilder  (e, "mobile", "手机号码", sb);
-						ReadEntryValuesToStringBuilder (e, "otherMobile", "其他手机", sb);
-						ReadEntryValueToStringBuilder  (e, "telephoneNumber", "办公电话", sb);
-						ReadEntryValuesToStringBuilder (e, "otherTelephone", "其他办公", sb);
-						ReadEntryValueToStringBuilder  (e, "homePhone", "家庭电话", sb);
-						ReadEntryValuesToStringBuilder (e, "otherHomePhone", "其他家庭", sb);
-						ReadEntryValueToStringBuilder  (e, "ipPhone", "ＩＰ电话", sb);
-						ReadEntryValuesToStringBuilder (e, "otherIpPhone", "其他ＩＰ号码", sb);
-						ReadEntryValueToStringBuilder  (e, "facsimileTelephoneNumber", "传真电话", sb);
-						ReadEntryValuesToStringBuilder (e, "otherFacsimileTelephoneNumber", "其他传真", sb);
-						ReadEntryValueToStringBuilder  (e, "mail", "电子邮箱", sb);
-						ReadEntryValuesToStringBuilder (e, "otherMailbox", "其他邮箱", sb);
-						ReadEntryValueToStringBuilder  (e, "info", "电话备注", sb);
+						ReadEntryValueToStringBuilder  (as, "mobile", "手机号码", sb);
+						ReadEntryValuesToStringBuilder (as, "otherMobile", "其他手机", sb);
+						ReadEntryValueToStringBuilder  (as, "telephoneNumber", "办公电话", sb);
+						ReadEntryValuesToStringBuilder (as, "otherTelephone", "其他办公", sb);
+						ReadEntryValueToStringBuilder  (as, "homePhone", "家庭电话", sb);
+						ReadEntryValuesToStringBuilder (as, "otherHomePhone", "其他家庭", sb);
+						ReadEntryValueToStringBuilder  (as, "ipPhone", "ＩＰ电话", sb);
+						ReadEntryValuesToStringBuilder (as, "otherIpPhone", "其他ＩＰ号码", sb);
+						ReadEntryValueToStringBuilder  (as, "facsimileTelephoneNumber", "传真电话", sb);
+						ReadEntryValuesToStringBuilder (as, "otherFacsimileTelephoneNumber", "其他传真", sb);
+						ReadEntryValueToStringBuilder  (as, "mail", "电子邮箱", sb);
+						ReadEntryValuesToStringBuilder (as, "otherMailbox", "其他邮箱", sb);
+						ReadEntryValueToStringBuilder  (as, "info", "电话备注", sb);
 
 						// 再输出与公司相关的信息、职位信息
-						ReadEntryValueToStringBuilder  (e, "company", "　　公司", sb);	// 如果有很多分公司，在这里保存分公司名称
-						ReadEntryValueToStringBuilder  (e, "department", "　　部门", sb);	// 公司/分公司的部门名称
-						ReadEntryValueToStringBuilder  (e, "title", "　　职位", sb);	// 职位
-						ReadEntryValueToStringBuilder  (e, "manager", "　　上级", sb);	// 被谁管理，上级是谁
-						ReadEntryValueToStringBuilder  (e, "physicalDeliveryOfficeName", "办公位置", sb);
-						ReadEntryValueToStringBuilder  (e, "description", "　　说明", sb);
+						ReadEntryValueToStringBuilder  (as, "company", "　　公司", sb);	// 如果有很多分公司，在这里保存分公司名称
+						ReadEntryValueToStringBuilder  (as, "department", "　　部门", sb);	// 公司/分公司的部门名称
+						ReadEntryValueToStringBuilder  (as, "title", "　　职位", sb);	// 职位
+						ReadEntryValueToStringBuilder  (as, "manager", "　　上级", sb);	// 被谁管理，上级是谁
+						ReadEntryValueToStringBuilder  (as, "physicalDeliveryOfficeName", "办公位置", sb);
+						ReadEntryValueToStringBuilder  (as, "description", "　　说明", sb);
 
 						// 地址信息（省、市、邮政）
-						ReadEntryValueToStringBuilder  (e, "co", "　　国家", sb);
-						ReadEntryValueToStringBuilder  (e, "st", "省自治区", sb);
-						ReadEntryValueToStringBuilder  (e, "l", "城市／县", sb);
-						ReadEntryValueToStringBuilder  (e, "streetAddress", "　　街道", sb);
-						ReadEntryValueToStringBuilder  (e, "postOfficeBox", "邮政信箱", sb);
-						ReadEntryValueToStringBuilder  (e, "postalCode", "邮政编码", sb);
+						ReadEntryValueToStringBuilder  (as, "co", "　　国家", sb);
+						ReadEntryValueToStringBuilder  (as, "st", "省自治区", sb);
+						ReadEntryValueToStringBuilder  (as, "l", "城市／县", sb);
+						ReadEntryValueToStringBuilder  (as, "streetAddress", "　　街道", sb);
+						ReadEntryValueToStringBuilder  (as, "postOfficeBox", "邮政信箱", sb);
+						ReadEntryValueToStringBuilder  (as, "postalCode", "邮政编码", sb);
 
 						//if (! ec.isLast ())	// java.lang.UnsupportedOperationException: ERR_02014_UNSUPPORTED_OPERATION The method method org.apache.directory.ldap.client.api.EntryCursorImpl.isLast() is not supported
 						//{
@@ -295,10 +345,12 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 						}
 					}
 					//ec.close ();
-					sc.close ();
+					//sc.close ();
+					enumSearchResults.close ();
 				}
-				lc.unBind ();
-				lc.close ();
+				//lc.unBind ();
+				//lc.close ();
+				ctx.close ();
 			}
 			if (listAddressBookNames.size () > 1 || nBaseDN > 1)
 			{
@@ -319,39 +371,67 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 			}
 			if (hasMultipleEntry)
 			{
-				sb.append ("本地查询在某个目录下搜索到多条通信录，请修改搜索条件使结果精确匹配到 1 条");
+				sb.append ("本地查询在某个目录下搜索到多条通信录，请修改搜索关键字使结果精确匹配到 1 条");
 				sb.append ('\n');
 			}
 		}
-		catch (IOException | LdapException | CursorException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
 		return sb==null ? "" : sb.toString ();
 	}
 
-	public static void ReadEntryValueToStringBuilder (Entry e, String sAttributeName, String sAttributeDescription, StringBuilder sb) throws LdapInvalidAttributeValueException
+	//public static void ReadEntryValueToStringBuilder (Entry e, String sAttributeName, String sAttributeDescription, StringBuilder sb) throws LdapInvalidAttributeValueException
+	//{
+	//	Attribute a = e.get (sAttributeName);
+	//	if (a!=null && StringUtils.isNotEmpty (a.getString()))
+	//	{
+	//		sb.append (sAttributeDescription);
+	//		sb.append (": ");
+	//		sb.append (a.getString ());
+	//		sb.append ('\n');
+	//	}
+	//}
+	public static void ReadEntryValueToStringBuilder (Attributes as, String sAttributeName, String sAttributeDescription, StringBuilder sb) throws NamingException
 	{
-		Attribute a = e.get (sAttributeName);
-		if (a!=null && StringUtils.isNotEmpty (a.getString()))
+		Attribute a = as.get (sAttributeName);
+		if (a!=null && a.size () > 0)
 		{
 			sb.append (sAttributeDescription);
 			sb.append (": ");
-			sb.append (a.getString ());
+			sb.append (a.get (0));
 			sb.append ('\n');
 		}
 	}
 
-	public static void ReadEntryValuesToStringBuilder (Entry e, String sAttributeName, String sAttributeDescription, StringBuilder sb)
+	//public static void ReadEntryValuesToStringBuilder (Entry e, String sAttributeName, String sAttributeDescription, StringBuilder sb)
+	//{
+	//	Attribute a = e.get (sAttributeName);
+	//	if (a!=null && a.size ()>0)
+	//	{
+	//		sb.append (sAttributeDescription);
+	//		sb.append (": ");
+	//		for (Value<?> v : a)
+	//		{
+	//			sb.append (v.getString ());
+	//			sb.append (' ');
+	//		}
+	//		sb.append ('\n');
+	//	}
+	//}
+	public static void ReadEntryValuesToStringBuilder (Attributes as, String sAttributeName, String sAttributeDescription, StringBuilder sb) throws NamingException
 	{
-		Attribute a = e.get (sAttributeName);
+		Attribute a = as.get (sAttributeName);
 		if (a!=null && a.size ()>0)
 		{
 			sb.append (sAttributeDescription);
 			sb.append (": ");
-			for (Value<?> v : a)
+			NamingEnumeration<?> attributeValuesEnum = a.getAll();
+			while (attributeValuesEnum.hasMore ())
 			{
-				sb.append (v.getString ());
+				Object v = attributeValuesEnum.next ();
+				sb.append (v);
 				sb.append (' ');
 			}
 			sb.append ('\n');
