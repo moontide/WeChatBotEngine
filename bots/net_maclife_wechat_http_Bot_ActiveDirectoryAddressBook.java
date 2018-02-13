@@ -320,7 +320,7 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 						ReadEntryValueToStringBuilder  (as, "company", "　　公司", sb);	// 如果有很多分公司，在这里保存分公司名称
 						ReadEntryValueToStringBuilder  (as, "department", "　　部门", sb);	// 公司/分公司的部门名称
 						ReadEntryValueToStringBuilder  (as, "title", "　　职位", sb);	// 职位
-						ReadEntryValueToStringBuilder  (as, "manager", "　　上级", sb);	// 被谁管理，上级是谁
+						ReadEntryValueToStringBuilder  (as, "manager", "　　上级", true, sb);	// 被谁管理，上级是谁。manager 返回的是一个 DN 字符串，需要从中提取名字信息
 						ReadEntryValueToStringBuilder  (as, "physicalDeliveryOfficeName", "办公位置", sb);
 						ReadEntryValueToStringBuilder  (as, "description", "　　说明", sb);
 
@@ -393,18 +393,28 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 	//		sb.append ('\n');
 	//	}
 	//}
-	public static void ReadEntryValueToStringBuilder (Attributes as, String sAttributeName, String sAttributeDescription, StringBuilder sb) throws NamingException
+	public static void ReadEntryValueToStringBuilder (Attributes as, String sAttributeName, String sAttributeDescription, boolean isDN, StringBuilder sb) throws NamingException
 	{
 		Attribute a = as.get (sAttributeName);
 		if (a!=null && a.size () > 0)
 		{
+			Object v = a.get (0);
+			if (isDN)
+			{
+				LdapName ln = new LdapName (v.toString ());
+				Rdn lastRDN = ln.getRdn (ln.size () - 1);
+				v = lastRDN.getValue ();
+			}
 			sb.append (sAttributeDescription);
 			sb.append (": ");
-			sb.append (a.get (0));
+			sb.append (v);
 			sb.append ('\n');
 		}
 	}
-
+	public static void ReadEntryValueToStringBuilder (Attributes as, String sAttributeName, String sAttributeDescription, StringBuilder sb) throws NamingException
+	{
+		ReadEntryValueToStringBuilder (as, sAttributeName, sAttributeDescription, false, sb);
+	}
 	//public static void ReadEntryValuesToStringBuilder (Entry e, String sAttributeName, String sAttributeDescription, StringBuilder sb)
 	//{
 	//	Attribute a = e.get (sAttributeName);
