@@ -7,22 +7,28 @@
 # 关于 #
 
 WeChatBotEngine 是一个基于微信 Web 版通信协议的机器人引擎/机器人框架。
-WeChatBotEngine 自身处理了与微信后台的通信，开发者只需要在此基础上开发自己的 Bot 小程序，即可打造、扩展 WeChatBotEngine 的机器人功能。
+WeChatBotEngine 自身处理了与微信后台的通信，开发者只需要在此基础上开发自己的 Bot，即可打造、扩展 WeChatBotEngine 的机器人功能。
 
 ![文字二维码截图](https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/text-QR-code.png)
 
-## WeChatBotEngine 自带的几个机器人小程序 ##
-WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的，一些出于给开发者以参考的目的。这些机器人有：
+## WeChatBotEngine 自带的几个机器人 ##
+WeChatBotEngine 自带了几个机器人，一些出于演示的目的，一些出于给开发者以参考的目的。这些机器人有：
 
-### 自带的机器人小程序列表 ###
+### 自带的机器人列表 ###
+图例：
+* 📌 - 推荐
+* ✳ - 有点用处
 
 #### 公用机器人 ####
 <dl>
-	<dt><strong>SayHi</strong>: 问候/再见机器人</dt>
-	<dd>主要用于机器人上线、下线时发出通知。问候语、再见语可配置。</dd>
-	<dt><strong>Repeater</strong>: 复读机机器人</dt>
-	<dd>重复消息发送者的消息。该机器人仅用于演示、测试用途，正式环境不建议使用。</dd>
-	<dt><strong>Relay</strong>: 消息中继机器人 (仅转入，不转出)</dt>
+	<dt>📌 <a href='/doc/bot-WebSoup.md'><strong>WebSoup</strong>: 【抓网页(HTML/XML/JSON)】机器人</a></dt>
+	<dd>抓取 HTML/XML：根据 <a href='https://jsoup.org/apidocs/org/jsoup/select/Selector.html'>CSS 选择器</a>从下载下来的 HTML/XML 中提取数据并发送到微信；<br/>
+		抓取 JSON：执行 JavaScript 将 JSON 中的数据取出，并发送到微信。<br/>
+		WebSoup 机器人的自定义模板功能，更可以让 WebSoup 更方便用户使用。
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-web-soup-50%25.png'/>
+	</dd>
+	<dt>📌 <a href='/doc/bot-Relay.md'><strong>Relay</strong>: 【消息中继】机器人 (仅转入，不转出)</a></dt>
 	<dd>从 Socket 接收 JSON 格式的消息，根据消息中指定的接收人转发到微信群/微信号中。其他程序通过这种方式来把消息转发到微信。
 		利用这一点，可以把强大的外部应用程序的部分功能通过消息中继机器人将功能扩展，比如
 		<br/>
@@ -31,7 +37,7 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 				<br/>
 				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.notify-transmission-download-complete-50%25.png'/>
 			</li>
-			<li>利用 crontab，实现一个简单的整点报时的功能。（当然你也可以单独写一个 Bot 小程序来实现）</li>
+			<li>利用 crontab，实现一个简单的整点报时的功能。（当然你也可以单独写一个 Bot 来实现）</li>
 			<li>利用 crontab，定时获取一个网页的信息，将内容发到微信，达到定期推送消息的目的。
 				<br/>
 				<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-relay.message-push-qiushibaike.png'/>
@@ -44,68 +50,77 @@ WeChatBotEngine 自带了几个机器人小程序，一些出于演示的目的�
 			<li>…</li>
 		</ul>
 	</dd>
-	<dt><strong>ShellCommand</strong>: 系统命令 / 命令行 机器人</dt>
+	<dt>📌 <a href='/doc/bot-ShellCommand.md'><strong>ShellCommand</strong>: 【系统命令 / 命令行】机器人</a></dt>
 	<dd>从文本消息中接收命令输入，执行命令，返回命令输出结果。用法举例： <code>/cmd ls -l /bin/</code>
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-shell-command.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-shell-command-50%25.png'/>
 	</dd>
-	<dt><strong>MakeFriend</strong>: 加好友 机器人</dt>
-	<dd>在群聊中，用 <code>/addme</code> 命令向命令执行者发送加好友的请求。
+	<dt>📌 <a href='/doc/bot-ActiveDirectoryAddressBook.md'><strong>ActiveDirectoryAddressBook</strong>: 【公司通讯录/域通讯录】机器人</a></dt>
+	<dd>基于活动目录 (Active Directory) 的微信通讯录： 根据微信群名、好友昵称，查询与该名称关联的通讯录下的某个关键字（姓名、域帐号、邮箱、电话号码）的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>/gstxl 关键字</code> 将会查询与 <code>我的公司1</code> 所关联的几个通讯簿中 姓名或电话号码或邮箱地址为 <code>关键字</code> 的联系信息。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-make-friend-addme.png'/>
-		<br/>
-		当收到别人发来的请求加好友消息时，根据设定的“暗号”，自动通过好友请求。
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-active-directory-address-book-50%25.png'/>
 	</dd>
-	<dt><strong>Manager</strong>: 远程管理 机器人</dt>
-	<dd>将控制台里的一些管理命令用远程管理机器人再次实现，以达到不在电脑跟前时，对引擎进行管理的目的。目前只实现了 加载机器人(/LoadBot)、卸载机器人(/UnloadBot)、列出机器人(/ListBots, 所有人都可执行该命令)、查看设置日志级别(/LogLevel)、改群名(/Topic)、邀请人加入群聊(/Invite)、将群成员踢出(/Kick，注意： Kick 操作仅当你是群主时才会执行成功)。
-		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-manager.png'/>
-	</dd>
-	<dt><strong>SimpleAddressBook</strong>: 微信群简易通讯录机器人</dt>
+	<dt>✳ <strong>SimpleAddressBook</strong>: 微信群【简易通讯录】机器人</dt>
 	<dd>基于 MySQL 数据库的微信群简易通讯录：根据微信群名称查询该群名下的指定的某个名称的联系信息。用法举例： 在 <code>我的公司1</code> 群中发送 <code>/txl 张三</code> 将会查询 <code>我的公司1</code> 通讯录中 <code>张三</code> 的联系信息。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-simple-address-book-50%25.png'/>
 	</dd>
-	<dt><strong>BaiduImageSearch</strong>: 百度图片搜索（百度识图）机器人</dt>
+	<dt>✳ <strong>MakeFriend</strong>: 【加好友】机器人</dt>
+	<dd>在群聊中，用 <code>/addme</code> 命令向命令执行者发送加好友的请求。
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-make-friend-addme-50%25.png'/>
+		<br/>
+		当收到别人发来的请求加好友消息时，根据设定的“暗号”，自动通过好友请求。
+	</dd>
+	<dt>✳ <strong>Manager</strong>: 【远程管理】机器人</dt>
+	<dd>将控制台里的一些管理命令用远程管理机器人再次实现，以达到不在电脑跟前时，对引擎进行管理的目的。目前只实现了 加载机器人(/LoadBot)、卸载机器人(/UnloadBot)、列出机器人(/ListBots, 所有人都可执行该命令)、查看设置日志级别(/LogLevel)、改群名(/Topic)、邀请人加入群聊(/Invite)、将群成员踢出(/Kick，注意： Kick 操作仅当你是群主时才会执行成功)。
+		<br/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-manager-50%25.png'/>
+	</dd>
+	<dt>✳ <strong>BaiduImageSearch</strong>: 【百度图片搜索（百度识图）】机器人</dt>
 	<dd>当有人发了图片时，提交给百度图片搜索，给出百度图片搜索的结果、可能的图片来源。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-image-search-50%25.png'/>
 	</dd>
-	<dt><strong>BaiduVoice</strong>: 百度语音识别机器人</dt>
+	<dt>✳ <strong>BaiduVoice</strong>: 【百度语音识别】机器人</dt>
 	<dd>当有人发了音频、视频时，将音频、视频中的音频提交给百度语音识别（语音转文字），给出识别后的文字结果。 -- 因为在搜索聊天记录只能用文字来搜索，所以，非常实用。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-voice.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-voice-50%25.png'/>
 	</dd>
-	<dt><strong>BaiduTranslate</strong>: 百度翻译机器人</dt>
+	<dt>✳ <strong>BaiduTranslate</strong>: 【百度翻译】机器人</dt>
 	<dd>利用百度翻译接口，提供翻译功能。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-translate.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-baidu-translate-50%25.png'/>
 	</dd>
-	<dt><strong>GoogleImageSearch</strong>: Google 图片搜索机器人</dt>
+	<dt>✳ <strong>GoogleImageSearch</strong>: 【Google 图片搜索】机器人</dt>
 	<dd>当有人发了图片时，提交给 Google 图片搜索，给出 Google 图片搜索的结果、可能的图片来源。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-google-image-search.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-google-image-search-50%25.png'/>
 	</dd>
-	<dt><strong>Emoji</strong>: Emoji 表情字符机器人</dt>
+	<dt>✳ <strong>Emoji</strong>: 【Emoji 表情字符】机器人</dt>
 	<dd>根据关键字，从数据库中查询对应的 emoji 字符。<em>因为不同系统对 Unicode 支持的不同，个别 emoji 字符可能无法正常显示。</em>
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-emoji.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-emoji-50%25.png'/>
 	</dd>
-	<dt><strong>MissileLaunched</strong>: 用来恶搞地理位置信息的机器人</dt>
+	<dt><strong>MissileLaunched</strong>: 用来【恶搞地理位置信息】的机器人</dt>
 	<dd>当有人发了地理位置信息时，把经纬度报出来，然后加上一句随机可设置的“导弹准备就绪”的恶搞话语…… = =
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-missile-launched.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-missile-launched-50%25.png'/>
 	</dd>
+	<dt><strong>Repeater</strong>: 【复读机】机器人</dt>
+	<dd>重复消息发送者的消息。该机器人仅用于演示、测试用途，正式环境不建议使用。</dd>
+	<dt><strong>SayHi</strong>: 问候/再见机器人</dt>
+	<dd>主要用于机器人上线、下线时发出通知。问候语、再见语可配置。</dd>
 </dl>
 
 #### 工业/商业机器人 ####
 <dl>
-	<dt><strong>HCICloudCSR</strong>: 捷通华声 灵云智能客服 (CSR) 对话机器人</dt>
+	<dt><strong>HCICloudCSR</strong>: 捷通华声【灵云智能客服 (CSR)】对话机器人</dt>
 	<dd>利用灵云智能客服提供的 http 接口，从智能客服机器人获取一条答案，回复给用户。
 		<br/>
-		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-hcicloud-csr.png'/>
+		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-hcicloud-csr-50%25.png'/>
 	</dd>
-	<dt><strong>iConTek</strong>: iConTek 智能客服机器人</dt>
+	<dt><strong>iConTek</strong>: 【iConTek 智能客服】机器人</dt>
 	<dd>利用 iConTek 提供的 http 接口，从 iConTek 机器人引擎获取一条答案，回复给用户。
 		<br/>
 		<img src='https://github.com/moontide/WeChatBotEngine/raw/master/doc/img/bot-iConTek-50%25.png'/>
