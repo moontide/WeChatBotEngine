@@ -1415,16 +1415,19 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Gray
 					if (isReplyToRoom)
 					{
 						JsonNode jsonMeInThisRoom = SearchForSingleMemberContactInRoom (sReplyToAccount, sMyEncryptedAccountInThisSession);
-						String sMyDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.GetJSONText (jsonMeInThisRoom, "DisplayName");
+						String sMyNickNameOrDisplayNameInThisRoom = GetMemberContactNameInRoom (jsonMeInThisRoom);
 						if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
 						{
-							sMyDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sMyDisplayNameInThisRoom);
+							sMyNickNameOrDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sMyNickNameOrDisplayNameInThisRoom);
 						}
-						bRoomMessageContentMentionedMe = IsRoomTextMessageMentionedMe (sContent, sMyDisplayNameInThisRoom);
-						bRoomMessageContentMentionedMeFirst = IsRoomTextMessageMentionedMeFirst (sContent, sMyDisplayNameInThisRoom);
+						bRoomMessageContentMentionedMe = IsRoomTextMessageMentionedMe (sContent, sMyNickNameOrDisplayNameInThisRoom);
+						bRoomMessageContentMentionedMeFirst = IsRoomTextMessageMentionedMeFirst (sContent, sMyNickNameOrDisplayNameInThisRoom);
 
 						if (bRoomMessageContentMentionedMeFirst)
-							sContent = StringUtils.substring (sContent, (StringUtils.isNotEmpty (sMyDisplayNameInThisRoom) ? StringUtils.length (sMyDisplayNameInThisRoom) : StringUtils.length (sMyEncryptedAccountInThisSession)) + 2);
+						{
+							if (StringUtils.isNotEmpty (sMyNickNameOrDisplayNameInThisRoom))
+								sContent = StringUtils.substring (sContent, StringUtils.length (sMyNickNameOrDisplayNameInThisRoom) + 2);
+						}
 					}
 
 					OnTextMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, bRoomMessageContentMentionedMe, bRoomMessageContentMentionedMeFirst);
