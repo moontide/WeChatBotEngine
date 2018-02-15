@@ -554,15 +554,9 @@ logger.severe (net_maclife_util_ANSIEscapeTool.Red (GetXMLValue(eXML, "message")
 
 	public static void AppendContactInformation (StringBuilder sb, JsonNode jsonContact, boolean bIsRoomMember)
 	{
-		String sNickName = GetJSONText (jsonContact, "NickName");
-		String sDisplayName = GetJSONText (jsonContact, "DisplayName");
-		String sRemarkName = GetJSONText (jsonContact, "RemarkName");
-		if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
-		{
-			sNickName = RestoreEmojiCharacters (sNickName);
-			sDisplayName = RestoreEmojiCharacters (sDisplayName);
-			sRemarkName = RestoreEmojiCharacters (sRemarkName);
-		}
+		String sNickName = net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName");
+		String sDisplayName = net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "DisplayName");
+		String sRemarkName = net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "RemarkName");
 		//String sDisplayNameOrNickName = bIsRoomMember && StringUtils.isNotBlank (sDisplayName) ? sDisplayName : sNickName;
 		String sRemarkNameOrDisplayName = bIsRoomMember ? sDisplayName : sRemarkName;
 
@@ -955,10 +949,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 			JsonNode jsonContact = jsonContactList.get (i);
 			sb.append (String.format ("%" + String.valueOf (nCount).length () + "d", (i+1)));
 			sb.append ("  ");
-			if (ParseBoolean (GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
-				sb.append (RestoreEmojiCharacters (GetJSONText (jsonContact, "NickName")));
-			else
-				sb.append (GetJSONText (jsonContact, "NickName"));
+			sb.append (net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName"));
 
 			JsonNode jsonMemberList = jsonContact.get ("MemberList");
 			for (int j=0; j<jsonMemberList.size (); j++)

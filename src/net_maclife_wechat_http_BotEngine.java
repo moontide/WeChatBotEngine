@@ -761,27 +761,48 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		return net_maclife_wechat_http_BotApp.IsRoomTextMessageMentionedThisOneFirst (sRoomTextMessage, jsonContactInRoom);
 	}
 
-
-	public static String GetContactName (JsonNode jsonContact)
+	/**
+	 * 从 Contact 中获取联系人姓名。由于微信 HTTP 接口返回的联系人信息可能包含了 NickName、DisplayName、RemarkName 等信息。
+	 * @param jsonContact 普通联系人 或 群成员联系人
+	 * @param sPreferedAttributeName 优先选用的 JSON 属性名
+	 * @param sAlternativeAttributeName 可选的 JSON 属性名
+	 * @return
+	 * <ul>
+	 * 	<li>如果 jsonContact 为 null，则返回 null。</li>
+	 * 	<li>如果 sPreferedAttributeName 和 sAlternativeAttributeName 都为空或 null，也返回 null。</li>
+	 * 	<li>如果 sPreferedAttributeName 和 sAlternativeAttributeName 其中一个为空或 null，则返回另一个不为空或 null 的属性值。</li>
+	 * 	<li>如果 sPreferedAttributeName 和 sAlternativeAttributeName 都不为空或 null，则返回 sPreferedAttributeName 的属性值。</li>
+	 * </ul>
+	 */
+	public static String GetContactName (JsonNode jsonContact, String sPreferedAttributeName, String sAlternativeAttributeName)
 	{
-		if (jsonContact == null)
+		if (jsonContact == null || (StringUtils.isEmpty (sPreferedAttributeName) && StringUtils.isEmpty (sAlternativeAttributeName)))
 			return null;
 
 		String sName = null;
-		String sRemarkName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "RemarkName");
-		if (StringUtils.isNotEmpty (sRemarkName))
-			sName = sRemarkName;
+		String sPreferedName = null, sAlternativeName = null;
+		if (! StringUtils.isEmpty (sPreferedAttributeName))
+			sPreferedName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sPreferedAttributeName);
+		if (! StringUtils.isEmpty (sAlternativeAttributeName))
+			sAlternativeName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sAlternativeAttributeName);
+		if (StringUtils.isNotEmpty (sPreferedName))
+			sName = sPreferedName;
 		else
-			sName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "NickName");
+			sName = sAlternativeName;
 
 		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
-		{
 			sName = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sName);
-		}
 
 		return sName;
 	}
-
+	public static String GetContactName (JsonNode jsonContact, String sPreferedAttributeName)
+	{
+		return GetContactName (jsonContact, sPreferedAttributeName, null);
+	}
+	public static String GetContactName (JsonNode jsonContact)
+	{
+		return GetContactName (jsonContact, "RemarkName", "NickName");
+	}
 	/**
 	 * 从通信录中获取联系人（包括群）的名称。获取的联系人名称不建议用来 @ 回复（因为可能是你自己给出的备注名称 -- 别人可能不认识该名称）。
 	 * 注意： 对于群，有可能没被加在通讯录中，这时从通讯录中会取不到，因此，如果在通讯录中找不到，则需要针对群通讯录单独再取一次“群联系人”
@@ -816,22 +837,7 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 
 	public static String GetMemberContactNameInRoom (JsonNode jsonRoomMemberContact)
 	{
-		if (jsonRoomMemberContact == null)
-			return null;
-
-		String sName = null;
-		String sNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomMemberContact, "NickName");	// 实际上，如果在手机端对群内联系人加了备注名，这里取到就会是自己设置的备注名
-		String sDisplayName = net_maclife_wechat_http_BotApp.GetJSONText (jsonRoomMemberContact, "DisplayName");	// 群昵称
-		if (StringUtils.isNotEmpty (sDisplayName) && !StringUtils.equals (sNickName, sDisplayName))
-			sName = sDisplayName;
-		else
-			sName = sNickName;
-
-		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
-		{
-			sName = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sName);
-		}
-		return sName;
+		return GetContactName (jsonRoomMemberContact, "DisplayName", "NickName");
 	}
 
 	/**
@@ -1073,11 +1079,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 						jsonMe = jsonInit.get ("User");
 						sMyEncryptedAccountInThisSession = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "UserName");
 						sMyCustomAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "Alias");
-						sMyNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonMe, "NickName");
-						if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
-						{
-							sMyNickName = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sMyNickName);
-						}
+						sMyNickName = GetContactName (jsonMe, "NickName");
 						jsonSyncCheckKeys = jsonInit.get ("SyncKey");
 						SaveSessionCache (fSessionCache, jsonSyncCheckKeys);
 						SaveCookiesCache (fCookiesCache);
@@ -1254,9 +1256,7 @@ net_maclife_wechat_http_BotApp.logger.finest ("收到 " + nAddMsgCount + " 条�
 			//sContent = StringUtils.replaceEach (sContent, new String[]{"<br/>", "&lt;", "&gt;", "&amp;"}, new String[]{"\n", "<", ">", "&"});
 			//sContent = StringEscapeUtils.unescapeHtml4 (sContent);
 			if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.content.restore-emoji-character"), false))
-			{
 				sContent = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sContent);
-			}
 
 			String sFromAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "FromUserName");	// 发送人帐号，有可能是自己（在其他设备上发的）
 			JsonNode jsonFrom = SearchForSingleContact (sFromAccount);
@@ -1373,7 +1373,7 @@ net_maclife_wechat_http_BotApp.logger.info
 						" 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】" +
 						(
 							!StringUtils.equalsIgnoreCase (sReplyToName_RoomMember, net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo_RoomMember, "NickName")) ?
-							"(【" + net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo_RoomMember, "NickName") + "】)":
+							"(【" + GetContactName (jsonReplyTo_RoomMember, "NickName") + "】)":
 							""
 						)
 					) +
@@ -1416,10 +1416,6 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Gray
 					{
 						JsonNode jsonMeInThisRoom = SearchForSingleMemberContactInRoom (sReplyToAccount, sMyEncryptedAccountInThisSession);
 						String sMyNickNameOrDisplayNameInThisRoom = GetMemberContactNameInRoom (jsonMeInThisRoom);
-						if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
-						{
-							sMyNickNameOrDisplayNameInThisRoom = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sMyNickNameOrDisplayNameInThisRoom);
-						}
 						bRoomMessageContentMentionedMe = IsRoomTextMessageMentionedMe (sContent, sMyNickNameOrDisplayNameInThisRoom);
 						bRoomMessageContentMentionedMeFirst = IsRoomTextMessageMentionedMeFirst (sContent, sMyNickNameOrDisplayNameInThisRoom);
 
