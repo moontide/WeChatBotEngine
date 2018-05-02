@@ -764,40 +764,40 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 	/**
 	 * 从 Contact 中获取联系人姓名。由于微信 HTTP 接口返回的联系人信息可能包含了 NickName、DisplayName、RemarkName 等信息。
 	 * @param jsonContact 普通联系人 或 群成员联系人
-	 * @param sPreferedAttributeName 优先选用的 JSON 属性名
+	 * @param sPreferredAttributeName 优先选用的 JSON 属性名
 	 * @param sAlternativeAttributeName 可选的 JSON 属性名
 	 * @return
 	 * <ul>
 	 * 	<li>如果 jsonContact 为 null，则返回 null。</li>
-	 * 	<li>如果 sPreferedAttributeName 和 sAlternativeAttributeName 都为空或 null，也返回 null。</li>
-	 * 	<li>如果 sPreferedAttributeName 和 sAlternativeAttributeName 其中一个为空或 null，则返回另一个不为空或 null 的属性值。</li>
-	 * 	<li>如果 sPreferedAttributeName 和 sAlternativeAttributeName 都不为空或 null，则返回 sPreferedAttributeName 的属性值。</li>
+	 * 	<li>如果 sPreferredAttributeName 和 sAlternativeAttributeName 都为空或 null，也返回 null。</li>
+	 * 	<li>如果 sPreferredAttributeName 和 sAlternativeAttributeName 其中一个为空或 null，则返回另一个不为空或 null 的属性值。</li>
+	 * 	<li>如果 sPreferredAttributeName 和 sAlternativeAttributeName 都不为空或 null，则返回 sPreferredAttributeName 的属性值。</li>
 	 * </ul>
 	 */
-	public static String GetContactName (JsonNode jsonContact, String sPreferedAttributeName, String sAlternativeAttributeName)
+	public static String GetContactName (JsonNode jsonContact, String sPreferredAttributeName, String sAlternativeAttributeName)
 	{
-		if (jsonContact == null || (StringUtils.isEmpty (sPreferedAttributeName) && StringUtils.isEmpty (sAlternativeAttributeName)))
+		if (jsonContact == null || (StringUtils.isEmpty (sPreferredAttributeName) && StringUtils.isEmpty (sAlternativeAttributeName)))
 			return null;
 
 		String sName = null;
-		String sPreferedName = null, sAlternativeName = null;
-		if (! StringUtils.isEmpty (sPreferedAttributeName))
-			sPreferedName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sPreferedAttributeName);
+		String sPreferredName = null, sAlternativeName = null;
+		if (! StringUtils.isEmpty (sPreferredAttributeName))
+			sPreferredName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sPreferredAttributeName);
 		if (! StringUtils.isEmpty (sAlternativeAttributeName))
 			sAlternativeName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sAlternativeAttributeName);
-		if (StringUtils.isNotEmpty (sPreferedName))
-			sName = sPreferedName;
+		if (StringUtils.isNotEmpty (sPreferredName) || StringUtils.isEmpty (sAlternativeAttributeName))
+			sName = sPreferredName;
 		else
 			sName = sAlternativeName;
 
-		if (net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
+		if (StringUtils.isNotEmpty (sName) && net_maclife_wechat_http_BotApp.ParseBoolean (net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.message.name.restore-emoji-character"), false))
 			sName = net_maclife_wechat_http_BotApp.RestoreEmojiCharacters (sName);
 
 		return sName;
 	}
-	public static String GetContactName (JsonNode jsonContact, String sPreferedAttributeName)
+	public static String GetContactName (JsonNode jsonContact, String sPreferredAttributeName)
 	{
-		return GetContactName (jsonContact, sPreferedAttributeName, null);
+		return GetContactName (jsonContact, sPreferredAttributeName, null);
 	}
 	public static String GetContactName (JsonNode jsonContact)
 	{

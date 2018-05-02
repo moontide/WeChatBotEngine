@@ -1360,6 +1360,12 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 	public static JsonNode WebWeChatSendMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, int nMessageType, Object oMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.fine ("发消息 WebWeChatSendMessage …");
+		if (ParseBoolean (GetConfig().getString ("app.message.no-sending", "0")))
+		{
+logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("已配置为不发送消息，不执行发送操作"));
+			return null;
+		}
+
 		String sURL = null;
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
@@ -2953,22 +2959,28 @@ net_maclife_wechat_http_BotApp.logger.config ("app.jdbc.url = " + sPassword);
 		if (StringUtils.isEmpty (sBoolean))
 			return r;
 
-		if (StringUtils.equalsIgnoreCase (sBoolean, ("true"))
-			|| StringUtils.equalsIgnoreCase (sBoolean, ("yes"))
+		if (StringUtils.equalsIgnoreCase (sBoolean, ("yes"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("true"))
 			|| StringUtils.equalsIgnoreCase (sBoolean, ("on"))
-			|| StringUtils.equalsIgnoreCase (sBoolean, ("t"))
 			|| StringUtils.equalsIgnoreCase (sBoolean, ("y"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("t"))
 			|| StringUtils.equalsIgnoreCase (sBoolean, ("1"))
 			|| StringUtils.equalsIgnoreCase (sBoolean, ("是"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("真"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("开"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("对"))
 			)
 			r = true;
-		else if (StringUtils.equalsIgnoreCase (sBoolean, ("false"))
-			|| StringUtils.equalsIgnoreCase (sBoolean, ("no"))
+		else if (StringUtils.equalsIgnoreCase (sBoolean, ("no"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("false"))
 			|| StringUtils.equalsIgnoreCase (sBoolean, ("off"))
-			|| StringUtils.equalsIgnoreCase (sBoolean, ("f"))
 			|| StringUtils.equalsIgnoreCase (sBoolean, ("n"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("f"))
 			|| StringUtils.equalsIgnoreCase (sBoolean, ("0"))
-			|| StringUtils.equalsIgnoreCase (sBoolean, ("否"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("否")) || StringUtils.equalsIgnoreCase (sBoolean, ("不"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("假"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("关"))
+			|| StringUtils.equalsIgnoreCase (sBoolean, ("错"))
 			)
 			r = false;
 
