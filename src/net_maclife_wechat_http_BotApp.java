@@ -645,7 +645,7 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 		StringBuilder sb = new StringBuilder ();
 		sb.append ("\n");
 		sb.append ("昵称: ");
-		sb.append (GetJSONText (jsonUser, "NickName"));
+		sb.append (net_maclife_wechat_http_BotEngine.GetContactName (jsonUser, "NickName"));
 		sb.append ("\n");
 		sb.append ("本次会话的加密帐号: ");
 		sb.append (GetJSONText (jsonUser, "UserName"));
@@ -1025,7 +1025,7 @@ logger.severe ("联系人数量超过 0xFFFFFF" + 0xFFFFFF + " 个，这样可�
 
 			if (StringUtils.isNotEmpty (sRemarkName))
 			{
-				String sTemp = GetJSONText (node, "RemarkName");
+				String sTemp = net_maclife_wechat_http_BotEngine.GetContactName (node, "RemarkName");
 				if (StringUtils.equalsIgnoreCase (sRemarkName, sTemp))
 				{
 					nMatchWeight |= 0x04;
@@ -1034,7 +1034,7 @@ logger.severe ("联系人数量超过 0xFFFFFF" + 0xFFFFFF + " 个，这样可�
 
 			if (StringUtils.isNotEmpty (sDisplayName))
 			{
-				String sTemp = GetJSONText (node, "DisplayName");
+				String sTemp = net_maclife_wechat_http_BotEngine.GetContactName (node, "DisplayName");
 				if (StringUtils.equalsIgnoreCase (sDisplayName, sTemp))
 				{
 					nMatchWeight |= 0x02;
@@ -1043,7 +1043,7 @@ logger.severe ("联系人数量超过 0xFFFFFF" + 0xFFFFFF + " 个，这样可�
 
 			if (StringUtils.isNotEmpty (sNickName))
 			{
-				String sTemp = GetJSONText (node, "NickName");
+				String sTemp = net_maclife_wechat_http_BotEngine.GetContactName (node, "NickName");
 				if (StringUtils.equalsIgnoreCase (sNickName, sTemp))
 				{
 					nMatchWeight |= 0x01;
@@ -2248,8 +2248,8 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 	}
 	public static boolean IsRoomTextMessageMentionedThisOne (String sRoomTextMessage, JsonNode jsonContactInRoom)
 	{
-		String sNickName = GetJSONText (jsonContactInRoom, "NickName");
-		String sDisplayName = GetJSONText (jsonContactInRoom, "DisplayName");
+		String sNickName = net_maclife_wechat_http_BotEngine.GetContactName (jsonContactInRoom, "NickName");
+		String sDisplayName = net_maclife_wechat_http_BotEngine.GetContactName (jsonContactInRoom, "DisplayName");
 		return IsRoomTextMessageMentionedThisOne (sRoomTextMessage, sNickName, sDisplayName);
 	}
 
@@ -2273,8 +2273,8 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Red (sAPIName + " 失败，代�
 	}
 	public static boolean IsRoomTextMessageMentionedThisOneFirst (String sRoomTextMessage, JsonNode jsonContactInRoom)
 	{
-		String sNickName = GetJSONText (jsonContactInRoom, "NickName");
-		String sDisplayName = GetJSONText (jsonContactInRoom, "DisplayName");
+		String sNickName = net_maclife_wechat_http_BotEngine.GetContactName (jsonContactInRoom, "NickName");
+		String sDisplayName = net_maclife_wechat_http_BotEngine.GetContactName (jsonContactInRoom, "DisplayName");
 		return IsRoomTextMessageMentionedThisOneFirst (sRoomTextMessage, sNickName, sDisplayName);
 	}
 

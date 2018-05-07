@@ -782,9 +782,9 @@ net_maclife_wechat_http_BotApp.logger.warning (net_maclife_util_ANSIEscapeTool.Y
 		String sName = null;
 		String sPreferredName = null, sAlternativeName = null;
 		if (! StringUtils.isEmpty (sPreferredAttributeName))
-			sPreferredName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sPreferredAttributeName);
+			sPreferredName = StringEscapeUtils.unescapeXml (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sPreferredAttributeName));
 		if (! StringUtils.isEmpty (sAlternativeAttributeName))
-			sAlternativeName = net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sAlternativeAttributeName);
+			sAlternativeName = StringEscapeUtils.unescapeXml (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, sAlternativeAttributeName));
 		if (StringUtils.isNotEmpty (sPreferredName) || StringUtils.isEmpty (sAlternativeAttributeName))
 			sName = sPreferredName;
 		else
@@ -1372,7 +1372,7 @@ net_maclife_wechat_http_BotApp.logger.info
 						"" :
 						" 群成员 【" + net_maclife_util_ANSIEscapeTool.Green (StringUtils.trimToEmpty (sReplyToName_RoomMember)) + "】" +
 						(
-							!StringUtils.equalsIgnoreCase (sReplyToName_RoomMember, net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo_RoomMember, "NickName")) ?
+							!StringUtils.equalsIgnoreCase (sReplyToName_RoomMember, GetContactName (jsonReplyTo_RoomMember, "NickName")) ?
 							"(【" + GetContactName (jsonReplyTo_RoomMember, "NickName") + "】)":
 							""
 						)
@@ -1687,7 +1687,7 @@ net_maclife_wechat_http_BotApp.logger.finest ("收到新的同步检测 Key");
 		try
 		{
 			JsonNode jsonRecommenedInfo = jsonNode.get ("RecommendInfo");
-			String 昵称 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "NickName");
+			String 昵称 = GetContactName (jsonRecommenedInfo, "NickName");
 			String 微信号 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Alias");
 			int n性别 = net_maclife_wechat_http_BotApp.GetJSONInt (jsonRecommenedInfo, "Sex");
 			String 省 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Province");
@@ -1876,13 +1876,13 @@ net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
 		{
 			// 别人请求加好友时的消息，也携带了名片信息
 			JsonNode jsonRecommenedInfo = jsonNode.get ("RecommendInfo");
-			String 昵称 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "NickName");
+			String 昵称 = GetContactName (jsonRecommenedInfo, "NickName");
 			String 微信号 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Alias");
 			int n性别 = net_maclife_wechat_http_BotApp.GetJSONInt (jsonRecommenedInfo, "Sex");
-			String s个性签名 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Signature");
+			String s个性签名 = StringEscapeUtils.unescapeXml (net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Signature"));
 			String s省 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Province");
 			String s市 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "City");
-			String 附加内容 = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Content");
+			String 附加内容 = StringEscapeUtils.unescapeXml (net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Content"));
 			int nScene = net_maclife_wechat_http_BotApp.GetJSONInt (jsonRecommenedInfo, "Scene");	// 根据什么来请求加好友的？
 			String sMakeFriendTicket = net_maclife_wechat_http_BotApp.GetJSONText (jsonRecommenedInfo, "Ticket");
 			int nOpCode = net_maclife_wechat_http_BotApp.GetJSONInt (jsonRecommenedInfo, "OpCode");	// 固定为 2 ？
@@ -2194,8 +2194,8 @@ net_maclife_wechat_http_BotApp.logger.info ("联系人变更: " + GetContactName
 		boolean bEnabled = false;
 		String sTriggerMode = null;
 		String sAliasAccount = net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo, "Alias");
-		String sRemarkName = net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo, "RemarkName");
-		String sNickName = net_maclife_wechat_http_BotApp.GetJSONText (jsonReplyTo, "NickName");
+		String sRemarkName = GetContactName (jsonReplyTo, "RemarkName");
+		String sNickName = GetContactName (jsonReplyTo, "NickName");
 		if (isReplyToRoom)
 		{
 			sTriggerMode = net_maclife_wechat_http_BotApp.GetConfig ().getString ("engine.trigger.mode.group-chat.nick-name." + sNickName);
