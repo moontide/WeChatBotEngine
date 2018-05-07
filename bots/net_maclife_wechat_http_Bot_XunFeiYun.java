@@ -107,9 +107,7 @@ public class net_maclife_wechat_http_Bot_XunFeiYun extends net_maclife_wechat_ht
 	{
 		if (! fMedia.exists ())
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-/*
 
-*/
 		try
 		{
 			fMedia = ConvertAudioToWavFormat (fMedia);
@@ -323,7 +321,8 @@ net_maclife_wechat_http_BotApp.logger.severe ("视频提取音频失败");
 		mapRequestHeaders.put ("X-Appid", sXunFeiYunAppID);
 		String sCurrentUnixTimestamp = String.valueOf (System.currentTimeMillis () / 1000);
 		mapRequestHeaders.put ("X-CurTime", sCurrentUnixTimestamp);
-		String sXfyunParam_Base64 = Base64.encodeBase64String (("{\"scene\":\"main\",\"userid\":\"" + StringUtils.strip (sReplyToAccount_Person, "@") + "\"}").getBytes (net_maclife_wechat_http_BotApp.utf8));
+		String sUserID = StringUtils.strip (sReplyToAccount_Person, "@");
+		String sXfyunParam_Base64 = Base64.encodeBase64String (("{\"scene\":\"main\",\"userid\":\"" + sUserID + "\"}").getBytes (net_maclife_wechat_http_BotApp.utf8));
 		mapRequestHeaders.put ("X-Param", sXfyunParam_Base64);
 		String sValidationHashString = DigestUtils.md5Hex (sXunFeiYunAppKey + sCurrentUnixTimestamp + sXfyunParam_Base64 + sHTTPBody_Base64);
 		mapRequestHeaders.put ("X-CheckSum", sValidationHashString);
@@ -331,6 +330,7 @@ net_maclife_wechat_http_BotApp.logger.finest ("讯飞云 文本语义理解");
 net_maclife_wechat_http_BotApp.logger.finest ("AppID: " + sXunFeiYunAppID);
 net_maclife_wechat_http_BotApp.logger.finest ("AppKey: " + sXunFeiYunAppKey);
 net_maclife_wechat_http_BotApp.logger.finest ("Tstmp: " + sCurrentUnixTimestamp);
+net_maclife_wechat_http_BotApp.logger.finest ("UserID: " + sUserID);
 net_maclife_wechat_http_BotApp.logger.finest ("Param: " + sXfyunParam_Base64);
 net_maclife_wechat_http_BotApp.logger.finest ("HTBdy: " + sHTTPBody_Base64);
 net_maclife_wechat_http_BotApp.logger.finest ("Hash : " + sValidationHashString);
@@ -364,7 +364,8 @@ net_maclife_wechat_http_BotApp.logger.info ("	" + sResponseBodyContent);
 		mapRequestHeaders.put ("X-Appid", sXunFeiYunAppID);
 		String sCurrentUnixTimestamp = String.valueOf (System.currentTimeMillis () / 1000);
 		mapRequestHeaders.put ("X-CurTime", sCurrentUnixTimestamp);
-		String sXfyunParam_Base64 = Base64.encodeBase64String (("{\"auf\":\"8k\",\"aue\":\"raw\",\"scene\":\"main\",\"userid\":\"" + StringUtils.strip (sReplyToAccount_Person, "@") + "\"}").getBytes (net_maclife_wechat_http_BotApp.utf8));
+		String sUserID = StringUtils.strip (sReplyToAccount_Person, "@");
+		String sXfyunParam_Base64 = Base64.encodeBase64String (("{\"auf\":\"8k\",\"aue\":\"raw\",\"scene\":\"main\",\"userid\":\"" + sUserID + "\"}").getBytes (net_maclife_wechat_http_BotApp.utf8));
 		mapRequestHeaders.put ("X-Param", sXfyunParam_Base64);
 		String sValidationHashString = DigestUtils.md5Hex (sXunFeiYunAppKey + sCurrentUnixTimestamp + sXfyunParam_Base64 + sHTTPBody_Base64);
 		mapRequestHeaders.put ("X-CheckSum", sValidationHashString);
@@ -372,6 +373,7 @@ net_maclife_wechat_http_BotApp.logger.finest ("讯飞云 语音语义理解");
 net_maclife_wechat_http_BotApp.logger.finest ("AppID: " + sXunFeiYunAppID);
 net_maclife_wechat_http_BotApp.logger.finest ("AppKey: " + sXunFeiYunAppKey);
 net_maclife_wechat_http_BotApp.logger.finest ("Tstmp: " + sCurrentUnixTimestamp);
+net_maclife_wechat_http_BotApp.logger.finest ("UserID: " + sUserID);
 net_maclife_wechat_http_BotApp.logger.finest ("Param: " + sXfyunParam_Base64);
 //net_maclife_wechat_http_BotApp.logger.finest ("HTBdy: " + sHTTPBody_Base64);
 net_maclife_wechat_http_BotApp.logger.finest ("Hash : " + sValidationHashString);
@@ -383,6 +385,7 @@ net_maclife_wechat_http_BotApp.logger.info ("	" + sResponseBodyContent);
 
 		return ProcessSemanticResult (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, sReplyToAccount_Person, sReplyToName_Person, jsonResult);
 	}
+
 	int ProcessSemanticResult
 		(
 			String sReplyToAccount, String sReplyToName,
@@ -470,6 +473,7 @@ net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + sRC + " " + sDe
 		}
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
+
 	public static void main (String[] args)
 	{
 		if (args.length < 1)

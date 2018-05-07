@@ -1,4 +1,3 @@
-import java.io.*;
 import java.text.*;
 import java.util.*;
 
@@ -7,14 +6,6 @@ import javax.naming.directory.*;
 import javax.naming.ldap.*;
 
 import org.apache.commons.lang3.*;
-//import org.apache.directory.api.ldap.model.cursor.*;
-//import org.apache.directory.api.ldap.model.entry.*;
-//import org.apache.directory.api.ldap.model.exception.*;
-//import org.apache.directory.api.ldap.model.message.*;
-//import org.apache.directory.api.ldap.model.message.controls.*;
-//import org.apache.directory.api.ldap.model.name.*;
-//import org.apache.directory.ldap.client.api.*;
-//import org.apache.directory.api.ldap.model.message.*;
 
 import com.fasterxml.jackson.databind.*;
 
@@ -23,7 +14,7 @@ import com.fasterxml.jackson.databind.*;
 	<br/>
 	通常，在公司内部群中使用 adab 比较合适。
 	<br/>
-	暂时，只支持连一个 Active Directory 服务器…
+	单个群/单个人 支持关联多个通讯簿，每个通讯簿仅支持连单 Active Directory 服务器，但支持查询多个 BaseDN 下的数据。
  * @author liuyan
  *
  */
@@ -98,7 +89,6 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 			if (! isCommandValid)
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
-			// 现在开始查询 LDAP
 			//if (! isReplyToRoom)
 			//{
 			//	SendTextMessage (sReplyToAccount, sReplyToName, sReplyToAccount_RoomMember, sReplyToName_RoomMember, GetName() + " 需要在群聊中执行。如果你确实是在群聊中执行的，请务必设置好群名称，并告知管理员（我）。");
@@ -119,6 +109,7 @@ public class net_maclife_wechat_http_Bot_ActiveDirectoryAddressBook extends net_
 				return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 			}
 
+			// 现在开始查询 LDAP
 			try
 			{
 				String sResult = Query (sCommandParametersInputed, sReplyToName, USER_ACCOUNT_STATUS_MASK__ENABLED /* | USER_ACCOUNT_STATUS_MASK__DISABLED */);
@@ -301,7 +292,7 @@ net_maclife_wechat_http_BotApp.logger.finer ("LDAP 搜索 Base DN: " + sBaseDN);
 						ReadEntryValueToStringBuilder  (as, "givenName", "　　　名", sb);
 						ReadEntryValueToStringBuilder  (as, "initials", "首字母缩写", sb);
 
-						// 种联系信息
+						// 几种联系信息
 						ReadEntryValueToStringBuilder  (as, "mobile", "手机号码", sb);
 						ReadEntryValuesToStringBuilder (as, "otherMobile", "其他手机", sb);
 						ReadEntryValueToStringBuilder  (as, "telephoneNumber", "办公电话", sb);
