@@ -41,7 +41,6 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	//
 	public static final int WECHAT_MSG_TYPE__TEXT                  = 1;
 	public static final int WECHAT_MSG_TYPE__IMAGE                 = 3;
-	public static final int WECHAT_MSG_TYPE__APP                   = 6;	// 上面的参考中没有的
 	public static final int WECHAT_MSG_TYPE__VOICE                 = 34;
 	public static final int WECHAT_MSG_TYPE__REQUEST_TO_MAKE_FRIEND = 37;
 	//public static final int WECHAT_MSG_TYPE__POSSIBLE_FRIEND_MSG   = 40;
@@ -49,7 +48,14 @@ class net_maclife_wechat_http_BotEngine implements Runnable
 	public static final int WECHAT_MSG_TYPE__VIDEO_MSG             = 43;
 	public static final int WECHAT_MSG_TYPE__EMOTION               = 47;
 	//public static final int WECHAT_MSG_TYPE__GPS_POSITION          = 48;
-	public static final int WECHAT_MSG_TYPE__URL                   = 49;
+	public static final int WECHAT_MSG_TYPE__APP                   = 49;
+	public static final int WECHAT_APPMSGTYPE__MUSIC               = 3;
+	public static final int WECHAT_APPMSGTYPE__URL                 = 5;
+	public static final int WECHAT_APPMSGTYPE__FILE                = 6;
+	public static final int WECHAT_APPMSGTYPE__WEIBO               = 7;
+	public static final int WECHAT_APPMSGTYPE__EmotionWithStaticPreview  = 8;	// 这种图，在微信手机端上看到的是一幅静态图，然后有个朝下的箭头在图上面，点击图片，就会有圆形的下载进度条，下载完后，开始播放动态图
+	public static final int WECHAT_APPMSGTYPE__GiftMoney               = 2001;
+
 	//public static final int WECHAT_MSG_TYPE__VOIP_MSG              = 50;
 	public static final int WECHAT_MSG_TYPE__OPERATION             = 51;	// 上面的参考文档认为是初始化消息，我这里看起来更像是一个“操作”消息
 	//public static final int WECHAT_MSG_TYPE__VOIP_NOTIFY           = 52;
@@ -1432,8 +1438,6 @@ net_maclife_wechat_http_BotApp.logger.fine (net_maclife_util_ANSIEscapeTool.Gray
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetImage (sSessionKey, sMsgID);
 					OnImageMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, fMedia);
 					break;
-				case WECHAT_MSG_TYPE__APP:
-					break;
 				case WECHAT_MSG_TYPE__VOICE:
 					fMedia = net_maclife_wechat_http_BotApp.WebWeChatGetVoice (sSessionKey, sMsgID);
 					OnVoiceMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, fMedia);
@@ -1459,8 +1463,8 @@ net_maclife_wechat_http_BotApp.logger.fine ("消息内容没有图片信息。�
 					break;
 				//case WECHAT_MSG_TYPE__GPS_POSITION:
 				//	break;
-				case WECHAT_MSG_TYPE__URL:
-					OnURLMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent);
+				case WECHAT_MSG_TYPE__APP:
+					OnApplicationMessageReceived (jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent);
 					break;
 				//case WECHAT_MSG_TYPE__VOIP_MSG:
 				//	break;
@@ -1760,7 +1764,7 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 		}
 	}
 
-	void OnURLMessageReceived
+	void OnApplicationMessageReceived
 		(
 			JsonNode jsonNode,
 			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
@@ -1773,22 +1777,29 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 	{
 		try
 		{
+			String sMessageID = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "MsgId");
 			JsonNode jsonAppInfo = jsonNode.get ("AppInfo");
 			int 应用程序消息类型 = net_maclife_wechat_http_BotApp.GetJSONInt (jsonNode, "AppMsgType");
 			String s应用程序消息类型名称 = String.valueOf (应用程序消息类型);
 			switch (应用程序消息类型)
 			{
-				case 3:
+				case WECHAT_APPMSGTYPE__MUSIC:
 					s应用程序消息类型名称 = "音乐";
 					break;
-				case 5:
+				case WECHAT_APPMSGTYPE__URL:
 					s应用程序消息类型名称 = "网址";
 					break;
-				case 6:
+				case WECHAT_APPMSGTYPE__FILE:
 					s应用程序消息类型名称 = "文件";
 					break;
-				case 7:
+				case WECHAT_APPMSGTYPE__WEIBO:
 					s应用程序消息类型名称 = "微博";
+					break;
+				case WECHAT_APPMSGTYPE__EmotionWithStaticPreview:
+					s应用程序消息类型名称 = "带静态预览图的动态表情图";
+					break;
+				case WECHAT_APPMSGTYPE__GiftMoney:
+					s应用程序消息类型名称 = "红包？";
 					break;
 				default:
 					//s应用程序消息类型名称 = String.valueOf (应用程序消息类型);
@@ -1797,13 +1808,15 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 			String 应用程序ID = net_maclife_wechat_http_BotApp.GetJSONText (jsonAppInfo, "AppID");
 			String sURL = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "Url");
 			String sFileName = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "FileName");
+			long nFileSize = net_maclife_wechat_http_BotApp.GetJSONLong (jsonNode, "FileSize");	// 实际是字符串类型
+			String sMediaID = net_maclife_wechat_http_BotApp.GetJSONText (jsonNode, "MediaId");
 
 			nu.xom.Document doc = net_maclife_wechat_http_BotApp.xomBuilder.build (sContent, null);
-			Element msg = doc.getRootElement ();
-			Element appinfo = msg.getFirstChildElement ("appinfo");
+			Element xmlMsg = doc.getRootElement ();
+			Element appinfo = xmlMsg.getFirstChildElement ("appinfo");
 			String 应用程序名 = net_maclife_wechat_http_BotApp.GetXMLValue (appinfo, "appname");
 
-			Element appmsg = msg.getFirstChildElement ("appmsg");
+			Element appmsg = xmlMsg.getFirstChildElement ("appmsg");
 			String title = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "title");	// 据观察，其数值等于 等于 sFileName
 			String description = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "des");
 			String url_from_xml = net_maclife_wechat_http_BotApp.GetXMLValue (appmsg, "url");	// 据观察，其数值等于 等于 sURL
@@ -1852,10 +1865,16 @@ net_maclife_wechat_http_BotApp.logger.info ("名片消息: \n" + sb);
 				sb.append (应用程序ID);
 				sb.append ("\n");
 			}
-net_maclife_wechat_http_BotApp.logger.info ("URL 链接信息：\n" + sb);
-			DispatchEvent ("OnURLMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, msg, jsonNode);
+net_maclife_wechat_http_BotApp.logger.info ("应用程序信息：\n" + sb);
+			File f = null;
+			if (应用程序消息类型 == WECHAT_APPMSGTYPE__FILE)
+			{
+				// 将文件下载下来
+				f = net_maclife_wechat_http_BotApp.WebWeChatGetMedia2 (nUserID, sSessionID, sSessionKey, sPassTicket, sReplyToAccount_Person, sMessageID, sMediaID, sFileName);
+			}
+			DispatchEvent ("OnApplicationMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, xmlMsg, f);
 		}
-		catch (ParsingException | IOException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
@@ -2460,8 +2479,8 @@ net_maclife_wechat_http_BotApp.logger.warning ("因为配置匹配的原因，�
 							jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person,
 							sContent, (String)datas[0], (String)datas[1]
 						);
-				case "onurlmessage":
-					return bot.OnURLMessageReceived
+				case "onapplicationmessage":
+					return bot.OnApplicationMessageReceived
 						(
 							jsonNode,
 							jsonFrom, sFromAccount, sFromName, isFromMe,
@@ -2469,7 +2488,7 @@ net_maclife_wechat_http_BotApp.logger.warning ("因为配置匹配的原因，�
 							jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom,
 							jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember,
 							jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person,
-							(Element)datas[0]
+							(Element)datas[0], (File)datas[1]
 						);
 				case "onimagemessage":
 					return bot.OnImageMessageReceived

@@ -195,11 +195,11 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	/**
-	 * 当收到了链接分享消息时……
+	 * 当收到了应用程序（链接分享）消息时……
 	 * @param xmlMsg 文本内容解析出来 XML 元素
 	 * @return
 	 */
-	public int OnURLMessageReceived
+	public int OnApplicationMessageReceived
 		(
 			JsonNode jsonMessage,
 			JsonNode jsonFrom, String sFromAccount, String sFromName, boolean isFromMe,
@@ -207,7 +207,7 @@ public abstract class net_maclife_wechat_http_Bot
 			JsonNode jsonReplyTo, String sReplyToAccount, String sReplyToName, boolean isReplyToRoom,
 			JsonNode jsonReplyTo_RoomMember, String sReplyToAccount_RoomMember, String sReplyToName_RoomMember,
 			JsonNode jsonReplyTo_Person, String sReplyToAccount_Person, String sReplyToName_Person,
-			Element xmlMsg
+			Element xmlMsg, File fAttachment
 		)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;

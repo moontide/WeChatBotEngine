@@ -511,16 +511,6 @@ logger.severe (net_maclife_util_ANSIEscapeTool.Red (GetXMLValue(eXML, "message")
 		return nLoginResultCode;
 	}
 
-	//public static JsonNode MakeBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
-	//{
-	//	ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-	//	on.put ("Uin", sUserID);
-	//	on.put ("Sid", sSessionID);
-	//	on.put ("Skey", sSessionKey);
-	//	on.put ("DeviceID", sDeviceID);
-	//	return on;
-	//}
-
 	public static JsonNode MakeBaseRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
@@ -530,13 +520,6 @@ logger.severe (net_maclife_util_ANSIEscapeTool.Red (GetXMLValue(eXML, "message")
 		on.put ("DeviceID", sDeviceID);
 		return on;
 	}
-
-	//public static JsonNode MakeFullBaseRequestJsonNode (String sUserID, String sSessionID, String sSessionKey, String sDeviceID)
-	//{
-	//	ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
-	//	on.set ("BaseRequest", MakeBaseRequestJsonNode (sUserID, sSessionID, sSessionKey, sDeviceID));
-	//	return on;
-	//}
 
 	public static JsonNode MakeFullBaseRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID)
 	{
@@ -1145,26 +1128,6 @@ logger.finest ("	" + sSyncCheckURL);
 		CookieStore cookieStore = cookieManager.getCookieStore ();
 		List<HttpCookie> listCookies = cookieStore.get (new URI(sSyncCheckURL));
 		String sCookieValue = "";
-		/*
-		String cookie_wxDataTicket="", cookie_wxAuthTicket="", cookie_webwxuvid="", cookie_wxloadtime="", cookie_mm_lang="";
-		for (HttpCookie cookie : listCookies)
-		{
-			if (cookie.hasExpired ())	// 已过期的 Cookie 不再送 （虽然通常不会走到这一步）
-				continue;
-
-			if (cookie.getName ().equalsIgnoreCase ("webwx_auth_ticket"))
-				cookie_wxAuthTicket = cookie.getValue ();
-			else if (cookie.getName ().equalsIgnoreCase ("webwx_data_ticket"))
-				cookie_wxDataTicket = cookie.getValue ();
-			else if (cookie.getName ().equalsIgnoreCase ("webwxuvid"))
-				cookie_webwxuvid = cookie.getValue ();
-			else if (cookie.getName ().equalsIgnoreCase ("wxloadtime"))
-				cookie_wxloadtime = cookie.getValue ();
-			else if (cookie.getName ().equalsIgnoreCase ("mm_lang"))
-				cookie_mm_lang = cookie.getValue ();
-		}
-		sCookieValue = MakeCookieValue (sUserID, sSessionID, cookie_wxAuthTicket, cookie_wxDataTicket, cookie_webwxuvid, cookie_wxloadtime, cookie_mm_lang);
-		*/
 		sCookieValue = MakeCookieValue (listCookies);
 		mapRequestHeaders.put ("Cookie", sCookieValue);	// 避免服务器返回 1100 1102 代码？
 logger.finest ("发送 WebWeChatGetMessagePackage 中 synccheck 的 http 请求消息头 (Cookie):");
@@ -1828,20 +1791,23 @@ logger.info ("获取视频, msgid: " + sMsgID);
 		return WebWeChatGetMedia (sSessionKey, "webwxgetvideo", sMsgID);
 	}
 
-	public static File WebWeChatGetMedia2 (String sUserID, String sSessionID, String sSessionKey, String sPassTicket, String sAccount, String sMediaID) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
+	public static File WebWeChatGetMedia2 (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sAccount, String sMessageID, String sMediaID, String sFileName) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, URISyntaxException
 	{
 logger.info ("获取媒体/获取文件，媒体 ID: " + sMediaID);
+		String sBaseURL = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia";
+		CookieStore cookieStore = cookieManager.getCookieStore ();
+		List<HttpCookie> listCookies = cookieStore.get (new URI(sBaseURL));
 		//             https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=********************&mediaid=*********&filename=*******&fromuser=2100343515&pass_ticket=********&webwx_data_ticket=*****
-		String sURL = "https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetmedia?sender=" + sAccount + "&mediaid=" + sMediaID + "&skey=" + URLEncoder.encode (sSessionKey, utf8);
-		String sMediaFileName = mediaFilesDirectory + "/" + sMediaID;
+		String sURL = sBaseURL + "?sender=" + sAccount + "&mediaid=" + sMediaID + "&encryfilename=" + URLEncoder.encode (sFileName, utf8) + "&fromuser=" + nUserID + "&pass_ticket=" + URLEncoder.encode (sPassTicket, utf8) + "&webwx_data_ticket=" + URLEncoder.encode (GetCookieValue (listCookies, "webwx_data_ticket"), utf8);
+		String sMediaFileName = mediaFilesDirectory + "/" + sMessageID + " " + sFileName;
 		File fMediaFile = null;
 
 logger.fine ("WebWeChatGetMedia2 的 URL");
 logger.fine ("	" + sURL);
 
 		Map<String, Object> mapRequestHeaders = new HashMap<String, Object> ();
-		CookieStore cookieStore = cookieManager.getCookieStore ();
-		List<HttpCookie> listCookies = cookieStore.get (new URI(sURL));
+		//CookieStore cookieStore = cookieManager.getCookieStore ();
+		//List<HttpCookie> listCookies = cookieStore.get (new URI(sURL));
 		String sCookieValue = "";
 		sCookieValue = MakeCookieValue (listCookies);
 		mapRequestHeaders.put ("Cookie", sCookieValue);
@@ -1856,10 +1822,6 @@ logger.finer ("	" + mapRequestHeaders);
 		int iMainResponseCode = iResponseCode/100;
 		if (iMainResponseCode==2)
 		{
-			String sExtensionName = net_maclife_util_HTTPUtils.ContentTypeToFileExtensionName (http.getHeaderField ("Content-Type"));
-			if (StringUtils.isNotEmpty (sExtensionName))
-				sMediaFileName = sMediaFileName + "." + sExtensionName;
-
 			fMediaFile = new File (sMediaFileName);
 			InputStream is = http.getInputStream ();
 			OutputStream os = new FileOutputStream (fMediaFile);
@@ -1867,7 +1829,7 @@ logger.finer ("	" + mapRequestHeaders);
 			is.close ();
 			os.close ();
 		}
-logger.fine ("获取 WebWeChatGetMedia 的 http 响应消息体 (保存到文件)");
+logger.fine ("获取 WebWeChatGetMedia2 的 http 响应消息体 (保存到文件)");
 logger.fine ("	" + fMediaFile);
 		return fMediaFile;
 	}
