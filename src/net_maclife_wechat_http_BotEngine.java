@@ -2103,8 +2103,8 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 			Element sysmsg = doc.getRootElement ();
 			Element revokemsg = sysmsg.getFirstChildElement ("revokemsg");
 			String sPeerAccount = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "session");
-			String sRevokedMsgID = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "oldmsgid");
-			String sMsgIDOfTheRevokeMsg = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "msgid");
+			String sMsgIDBeenRevoked = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "msgid");
+			String sOldMsgIDBeenRevoked = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "oldmsgid");
 			String sReplacedByMsg = net_maclife_wechat_http_BotApp.GetXMLValue (revokemsg, "replacemsg");
 
 			StringBuilder sb = new StringBuilder ();
@@ -2114,11 +2114,13 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 				sb.append (sPeerAccount);
 				sb.append ("\n");
 			}
-			if (StringUtils.isNotEmpty (sRevokedMsgID))
+			if (StringUtils.isNotEmpty (sMsgIDBeenRevoked))
 			{
 				sb.append ("被撤回的消息ID: ");
-				sb.append (sRevokedMsgID);
-				sb.append ("\n");
+				sb.append (sMsgIDBeenRevoked);
+				sb.append (" (旧版ID = ");
+				sb.append (sOldMsgIDBeenRevoked);
+				sb.append (")\n");
 			}
 			if (StringUtils.isNotEmpty (sReplacedByMsg))
 			{
@@ -2127,7 +2129,7 @@ net_maclife_wechat_http_BotApp.logger.info ("手机端退出了订阅号列表�
 				sb.append ("\n");
 			}
 net_maclife_wechat_http_BotApp.logger.info ("“消息已撤回”消息：\n" + sb);
-			DispatchEvent ("OnMessageIsRevokedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sMsgIDOfTheRevokeMsg, sReplacedByMsg);
+			DispatchEvent ("OnMessageIsRevokedMessage", jsonNode, jsonFrom, sFromAccount, sFromName, isFromMe, jsonTo, sToAccount, sToName, isToMe, jsonReplyTo, sReplyToAccount, sReplyToName, isReplyToRoom, jsonReplyTo_RoomMember, sReplyToAccount_RoomMember, sReplyToName_RoomMember, jsonReplyTo_Person, sReplyToAccount_Person, sReplyToName_Person, sContent, false, false, sMsgIDBeenRevoked, sReplacedByMsg);
 		}
 		catch (ParsingException | IOException e)
 		{
