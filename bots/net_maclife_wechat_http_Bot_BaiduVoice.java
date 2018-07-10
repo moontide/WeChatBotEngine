@@ -14,18 +14,6 @@ import com.fasterxml.jackson.databind.*;
  * 利用百度语音 API 实现的 语音识别（语音转文字） 机器人。
 
 <p>
-	百度访问令牌 (AccessToken) 返回的数据格式
-<pre>
-{
-    "access_token":"***...***",
-    "session_key":"***...***",
-    "scope":"public audio_voice_assistant_get audio_tts_post wise_adapt lebo_resource_base lightservice_public hetu_basic lightcms_map_poi kaidian_kaidian",	// 类似这样
-    "refresh_token":"***...***",
-    "session_secret":"***...***",
-    "expires_in":NNNNNNN
-}
-</pre>
-
 语音识别结果
 <pre>
 {
@@ -46,14 +34,13 @@ import com.fasterxml.jackson.databind.*;
  */
 public class net_maclife_wechat_http_Bot_BaiduVoice extends net_maclife_wechat_http_Bot
 {
-	public static final String BAIDU_OAUTH_ACCESS_TOKEN_URL  = "https://openapi.baidu.com/oauth/2.0/token";
 	public static final String BAIDU_ASR_API_URL             = "http://vop.baidu.com/server_api";
 	public static final String BAIDU_TTS_API_URL             = "http://tsn.baidu.com/text2audio";
 
-	static String sBaiduOAuthAccessTokenFileInJSONFormat = net_maclife_wechat_http_BotApp.cacheDirectory + "/" + net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.oauth.accessTokenFile");
 	static String sBaiduCloudAppID           = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.voice.app.id");
 	static String sBaiduCloudAppKey          = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.voice.app.key");
 	static String sBaiduCloudAppPassword     = net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.voice.app.password");
+	static String sBaiduOAuthAccessTokenFileInJSONFormat = net_maclife_wechat_http_BotApp.cacheDirectory + "/" + net_maclife_wechat_http_BotApp.GetConfig ().getString ("bot.baidu.voice.accessTokenFile");
 
 	static String sMACAddress = "BaiduVoiceBotApplet";
 	static
@@ -207,7 +194,7 @@ net_maclife_wechat_http_BotApp.logger.info ("    MAC 地址: " + sMACAddress);
 			File fMedia
 		) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
-		String sAccessToken = GetBaiduAccessToken ();
+		String sAccessToken = net_maclife_util_BaiduCloud.GetBaiduAccessToken (sBaiduCloudAppKey, sBaiduCloudAppPassword, sBaiduOAuthAccessTokenFileInJSONFormat);
 		if (StringUtils.isEmpty (sAccessToken))
 			return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 
@@ -283,52 +270,6 @@ net_maclife_wechat_http_BotApp.logger.warning (GetName() + " " + err_no + " " + 
 		}
 
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-	}
-
-	public static String GetBaiduAccessToken ()
-	{
-		File f = new File (sBaiduOAuthAccessTokenFileInJSONFormat);
-		if (f.exists ())
-		{
-			long nFileModifiedTime_Millisecond = f.lastModified ();
-			try
-			{
-				JsonNode jsonAccessToken = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (f);
-				int nExpireDuration_Seconds = net_maclife_wechat_http_BotApp.GetJSONInt (jsonAccessToken, "expires_in");
-				long now = System.currentTimeMillis ();
-				if (now <= (nFileModifiedTime_Millisecond + nExpireDuration_Seconds*1000))
-					return net_maclife_wechat_http_BotApp.GetJSONText (jsonAccessToken, "access_token");
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-		}
-
-		// 已过期，或者从未获取过
-		return GetNewBaiduAccessToken ();
-	}
-
-	public static String GetNewBaiduAccessToken ()
-	{
-		// 使用 Client Credentials 方式获得百度访问令牌
-		// 参见: http://developer.baidu.com/wiki/index.php?title=docs/oauth/client
-		String sPostData = "grant_type=client_credentials&client_id=" + sBaiduCloudAppKey + "&client_secret=" + sBaiduCloudAppPassword;
-		try
-		{
-			String sResponseBodyContent = net_maclife_util_HTTPUtils.CURL_Post (BAIDU_OAUTH_ACCESS_TOKEN_URL, sPostData.getBytes ());
-			FileWriter fw = new FileWriter (sBaiduOAuthAccessTokenFileInJSONFormat);
-			fw.write (sResponseBodyContent);
-			fw.close ();
-
-			JsonNode jsonAccessToken = net_maclife_wechat_http_BotApp.jacksonObjectMapper_Loose.readTree (sResponseBodyContent);
-			return net_maclife_wechat_http_BotApp.GetJSONText (jsonAccessToken, "access_token");
-		}
-		catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e)
-		{
-			e.printStackTrace();
-		}
-		return null;
 	}
 
 	public static File ConvertAudioToAMRFormat (File sSourceAudio) throws IOException, InterruptedException
