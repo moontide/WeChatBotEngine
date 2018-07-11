@@ -115,9 +115,64 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	////////////////////////////////
-	// 关闭事件
+	// 引擎关闭事件
 	////////////////////////////////
 	public int OnShutdown ()
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 微信初始化事件。
+	// 一般，可以在微信初始化事件中获取到最近联系人
+	// 需要注意的是： 如果缓存的 session 未过期，则不会进行“微信初始化”操作，这个事件也就不会被触发。
+	////////////////////////////////
+	public int OnInit (JsonNode jsonInitResult)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 获取到联系人信息事件
+	// 一般，可以在这个事件中处理联系人信息
+	////////////////////////////////
+	public int OnContactsReceived (JsonNode jsonContacts)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 获取到群成员信息事件
+	// 一般，可以在这个事件中处理群成员信息
+	////////////////////////////////
+	public int OnRoomsAndTheirMembersReceived (JsonNode jsonRoomsAndTheirMembers)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 联系人信息变动事件
+	// ModContactList 节点处理
+	////////////////////////////////
+	public int OnContactChanged (JsonNode jsonNode)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 联系人被删除事件
+	// DelContactList 节点处理
+	////////////////////////////////
+	public int OnContactDeleted (JsonNode jsonNode)
+	{
+		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
+	}
+
+	////////////////////////////////
+	// 群聊成员变动事件
+	// ModChatRoomMemberList 节点处理
+	////////////////////////////////
+	public int OnRoomMemberChanged (JsonNode jsonNode)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
@@ -396,30 +451,4 @@ public abstract class net_maclife_wechat_http_Bot
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
-
-	////////////////////////////////
-	// ModContactList 节点处理
-	////////////////////////////////
-	public int OnContactChanged (JsonNode jsonNode)
-	{
-		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-	}
-
-	////////////////////////////////
-	// DelContactList 节点处理
-	////////////////////////////////
-	public int OnContactDeleted (JsonNode jsonNode)
-	{
-		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-	}
-
-	////////////////////////////////
-	// ModChatRoomMemberList 节点处理
-	// 群聊成员变动
-	////////////////////////////////
-	public int OnRoomMemberChanged (JsonNode jsonNode)
-	{
-		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
-	}
-
 }

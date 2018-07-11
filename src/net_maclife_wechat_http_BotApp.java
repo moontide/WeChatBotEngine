@@ -915,12 +915,12 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 
 		ProcessBaseResponse (node, "WebWeChatGetRoomContacts");
 
-		DumpGroupsContacts (node);
+		DumpRoomsContacts (node);
 		//
 		return node;
 	}
 
-	public static void DumpGroupsContacts (JsonNode node)
+	public static void DumpRoomsContacts (JsonNode node)
 	{
 		StringBuilder sb = new StringBuilder ();
 		//sb.append ("\n");
