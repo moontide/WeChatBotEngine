@@ -1093,6 +1093,10 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 						jsonSyncCheckKeys = jsonInitResult.get ("SyncKey");
 						SaveSessionCache (fSessionCache, jsonSyncCheckKeys);
 						SaveCookiesCache (fCookiesCache);
+
+						List<String> listRoomAccounts = net_maclife_wechat_http_BotApp.GetRoomAccountsFromMultipleContacts (jsonInitResult);
+						jsonRoomsAndTheirMembersContacts = GetRoomsContactsFromServer (listRoomAccounts);	// 补全最近联系人中的各个群的联系人列表，这些群，有可能未加到通讯录中
+						OnRoomsAndTheirMembersReceived (jsonRoomsAndTheirMembersContacts);	// 触发“收到了群成员信息”事件
 					}
 
 					JsonNode jsonStatusNotify = StatusNotify ();
@@ -1100,7 +1104,7 @@ net_maclife_wechat_http_BotApp.logger.info ("新获取到的 Session 信息\n	UI
 					// 5. 获取联系人
 					jsonContacts = GetContacts ();
 					OnContactsReceived (jsonContacts);	// 触发“收到了联系人信息”事件
-					List<String> listRoomAccounts = net_maclife_wechat_http_BotApp.GetRoomAccountsFromContacts (jsonContacts);
+					List<String> listRoomAccounts = net_maclife_wechat_http_BotApp.GetRoomAccountsFromSingleContact (jsonContacts);
 					jsonRoomsAndTheirMembersContacts = GetRoomsContactsFromServer (listRoomAccounts);	// 补全各个群的联系人列表
 					OnRoomsAndTheirMembersReceived (jsonRoomsAndTheirMembersContacts);	// 触发“收到了群成员信息”事件
 

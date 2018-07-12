@@ -848,19 +848,28 @@ logger.info (sb.toString ());
 		return node;
 	}
 
-	public static List<String> GetRoomAccountsFromContacts (JsonNode jsonContacts)
+	public static List<String> GetRoomAccountsFromContacts (JsonNode jsonContacts, String sFieldNameOfList)
 	{
 		List<String> listRoomAccounts = new ArrayList<String> ();
-		JsonNode jsonMemberList = jsonContacts.get ("MemberList");
-		for (int i=0; i<jsonMemberList.size (); i++)
+		JsonNode jsonContactArray = jsonContacts.get (sFieldNameOfList);
+		for (int i=0; i<jsonContactArray.size (); i++)
 		{
-			JsonNode jsonContact = jsonMemberList.get (i);
+			JsonNode jsonContact = jsonContactArray.get (i);
 			String sUserEncryptedAccount = GetJSONText (jsonContact, "UserName");
 			if (IsRoomAccount (sUserEncryptedAccount))
 				listRoomAccounts.add (sUserEncryptedAccount);
 		}
 		return listRoomAccounts;
 	}
+	public static List<String> GetRoomAccountsFromSingleContact (JsonNode jsonContact)
+	{
+		return GetRoomAccountsFromContacts (jsonContact, "MemberList");
+	}
+	public static List<String> GetRoomAccountsFromMultipleContacts (JsonNode jsonContacts)
+	{
+		return GetRoomAccountsFromContacts (jsonContacts, "ContactList");
+	}
+
 	public static JsonNode MakeFullGetRoomContactRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, List<String> listRoomAccounts)
 	{
 		ObjectNode on = jacksonObjectMapper_Strict.createObjectNode ();
