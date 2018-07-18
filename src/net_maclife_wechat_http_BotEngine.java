@@ -338,6 +338,7 @@ net_maclife_wechat_http_BotApp.logger.info (bot.GetName () + " (" + net_maclife_
 		List<String> listRoomAccounts = new ArrayList<String> ();
 		listRoomAccounts.add (sRoomAccount);
 		JsonNode jn = GetRoomsContactsFromServer (listRoomAccounts);
+		OnRoomsAndTheirMembersReceived (jn);	// 触发“收到了群成员信息”事件
 		if (jn!=null && jn.get ("ContactList")!=null && jn.get ("ContactList").size ()>=1)
 			return jn.get ("ContactList").get (0);
 		else
