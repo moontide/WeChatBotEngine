@@ -117,6 +117,7 @@ public class net_maclife_wechat_http_Bot_WeChatContactsToDatabase extends net_ma
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
+	static final String sSQL_InsertContact = "INSERT INTO " + TABLE_NAME__Contacts + " (微信号, 昵称, 备注名, 签名, /*电话号码, 描述, 标签, 照片或名片,*/ 省, 市, 是否星标好友, /*是否已删除, 删除时间,*/ 是否群, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?) ON DUPLICATE KEY UPDATE 签名=?, 省=?, 市=?, 是否星标好友=?, 是否群=?, 群成员数量=?, 是否公众号=?, 是否企业号=?, 是否微信团队号=?, 数据来源=?, 最后更新时间=CURRENT_TIMESTAMP";
 	@Override
 	public int OnContactsReceived (JsonNode jsonContacts)
 	{
@@ -124,56 +125,16 @@ public class net_maclife_wechat_http_Bot_WeChatContactsToDatabase extends net_ma
 		PreparedStatement stmt = null;
 		try
 		{
-			String sSQL_Insert = "INSERT INTO " + TABLE_NAME__Contacts + " (微信号, 昵称, 备注名, 签名, /*电话号码, 描述, 标签, 照片或名片,*/ 省, 市, 是否星标好友, /*是否已删除, 删除时间,*/ 是否群, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?) ON DUPLICATE KEY UPDATE 签名=?, 省=?, 市=?, 是否星标好友=?, 是否群=?, 群成员数量=?, 是否公众号=?, 是否企业号=?, 是否微信团队号=?, 数据来源=?, 最后更新时间=CURRENT_TIMESTAMP";
 			net_maclife_wechat_http_BotApp.SetupDataSource ();
 			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
-			stmt = conn.prepareStatement (sSQL_Insert, new String[] {"contact_id"});
+			stmt = conn.prepareStatement (sSQL_InsertContact, new String[] {"contact_id"});
 
 			int nCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonContacts, "MemberCount");
 			JsonNode jsonMemberList = jsonContacts.get ("MemberList");
 			for (int i=0; i<nCount; i++)
 			{
 				JsonNode jsonContact = jsonMemberList.get (i);
-				int nVerifyFlag = net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "VerifyFlag");
-				//sb.append ('/');
-				//sb.append (nVerifyFlag);
-				boolean isRoomAccount = net_maclife_wechat_http_BotApp.IsRoomAccount (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
-				boolean isPublicAccount = net_maclife_wechat_http_BotApp.IsPublicAccount (nVerifyFlag);
-				boolean isEnterprisePublicAccount = net_maclife_wechat_http_BotApp.IsEnterprisePublicAccount (nVerifyFlag);
-				boolean isWeChatTeamAccount = net_maclife_wechat_http_BotApp.IsWeChatTeamAccount (nVerifyFlag);
-
-				int nCol = 1;
-				stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "Alias"));
-				stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName"));
-				stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "RemarkName"));
-				stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Signature"));
-				//stmt.setString (nCol++, "");	// Web 版并没有【电话号码】信息
-				//stmt.setString (nCol++, "");	// Web 版并没有【描述】信息
-				//stmt.setString (nCol++, "");	// Web 版并没有【标签】信息
-				//stmt.setString (nCol++, "");	// Web 版并没有【照片或名片】信息
-				stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Province"));
-				stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "City"));
-				stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "StarFriend"));
-				stmt.setBoolean (nCol++, isRoomAccount);
-				stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount"));
-				stmt.setBoolean (nCol++, isPublicAccount);
-				stmt.setBoolean (nCol++, isEnterprisePublicAccount);
-				stmt.setBoolean (nCol++, isWeChatTeamAccount);
-				stmt.setString (nCol++, "微信通讯录");
-
-
-				stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Signature"));
-				stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Province"));
-				stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "City"));
-				stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "StarFriend"));
-				stmt.setBoolean (nCol++, isRoomAccount);
-				stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount"));
-				stmt.setBoolean (nCol++, isPublicAccount);
-				stmt.setBoolean (nCol++, isEnterprisePublicAccount);
-				stmt.setBoolean (nCol++, isWeChatTeamAccount);
-				stmt.setString (nCol++, "微信通讯录");
-
-				stmt.executeUpdate ();
+				SaveContact (conn, stmt, jsonContact, "微信通讯录");
 			}
 		}
 		catch (Exception e)
@@ -207,117 +168,71 @@ public class net_maclife_wechat_http_Bot_WeChatContactsToDatabase extends net_ma
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
+	void SaveContact (Connection conn, PreparedStatement stmt, JsonNode jsonContact, String s数据来源) throws SQLException
+	{
+		int nVerifyFlag = net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "VerifyFlag");
+		//sb.append ('/');
+		//sb.append (nVerifyFlag);
+		boolean isRoomAccount = net_maclife_wechat_http_BotApp.IsRoomAccount (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
+		boolean isPublicAccount = net_maclife_wechat_http_BotApp.IsPublicAccount (nVerifyFlag);
+		boolean isEnterprisePublicAccount = net_maclife_wechat_http_BotApp.IsEnterprisePublicAccount (nVerifyFlag);
+		boolean isWeChatTeamAccount = net_maclife_wechat_http_BotApp.IsWeChatTeamAccount (nVerifyFlag);
+
+		int nCol = 1;
+		stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "Alias"));
+		stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName"));
+		stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "RemarkName"));
+		stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Signature"));
+		//stmt.setString (nCol++, "");	// Web 版并没有【电话号码】信息
+		//stmt.setString (nCol++, "");	// Web 版并没有【描述】信息
+		//stmt.setString (nCol++, "");	// Web 版并没有【标签】信息
+		//stmt.setString (nCol++, "");	// Web 版并没有【照片或名片】信息
+		stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Province"));
+		stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "City"));
+		stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "StarFriend"));
+		stmt.setBoolean (nCol++, isRoomAccount);
+		stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount"));
+		stmt.setBoolean (nCol++, isPublicAccount);
+		stmt.setBoolean (nCol++, isEnterprisePublicAccount);
+		stmt.setBoolean (nCol++, isWeChatTeamAccount);
+		stmt.setString (nCol++, s数据来源);
+
+
+		stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Signature"));
+		stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Province"));
+		stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "City"));
+		stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "StarFriend"));
+		stmt.setBoolean (nCol++, isRoomAccount);
+		stmt.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount"));
+		stmt.setBoolean (nCol++, isPublicAccount);
+		stmt.setBoolean (nCol++, isEnterprisePublicAccount);
+		stmt.setBoolean (nCol++, isWeChatTeamAccount);
+		stmt.setString (nCol++, s数据来源);
+
+		stmt.executeUpdate ();
+	}
+
+	static final String sSQL_QueryContactID = "SELECT contact_id FROM " + TABLE_NAME__Contacts + " WHERE 昵称=? AND 备注名=?";
+	static final String sSQL_InsertContactMember = "INSERT INTO " + TABLE_NAME__ContactMembers + " (contact_id, 序号, 成员昵称, 成员群昵称) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE 成员昵称=?, 成员群昵称=?";
 	@Override
 	public int OnRoomsAndTheirMembersReceived (JsonNode jsonRoomsAndTheirMembers)
 	{
 		Connection conn = null;
 		PreparedStatement stmt = null;
 		PreparedStatement stmt_QueryContactID = null;
-		PreparedStatement stmt_InsertContact = null;
 		try
 		{
-			String sSQL_Insert = "INSERT INTO " + TABLE_NAME__ContactMembers + " (contact_id, 序号, 成员昵称, 成员群昵称) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE 成员昵称=?, 成员群昵称=?";
-			String sSQL_QueryContactID = "SELECT contact_id FROM " + TABLE_NAME__Contacts + " WHERE 昵称=? AND 备注名=?";
-			String sSQL_InsertContact = "INSERT INTO " + TABLE_NAME__Contacts + " (微信号, 昵称, 备注名, 签名, 性别, 省, 市, 是否星标好友, 是否群, 群主UIN, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源, 最后更新时间) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, CURRENT_TIMESTAMP)";
 			net_maclife_wechat_http_BotApp.SetupDataSource ();
 			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
 			stmt_QueryContactID = conn.prepareStatement (sSQL_QueryContactID);
+			stmt = conn.prepareStatement (sSQL_InsertContactMember);
 
-			stmt = conn.prepareStatement (sSQL_Insert);
 			int nCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonRoomsAndTheirMembers, "Count");
 			JsonNode jsonContactList = jsonRoomsAndTheirMembers.get ("ContactList");
 			for (int i=0; i<nCount; i++)
 			{
 				JsonNode jsonContact = jsonContactList.get (i);
-				int nContactID = 0;
-				String s群昵称 = net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName");
-				String s群备注名 = net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "RemarkName");
-				try
-				{
-					stmt_QueryContactID.setString (1, s群昵称);
-					stmt_QueryContactID.setString (2, s群备注名);
-					ResultSet rs = stmt_QueryContactID.executeQuery ();
-					while (rs.next ())
-					{
-						nContactID = rs.getInt (1);
-						break;
-					}
-					rs.close ();
-				}
-				catch (Exception e)
-				{
-					e.printStackTrace ();
-					continue;	// 针对当前群取这个群在数据库中的 contact_id 时出错，则跳过这个群，继续下一个群
-				}
-				if (nContactID == 0)
-				{
-					try
-					{
-						stmt_InsertContact = conn.prepareStatement (sSQL_InsertContact, new String[] {"contact_id"});
-
-						int nVerifyFlag = net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "VerifyFlag");
-						boolean isRoomAccount = net_maclife_wechat_http_BotApp.IsRoomAccount (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
-						boolean isPublicAccount = net_maclife_wechat_http_BotApp.IsPublicAccount (nVerifyFlag);
-						boolean isEnterprisePublicAccount = net_maclife_wechat_http_BotApp.IsEnterprisePublicAccount (nVerifyFlag);
-						boolean isWeChatTeamAccount = net_maclife_wechat_http_BotApp.IsWeChatTeamAccount (nVerifyFlag);
-
-						int nCol = 1;
-						stmt_InsertContact.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "Alias"));
-						stmt_InsertContact.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName"));
-						stmt_InsertContact.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "RemarkName"));
-						stmt_InsertContact.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Signature"));
-						stmt_InsertContact.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "Sex"));
-						stmt_InsertContact.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Province"));
-						stmt_InsertContact.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "City"));
-						stmt_InsertContact.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "StarFriend"));
-						stmt_InsertContact.setBoolean (nCol++, isRoomAccount);
-						stmt_InsertContact.setLong (nCol++, net_maclife_wechat_http_BotApp.GetJSONLong (jsonContact, "OwnerUin"));
-						stmt_InsertContact.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount"));
-						stmt_InsertContact.setBoolean (nCol++, isPublicAccount);
-						stmt_InsertContact.setBoolean (nCol++, isEnterprisePublicAccount);
-						stmt_InsertContact.setBoolean (nCol++, isWeChatTeamAccount);
-						stmt_InsertContact.setString (nCol++, "不在通讯录里的群");
-
-						stmt_InsertContact.executeUpdate ();
-
-						ResultSet rs = stmt_InsertContact.getGeneratedKeys ();
-						if (rs != null)
-						{
-							while (rs.next ())
-							{
-								nContactID = rs.getInt (1);
-								break;
-							}
-						}
-					}
-					catch (Exception e)
-					{
-						e.printStackTrace ();
-					}
-
-					if (nContactID == 0)
-					{
-						net_maclife_wechat_http_BotApp.logger.warning ("无法根据群的昵称【" + s群昵称 + "】和备注名【" + s群备注名 + "】从表中取到其 contact_id，也许群尚未写到表中，也有可能群已经改名");
-						continue;
-					}
-				}
-
-				int nMemberCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount");
-				JsonNode jsonMemberList = jsonContact.get ("MemberList");
-				for (int j=0; j<nMemberCount; j++)
-				{
-					JsonNode jsonMember = jsonMemberList.get (j);
-					int nCol = 1;
-					stmt.setInt (nCol++, nContactID);
-					stmt.setInt (nCol++, (j+1));
-					stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "NickName"));
-					stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "DisplayName"));
-
-					stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "NickName"));
-					stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "DisplayName"));
-
-					stmt.executeUpdate ();
-				}
+				SaveRoomAndMembers (conn, stmt, stmt_QueryContactID, jsonContact, "不在通讯录里的群");
 			}
 		}
 		catch (Exception e)
@@ -360,29 +275,260 @@ public class net_maclife_wechat_http_Bot_WeChatContactsToDatabase extends net_ma
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
+	void SaveRoomAndMembers (Connection conn, PreparedStatement stmt, PreparedStatement stmt_QueryContactID, JsonNode jsonContact, String s数据来源) throws SQLException
+	{
+		String sSQL_InsertRoomContact = "INSERT INTO " + TABLE_NAME__Contacts + " (微信号, 昵称, 备注名, 签名, 性别, 省, 市, 是否星标好友, 是否群, 群主UIN, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源, 最后更新时间) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, CURRENT_TIMESTAMP)";
+		int nContactID = 0;
+		String s群昵称 = net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName");
+		String s群备注名 = net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "RemarkName");
+		try
+		{
+			stmt_QueryContactID.setString (1, s群昵称);
+			stmt_QueryContactID.setString (2, s群备注名);
+			ResultSet rs = stmt_QueryContactID.executeQuery ();
+			while (rs.next ())
+			{
+				nContactID = rs.getInt (1);
+				break;
+			}
+			rs.close ();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+			return;	// 针对当前群取这个群在数据库中的 contact_id 时出错，则跳过这个群，继续下一个群
+		}
+
+		if (nContactID == 0)
+		{
+			PreparedStatement stmt_InsertRoomContact = null;
+			try
+			{
+				stmt_InsertRoomContact = conn.prepareStatement (sSQL_InsertRoomContact, new String[] {"contact_id"});
+
+				int nVerifyFlag = net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "VerifyFlag");
+				boolean isRoomAccount = net_maclife_wechat_http_BotApp.IsRoomAccount (net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "UserName"));
+				boolean isPublicAccount = net_maclife_wechat_http_BotApp.IsPublicAccount (nVerifyFlag);
+				boolean isEnterprisePublicAccount = net_maclife_wechat_http_BotApp.IsEnterprisePublicAccount (nVerifyFlag);
+				boolean isWeChatTeamAccount = net_maclife_wechat_http_BotApp.IsWeChatTeamAccount (nVerifyFlag);
+
+				int nCol = 1;
+				stmt_InsertRoomContact.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "Alias"));
+				stmt_InsertRoomContact.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "NickName"));
+				stmt_InsertRoomContact.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonContact, "RemarkName"));
+				stmt_InsertRoomContact.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Signature"));
+				stmt_InsertRoomContact.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "Sex"));
+				stmt_InsertRoomContact.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "Province"));
+				stmt_InsertRoomContact.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonContact, "City"));
+				stmt_InsertRoomContact.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "StarFriend"));
+				stmt_InsertRoomContact.setBoolean (nCol++, isRoomAccount);
+				stmt_InsertRoomContact.setLong (nCol++, net_maclife_wechat_http_BotApp.GetJSONLong (jsonContact, "OwnerUin"));
+				stmt_InsertRoomContact.setInt (nCol++, net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount"));
+				stmt_InsertRoomContact.setBoolean (nCol++, isPublicAccount);
+				stmt_InsertRoomContact.setBoolean (nCol++, isEnterprisePublicAccount);
+				stmt_InsertRoomContact.setBoolean (nCol++, isWeChatTeamAccount);
+				stmt_InsertRoomContact.setString (nCol++, s数据来源);
+
+				stmt_InsertRoomContact.executeUpdate ();
+
+				ResultSet rs = stmt_InsertRoomContact.getGeneratedKeys ();
+				if (rs != null)
+				{
+					while (rs.next ())
+					{
+						nContactID = rs.getInt (1);
+						break;
+					}
+				}
+				rs.close ();
+				stmt_InsertRoomContact.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+				try
+				{
+					if (stmt_InsertRoomContact != null)
+						stmt_InsertRoomContact.close ();
+				}
+				catch (Exception e2)
+				{
+					e2.printStackTrace ();
+				}
+			}
+
+			if (nContactID == 0)
+			{
+				net_maclife_wechat_http_BotApp.logger.warning ("无法根据群的昵称【" + s群昵称 + "】和备注名【" + s群备注名 + "】从表中取到其 contact_id，也许群尚未写到表中，也有可能群已经改名");
+				return;
+			}
+		}
+
+		int nMemberCount = net_maclife_wechat_http_BotApp.GetJSONInt (jsonContact, "MemberCount");
+		JsonNode jsonMemberList = jsonContact.get ("MemberList");
+		for (int j=0; j<nMemberCount; j++)
+		{
+			JsonNode jsonMember = jsonMemberList.get (j);
+			int nCol = 1;
+			stmt.setInt (nCol++, nContactID);
+			stmt.setInt (nCol++, (j+1));
+			stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "NickName"));
+			stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "DisplayName"));
+
+			stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "NickName"));
+			stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonMember, "DisplayName"));
+
+			stmt.executeUpdate ();
+		}
+	}
+
 	/**
 		联系人变化。
 
 	 */
 	@Override
-	public int OnContactChanged (JsonNode jsonMessage)
+	public int OnContactChanged (JsonNode jsonSingleContact)
 	{
+		Connection conn = null;
+		PreparedStatement stmt = null;
+		try
+		{
+			net_maclife_wechat_http_BotApp.SetupDataSource ();
+			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
+			stmt = conn.prepareStatement (sSQL_InsertContact, new String[] {"contact_id"});
+
+			SaveContact (conn, stmt, jsonSingleContact, "联系人变更");
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+		finally
+		{
+			try
+			{
+				if (stmt != null)
+					stmt.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+			try
+			{
+				if (conn != null)
+					conn.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+		}
+
 		return
 			  net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	@Override
-	public int OnContactDeleted (JsonNode jsonMessage)
+	public int OnContactDeleted (JsonNode jsonSingleContact)
 	{
+		Connection conn = null;
+		PreparedStatement stmt = null;
+		try
+		{
+			String sSQL_UpdateDeletedFlag = "UPDATE " + TABLE_NAME__Contacts + " SET 是否已删除=1, 删除时间=CURRENT_TIMESTAMP WHERE 昵称=? AND 备注名=?";
+			net_maclife_wechat_http_BotApp.SetupDataSource ();
+			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
+			stmt = conn.prepareStatement (sSQL_UpdateDeletedFlag);
+
+			int nCol = 1;
+			stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonSingleContact, "NickName"));
+			stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonSingleContact, "RemarkName"));
+
+			stmt.executeUpdate ();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+		finally
+		{
+			try
+			{
+				if (stmt != null)
+					stmt.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+			try
+			{
+				if (conn != null)
+					conn.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+		}
+
 		return
 			  net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	@Override
-	public int OnRoomMemberChanged (JsonNode jsonMessage)
+	public int OnRoomMemberChanged (JsonNode jsonSingleRoomContact)
 	{
+		Connection conn = null;
+		PreparedStatement stmt = null;
+		PreparedStatement stmt_QueryContactID = null;
+		try
+		{
+			net_maclife_wechat_http_BotApp.SetupDataSource ();
+			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
+			stmt_QueryContactID = conn.prepareStatement (sSQL_QueryContactID);
+			stmt = conn.prepareStatement (sSQL_InsertContactMember);
+
+			SaveRoomAndMembers (conn, stmt, stmt_QueryContactID, jsonSingleRoomContact, "群成员变更");
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace ();
+		}
+		finally
+		{
+			try
+			{
+				if (stmt != null)
+					stmt.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+			try
+			{
+				if (stmt_QueryContactID != null)
+					stmt_QueryContactID.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+			try
+			{
+				if (conn != null)
+					conn.close ();
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace ();
+			}
+		}
+
 		return
 			  net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__PROCESSED
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;

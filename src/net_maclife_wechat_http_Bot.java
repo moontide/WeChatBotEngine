@@ -151,28 +151,28 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	////////////////////////////////
-	// 联系人信息变动事件
-	// ModContactList 节点处理
+	// 单个联系人信息变动事件
+	// 原消息中，ModContactList 有多少个元素，这个事件就会被触发多少次
 	////////////////////////////////
-	public int OnContactChanged (JsonNode jsonNode)
+	public int OnContactChanged (JsonNode jsonSingleContact)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
-	// 联系人被删除事件
-	// DelContactList 节点处理
+	// 单个联系人被删除事件
+	// 原消息中，DelContactList 有多少个元素，这个事件就会被触发多少次
 	////////////////////////////////
-	public int OnContactDeleted (JsonNode jsonNode)
+	public int OnContactDeleted (JsonNode jsonSingleContact)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
 	////////////////////////////////
-	// 群聊成员变动事件
-	// ModChatRoomMemberList 节点处理
+	// 单个群成员变动事件
+	// 原消息中，ModChatRoomMemberList 有多少个元素，这个事件就会被触发多少次
 	////////////////////////////////
-	public int OnRoomMemberChanged (JsonNode jsonNode)
+	public int OnRoomMemberChanged (JsonNode jsonSingleRoomContact)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
