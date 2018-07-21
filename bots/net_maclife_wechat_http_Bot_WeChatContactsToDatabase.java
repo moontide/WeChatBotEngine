@@ -33,7 +33,7 @@ public class net_maclife_wechat_http_Bot_WeChatContactsToDatabase extends net_ma
 		PreparedStatement stmt = null;
 		try
 		{
-			String sSQL_Insert = "INSERT INTO " + TABLE_NAME__Contacts + " (微信号, 昵称, 备注名, 签名, 性别, 省, 市, 是否星标好友, 是否群, 群主UIN, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?) ON DUPLICATE KEY UPDATE 签名=?, 性别=?, 省=?, 市=?, 是否星标好友=?, 是否群=?, 群主UIN=?, 群成员数量=?, 是否公众号=?, 是否企业号=?, 是否微信团队号=?, 数据来源=?, 最后更新时间=CURRENT_TIMESTAMP";
+			String sSQL_Insert = "INSERT INTO " + TABLE_NAME__Contacts + " (SessionID, ContactAccountInThisSession, 微信号, 昵称, 备注名, 签名, 性别, 省, 市, 是否星标好友, 是否群, 群主UIN, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源, 最后更新时间) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE SessionID=CASE WHEN SessionID='' THEN ? WHEN SessionID<>? THEN, ContactAccountInThisSession=CASE WHEN ?, 签名=?, 性别=?, 省=?, 市=?, 是否星标好友=?, 是否群=?, 群主UIN=?, 群成员数量=?, 是否公众号=?, 是否企业号=?, 是否微信团队号=?, 数据来源=?, 最后更新时间=CURRENT_TIMESTAMP";
 			net_maclife_wechat_http_BotApp.SetupDataSource ();
 			conn = net_maclife_wechat_http_BotApp.botDS.getConnection ();
 			stmt = conn.prepareStatement (sSQL_Insert, new String[] {"contact_id"});
@@ -53,6 +53,8 @@ public class net_maclife_wechat_http_Bot_WeChatContactsToDatabase extends net_ma
 				boolean isWeChatTeamAccount = net_maclife_wechat_http_BotApp.IsWeChatTeamAccount (nVerifyFlag);
 
 				int nCol = 1;
+				stmt.setString (nCol++, engine.sSessionID);
+				stmt.setString (nCol++, net_maclife_wechat_http_BotApp.GetJSONText (jsonRecentContact, "UserName"));
 				stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonRecentContact, "Alias"));
 				stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonRecentContact, "NickName"));
 				stmt.setString (nCol++, net_maclife_wechat_http_BotEngine.GetContactName (jsonRecentContact, "RemarkName"));
@@ -117,7 +119,7 @@ public class net_maclife_wechat_http_Bot_WeChatContactsToDatabase extends net_ma
 			| net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
 
-	static final String sSQL_InsertContact = "INSERT INTO " + TABLE_NAME__Contacts + " (微信号, 昵称, 备注名, 签名, /*电话号码, 描述, 标签, 照片或名片,*/ 省, 市, 是否星标好友, /*是否已删除, 删除时间,*/ 是否群, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?) ON DUPLICATE KEY UPDATE 签名=?, 省=?, 市=?, 是否星标好友=?, 是否群=?, 群成员数量=?, 是否公众号=?, 是否企业号=?, 是否微信团队号=?, 数据来源=?, 最后更新时间=CURRENT_TIMESTAMP";
+	static final String sSQL_InsertContact = "INSERT INTO " + TABLE_NAME__Contacts + " (微信号, 昵称, 备注名, 签名, /*电话号码, 描述, 标签, 照片或名片,*/ 省, 市, 是否星标好友, /*是否已删除, 删除时间,*/ 是否群, 群成员数量, 是否公众号, 是否企业号, 是否微信团队号, 数据来源, 最后更新时间) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE 签名=?, 省=?, 市=?, 是否星标好友=?, 是否群=?, 群成员数量=?, 是否公众号=?, 是否企业号=?, 是否微信团队号=?, 数据来源=?, 最后更新时间=CURRENT_TIMESTAMP";
 	@Override
 	public int OnContactsReceived (JsonNode jsonContacts)
 	{

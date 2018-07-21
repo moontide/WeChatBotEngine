@@ -1,6 +1,8 @@
 CREATE TABLE wechat_contacts
 (
 	contact_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+	SessionID VARCHAR(32) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '记录联系人时的会话的 ID',
+	ContactAccountInThisSession VARCHAR(70) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '此联系人在此会话的帐号ID',
 	明文ID VARCHAR(100) NOT NULL DEFAULT '' COMMENT '微信明文 ID，不是那种每次会话都会变化的且经过加密后的ID。这个 ID 是需要<s>手工在手机端逐个打开联系人的聊天窗口后才会获取到</s>（这种方法已失效，微信已不返回该数据，现在改为从“消息被撤回”消息中获取该数据），所有，如果从未打开过某人的聊天窗口，这个信息可能会为空',
 	微信号 VARCHAR(50) NOT NULL DEFAULT '' COMMENT '微信号。现在这个数据已经获取不到',
 	昵称 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '' COMMENT '昵称',
@@ -50,3 +52,13 @@ CREATE TABLE wechat_contact_members
 
 	PRIMARY KEY (contact_id, 序号)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='群聊里的成员';
+
+CREATE VIEW v_wechat_contact_members
+AS
+	SELECT
+		c.昵称 AS 群名,
+		m.*
+	FROM
+		wechat_contact_members m
+		LEFT JOIN wechat_contacts c ON m.contact_id = c.contact_id
+	;
