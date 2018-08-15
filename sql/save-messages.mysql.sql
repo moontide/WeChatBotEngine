@@ -1,7 +1,7 @@
 CREATE TABLE wechat_message_packages
 (
 	package_id INT UNSIGNED AUTO_INCREMENT,
-	package_json TEXT NOT NULL DEFAULT '' COMMENT 'HTTP 接口收到的原始消息包',
+	package_json MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE ut8mb4_bin NOT NULL DEFAULT '' COMMENT 'HTTP 接口收到的原始消息包',
 
 	AddMsgCount INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '新消息数量 AddMsgCount',
 	ModContactCount INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '联系人变更数量 ModContactCount',
