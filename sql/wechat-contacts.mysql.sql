@@ -1,9 +1,22 @@
+CREATE TABLE wechat_sessions
+(
+	session_id INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增长 ID',
+	SessionID VARCHAR(32) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '微信返回的会话 ID',
+	MyAccountInThisSession VARCHAR(70) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '“我”在此会话的加密帐号',
+	SessionCreatedTime DATETIME COMMENT '会话创建时间 / 登录微信 Web 版的时间',
+
+	PRIMARY KEY (session_id),
+	UNIQUE KEY (SessionID),
+	UNIQUE KEY (MyAccountInThisSession)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='微信 Web 会话。每次会话（每次登录）都会产生一个不同的加密帐号，同时所有联系人的帐号、群成员的帐号也会改变，但在同一个会话内联系人的帐号和群成员的帐号不变。';
+
 CREATE TABLE wechat_contacts
 (
-	contact_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-	SessionID VARCHAR(32) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '记录联系人时的会话的 ID',
-	ContactAccountInThisSession VARCHAR(70) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '此联系人在此会话的帐号ID',
-	明文ID VARCHAR(100) NOT NULL DEFAULT '' COMMENT '微信明文 ID，不是那种每次会话都会变化的且经过加密后的ID。这个 ID 是需要<s>手工在手机端逐个打开联系人的聊天窗口后才会获取到</s>（这种方法已失效，微信已不返回该数据，现在改为从“消息被撤回”消息中获取该数据），所有，如果从未打开过某人的聊天窗口，这个信息可能会为空',
+	contact_id INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增长 ID',
+	SessionID VARCHAR(32) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '微信返回的会话 ID',
+	MyAccountInThisSession VARCHAR(70) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '“我”在此会话的帐号',
+	ContactAccountInThisSession VARCHAR(70) CHARACTER SET ascii NOT NULL DEFAULT '' COMMENT '此联系人在此会话的帐号',
+	明文ID VARCHAR(100) NOT NULL DEFAULT '' COMMENT '微信明文帐号，不是那种每次会话都会变化的且经过加密后的帐号。这个明文帐号 是需要<s>手工在手机端逐个打开联系人的聊天窗口后才会获取到</s>（这种方法已失效，微信已不返回该数据，现在改为从“消息被撤回”消息中获取该数据），所有，如果从未打开过某人的聊天窗口，这个信息可能会为空',
 	微信号 VARCHAR(50) NOT NULL DEFAULT '' COMMENT '微信号。现在这个数据已经获取不到',
 	昵称 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '' COMMENT '昵称',
 	备注名 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '' COMMENT '备注名',
@@ -38,6 +51,7 @@ CREATE TABLE wechat_contacts
 
 	PRIMARY KEY (contact_id),
 	UNIQUE KEY UQ__昵称_备注名 (昵称, 备注名),
+	 /*UNIQUE KEY UQ__昵称_备注名 (MyAccountInThisSession, 昵称, 备注名), 注意事项： */
 	INDEX IX__wechat_contacts_昵称 (昵称),
 	INDEX IX__wechat_contacts_备注名 (备注名)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='同步个人微信的通讯录。除了位于加入到微信通讯录的联系人，还包括未加入到通讯录的群';
