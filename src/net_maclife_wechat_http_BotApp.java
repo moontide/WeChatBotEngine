@@ -48,6 +48,7 @@ public class net_maclife_wechat_http_BotApp implements Runnable
 	public static final Charset UTF_32BE = Charset.forName ("UTF-32BE");
 
 	public static final Random random = new SecureRandom ();
+	public static final Timer timer = new Timer ();
 
 	public static final int DEFAULT_NET_TRY_TIMES = 3;
 
@@ -1328,14 +1329,25 @@ logger.info ("IO 异常: " + e + (i>=(nTryTimes-1) ? "，已是最后一次，�
 	 *
 	 * @param sFrom_Account 来自帐号（大概，Web 版微信 HTTP 协议中，发件人只有可能是自己了，然而也不确定）
 	 * @param sTo_Account 发往帐号。帐号可以是本次会话的加密帐号，也可以是类似 wxid_***  gh_***  filehelper 之类的明帐号
+	 * @param bForceSend 是否强制发送。
+	 * <p>当配置文件里配置了默认不发送消息时，是否强制发送。加此选项的目的是为了允许你在控制台直接用控制台命令发送消息时，忽略配置文件里的配置项，直接发送。</p>
+	 * <p>当配置文件里配置了允许发送消息时，此参数不再起作用</p>
+	 *
 	 */
-	public static JsonNode WebWeChatSendMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, int nMessageType, Object oMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, int nMessageType, Object oMessage, boolean bForceSend) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.fine ("发消息 WebWeChatSendMessage …");
 		if (ParseBoolean (GetConfig().getString ("app.message.no-sending", "0")))
 		{
+			if (bForceSend)
+			{
+logger.warning (net_maclife_util_ANSIEscapeTool.Green ("虽然配置文件里已配置为不发送消息，但强制执行发送操作"));
+			}
+			else
+			{
 logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("已配置为不发送消息，不执行发送操作"));
-			return null;
+				return null;
+			}
 		}
 
 		String sURL = null;
@@ -1405,7 +1417,10 @@ logger.fine ("\n" + node);
 
 		return node;
 	}
-
+	public static JsonNode WebWeChatSendMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, int nMessageType, Object oMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, nMessageType, oMessage, false);
+	}
 	public static JsonNode MakeFullSendTextMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sContent)
 	{
 		long nLocalMessageID = GenerateLocalMessageID ();
@@ -1421,10 +1436,14 @@ logger.fine ("\n" + node);
 		on.set ("Msg", msg);
 		return on;
 	}
-	public static JsonNode WebWeChatSendTextMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendTextMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMessage, boolean bForceSend) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发文本消息:\n" + net_maclife_util_ANSIEscapeTool.Cyan (sMessage));
-		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__TEXT, sMessage, bForceSend);
+	}
+	public static JsonNode WebWeChatSendTextMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMessage) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		return WebWeChatSendTextMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, sMessage, false);
 	}
 
 	public static JsonNode MakeFullSendImageMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
@@ -1443,10 +1462,14 @@ logger.info ("发文本消息:\n" + net_maclife_util_ANSIEscapeTool.Cyan (sMessa
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendImageMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendImageMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID, boolean bForceSend) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发图片消息: " + sMediaID);
-		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__IMAGE, sMediaID, bForceSend);
+	}
+	public static JsonNode WebWeChatSendImageMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		return WebWeChatSendImageMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, sMediaID, false);
 	}
 
 	public static JsonNode MakeFullSendEmotionMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
@@ -1466,10 +1489,14 @@ logger.info ("发图片消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendEmotionMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendEmotionMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID, boolean bForceSend) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发表情图消息: " + sMediaID);
-		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__EMOTION, sMediaID, bForceSend);
+	}
+	public static JsonNode WebWeChatSendEmotionMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		return WebWeChatSendEmotionMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, sMediaID, false);
 	}
 
 	public static Element MakeFullSendVoiceMessageRequestElement (String sMediaID, File f) throws UnsupportedAudioFileException, IOException
@@ -1510,10 +1537,14 @@ logger.info ("发表情图消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendVoiceMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendVoiceMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID, boolean bForceSend) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发语音消息: " + sMediaID);
-		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VOICE, sMediaID, bForceSend);
+	}
+	public static JsonNode WebWeChatSendVoiceMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		return WebWeChatSendVoiceMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, sMediaID, false);
 	}
 
 	public static JsonNode MakeFullSendVideoMessageRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom, String sTo, String sMediaID)
@@ -1532,10 +1563,14 @@ logger.info ("发语音消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendVideoMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendVideoMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID, boolean bForceSend) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发视频消息: " + sMediaID);
-		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG, sMediaID);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__VIDEO_MSG, sMediaID, bForceSend);
+	}
+	public static JsonNode WebWeChatSendVideoMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, String sMediaID) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		return WebWeChatSendVideoMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, sMediaID, false);
 	}
 
 	public static Element MakeFullSendApplicationMessageRequestElement (String sMediaID, File f)
@@ -1594,10 +1629,14 @@ logger.info ("发视频消息: " + sMediaID);
 		on.put ("Scene", 0);
 		return on;
 	}
-	public static JsonNode WebWeChatSendApplicationMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, Element eXML) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	public static JsonNode WebWeChatSendApplicationMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, Element eXML, boolean bForceSend) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
 	{
 logger.info ("发应用程序 (如：上传文件) 消息，XML: " + eXML.toXML ());
-		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, eXML);
+		return WebWeChatSendMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, net_maclife_wechat_http_BotEngine.WECHAT_MSG_TYPE__APP, eXML, bForceSend);
+	}
+	public static JsonNode WebWeChatSendApplicationMessage (long nUserID, String sSessionID, String sSessionKey, String sPassTicket, String sFrom_Account, String sTo_Account, Element eXML) throws JsonProcessingException, IOException, KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+	{
+		return WebWeChatSendApplicationMessage (nUserID, sSessionID, sSessionKey, sPassTicket, sFrom_Account, sTo_Account, eXML, false);
 	}
 
 	public static JsonNode MakeFullUploadMediaRequestJsonNode (long nUserID, String sSessionID, String sSessionKey, String sDeviceID, String sFrom_Account, String sTo_Account, File f)
@@ -2447,8 +2486,9 @@ System.err.println ("收到退出命令");
 logger.warning ("必须输入回复的消息内容");
 							continue;
 						}
-						String sMessage = StringEscapeUtils.unescapeJava (sParam);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
-						engine.ReplyTextMessage (sMessage);
+						String sMessage = sParam;
+						sMessage = StringEscapeUtils.unescapeJava (sParam);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
+						engine.ReplyTextMessage (sMessage, true);
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "msg", "send", "text"))	// msg 命令 - 仿 IRC 频道的 msg 命令
 					{
@@ -2476,7 +2516,7 @@ logger.warning ("必须输入消息内容");
 							continue;
 						}
 						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
-						engine.SendTextMessage (sToAccount, sMessage);
+						engine.SendTextMessage (sToAccount, sMessage, true);
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "msgToAlias", "sendToAlias", "textToAlias",	// 根据用户的微信号来发文字消息
 							"msgToRemarkName", "sendToRemarkName", "textToRemarkName",	// 根据自己给用户做的备注名来发文字消息
@@ -2573,7 +2613,7 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearch
 						}
 						JsonNode jsonContact = listContacts.get (0);
 						sMessage = StringEscapeUtils.unescapeJava (sMessage);	// 目的：将 \n 转成回车符号，用单行文字书写多行文字。虽然，测试时发现，也不需要 unescape，微信接收到后会自动解转义（大概是 json 的原因吧）。为了日志好看一些，还是自己取消转义……
-						engine.SendTextMessage (GetJSONText (jsonContact, "UserName"), sMessage);
+						engine.SendTextMessage (GetJSONText (jsonContact, "UserName"), sMessage, true);
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "SendFile", "SendImage", "SendAudio", "SendVideo", "FileTo", "ImageTo", "AudioTo", "VideoTo"))	// 发送图片、视频、其他文件
 					{
@@ -2606,7 +2646,7 @@ logger.warning ("必须输入文件名");
 logger.warning ("文件 " + sFileName + " 不存在！");
 							continue;
 						}
-						engine.SendMediaFile (sToAccount, f);
+						engine.SendMediaFile (sToAccount, f, true);
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "fileToAlias", "imageToAlias", "audioToAlias", "voiceToAlias", "videoToAlias",	// 根据用户的微信号来发文件
 							"fileToRemarkName", "imageToRemarkName", "audioToRemarkName", "voiceToRemarkName", "videoToRemarkName",	// 根据自己给用户做的备注名来发文件
@@ -2709,7 +2749,7 @@ logger.warning (net_maclife_util_ANSIEscapeTool.Yellow ("根据" + sNameOfSearch
 							continue;
 						}
 						JsonNode jsonContact = listContacts.get (0);
-						engine.SendMediaFile (GetJSONText (jsonContact, "UserName"), f);
+						engine.SendMediaFile (GetJSONText (jsonContact, "UserName"), f, true);
 					}
 					else if (StringUtils.equalsAnyIgnoreCase (sCommand, "AddFriend", "AddContact", "MakeFriend"))
 					{

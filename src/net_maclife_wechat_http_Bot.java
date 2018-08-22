@@ -52,32 +52,61 @@ public abstract class net_maclife_wechat_http_Bot
 	}
 
 	/**
-		对 engine.BotSendTextMessage 的封装，免得每次都传递 Bot 参数
+		对 engine.BotSendTextMessage 、 engine.BotForceSendTextMessage 的封装，免得每次都传递 Bot 参数
 	*/
 	public void SendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage, boolean bUseAppendBotNameConfig, boolean bAppendBotName) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		if (engine != null)
-			engine.BotSendTextMessage (this, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage, bUseAppendBotNameConfig, bAppendBotName);
+			engine.BotSendTextMessage (this, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage, bUseAppendBotNameConfig, bAppendBotName, false);
 	}
+	public void ForceSendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage, boolean bUseAppendBotNameConfig, boolean bAppendBotName) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		if (engine != null)
+			engine.BotSendTextMessage (this, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage, bUseAppendBotNameConfig, bAppendBotName, true);
+	}
+
 	public void SendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		if (engine != null)
 			engine.BotSendTextMessage (this, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage);
 	}
+	public void ForceSendTextMessage (String sToAccount, String sToName, String sToAccount_RoomMember, String sToName_RoomMember, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		if (engine != null)
+			engine.BotForceSendTextMessage (this, sToAccount, sToName, sToAccount_RoomMember, sToName_RoomMember, sMessage);
+	}
+
 	public void SendTextMessage (String sToAccount, String sToName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		if (engine != null)
 			engine.BotSendTextMessage (this, sToAccount, sToName, sMessage);
 	}
+	public void ForceSendTextMessage (String sToAccount, String sToName, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		if (engine != null)
+			engine.BotForceSendTextMessage (this, sToAccount, sToName, sMessage);
+	}
+
 	public void SendTextMessage (String sToAccount, String sMessage, boolean bUseAppendBotNameConfig, boolean bAppendBotName) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		if (engine != null)
-			engine.BotSendTextMessage (this, sToAccount, null, null, null, sMessage, bUseAppendBotNameConfig, bAppendBotName);
+			engine.BotSendTextMessage (this, sToAccount, null, null, null, sMessage, bUseAppendBotNameConfig, bAppendBotName, false);
 	}
+	public void ForceSendTextMessage (String sToAccount, String sMessage, boolean bUseAppendBotNameConfig, boolean bAppendBotName) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		if (engine != null)
+			engine.BotSendTextMessage (this, sToAccount, null, null, null, sMessage, bUseAppendBotNameConfig, bAppendBotName, true);
+	}
+
 	public void SendTextMessage (String sToAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
 	{
 		if (engine != null)
 			engine.BotSendTextMessage (this, sToAccount, sMessage);
+	}
+	public void ForceSendTextMessage (String sToAccount, String sMessage) throws KeyManagementException, UnrecoverableKeyException, JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException
+	{
+		if (engine != null)
+			engine.BotForceSendTextMessage (this, sToAccount, sMessage);
 	}
 
 	/**
@@ -153,8 +182,10 @@ public abstract class net_maclife_wechat_http_Bot
 	////////////////////////////////
 	// 单个联系人信息变动事件
 	// 原消息中，ModContactList 有多少个元素，这个事件就会被触发多少次
+	// @param jsonSingleContact_Old 更改前的联系人信息
+	// @param jsonSingleContact_New 更改后的联系人信息
 	////////////////////////////////
-	public int OnContactChanged (JsonNode jsonSingleContact)
+	public int OnContactChanged (JsonNode jsonSingleContact_Old, JsonNode jsonSingleContact_New)
 	{
 		return net_maclife_wechat_http_BotEngine.BOT_CHAIN_PROCESS_MODE_MASK__CONTINUE;
 	}
